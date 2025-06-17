@@ -1,85 +1,229 @@
 "use client";
-import { ResourceClient, ResourceConfig } from "@/components/(dashboard)/components/common/ResourceClient";
-import type { Contact } from "@/lib/services/contactService";
-import { fetchContacts, addNewContact, updateContact, deleteContact } from "@/lib/redux/contactSlice";
-import { z } from "zod";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import React, { useState, useMemo } from "react";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Phone, Mail, Loader2 } from "lucide-react";
 
-const getInitials = (name: string = "") => {
-  const names = name.split(" ");
-  return names.length > 1 ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase() : name.substring(0, 2).toUpperCase();
-};
+// Types from leads page
+const LEAD_STATUS = {
+  NEW: "New",
+  CONTACTED: "Contacted",
+} as const;
 
+type LeadStatus = typeof LEAD_STATUS[keyof typeof LEAD_STATUS];
 
-const CONTACT_STATUSES = ['New', 'Contacted', 'NotInterested'] as const;
+interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  status: LeadStatus;
+}
 
+// Dummy data
+const dummyContacts: Contact[] = [
+  {
+    id: "1",
+    name: "John Doe",
+    email: "john@example.com",
+    phone: "+1234567890",
+    status: LEAD_STATUS.NEW,
+  },
+  {
+    id: "2",
+    name: "Jane Smith",
+    email: "jane@example.com",
+    phone: "+1987654321",
+    status: LEAD_STATUS.CONTACTED,
+  },
+];
 
-const contactFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters."),
-  email: z.string().email("Invalid email address."),
-  phoneNumber: z.string().min(10, "Phone number is too short."),
-  status: z.enum(CONTACT_STATUSES),
-  message: z.string().min(5, "Message must be at least 5 characters."),
-});
+export default function Contacts() {
+  const [contacts] = useState<Contact[]>(dummyContacts);
+  const [search, setSearch] = useState("");
+  const [editContact, setEditContact] = useState<Contact | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-const contactConfig: ResourceConfig<Contact> = {
-  noun: "Contact",
-  nounPlural: "Contacts",
-  sliceName: "contacts",
-  reduxActions: { fetch: fetchContacts, add: addNewContact, update: updateContact, delete: deleteContact },
-  formSchema: contactFormSchema,
-  
-  columns: [
-    {
-      accessorKey: "name",
-      header: "Contact",
-      cell: (item) => (
-        <div className="flex items-center gap-3">
-          <Avatar><AvatarImage src="" /><AvatarFallback className="bg-slate-200">{getInitials(item.name)}</AvatarFallback></Avatar>
-          <div><div className="font-medium">{item.name}</div><div className="text-sm text-muted-foreground">{item.email}</div></div>
+  // Filtered contacts
+  const filteredContacts = useMemo(() => {
+    return contacts.filter((contact) =>
+      contact.name.toLowerCase().includes(search.toLowerCase()) ||
+      contact.email.toLowerCase().includes(search.toLowerCase()) ||
+      contact.phone.includes(search)
+    );
+  }, [contacts, search]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case LEAD_STATUS.NEW:
+        return "bg-blue-500";
+      case LEAD_STATUS.CONTACTED:
+        return "bg-yellow-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  const handleStatusUpdate = async (status: LeadStatus) => {
+    setIsLoading(true);
+    try {
+      // Here you would update the contact's status
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating API call
+      console.log('Updating status for contact:', editContact?.id, 'to:', status);
+      setModalOpen(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full mx-auto mt-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <h1 className="text-3xl font-bold">Contacts</h1>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Input
+            placeholder="Search contacts..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full sm:w-80"
+          />
         </div>
-      ),
-    },
-    {
-      accessorKey: "message",
-      header: "Message",
-      cell: (item) => <p className="text-sm text-muted-foreground truncate max-w-xs">{item.message}</p>,
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: (item) => <Badge variant="secondary" className={cn("capitalize", item.status === 'New' && 'bg-blue-100 text-blue-700', item.status === 'Contacted' && 'bg-yellow-100 text-yellow-700', item.status === 'NotInterested' && 'bg-red-100 text-red-700')}>{item.status.replace(/([A-Z])/g, ' $1').trim()}</Badge>,
-    },
-  ],
-  
-  viewFields: [
-    { label: "Phone Number", render: (item) => item.phoneNumber },
-    { label: "Status", render: (item) => <Badge variant="secondary" className={cn("capitalize", item.status === 'New' && 'bg-blue-100 text-blue-700', item.status === 'Contacted' && 'bg-yellow-100 text-yellow-700', item.status === 'NotInterested' && 'bg-red-100 text-red-700')}>{item.status.replace(/([A-Z])/g, ' $1').trim()}</Badge> },
-    { label: "Full Message", render: (item) => <p className="text-sm leading-relaxed">{item.message}</p> },
-    { label: "Received On", render: (item) => new Date(Number(item.createdOn)).toLocaleString() },
-  ],
-  
-  formFields: [
-    { name: "name", label: "Name", type: "text" },
-    { name: "email", label: "Email", type: "email" },
-    { name: "phoneNumber", label: "Phone Number", type: "text" },
-    { name: "message", label: "Message", type: "text" },
-    {
-      name: "status",
-      label: "Status",
-      type: "select",
+      </div>
 
-      options: CONTACT_STATUSES.map(status => ({
-        value: status,
-        label: status.replace(/([A-Z])/g, ' $1').trim()
-      }))
-    },
-  ]
-};
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Contact Info</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredContacts.map((contact, idx) => (
+                  <TableRow key={contact.id}>
+                    <TableCell>{idx + 1}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{contact.name}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm">{contact.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm">{contact.phone}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(contact.status) + " text-white"}>
+                        {contact.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditContact(contact);
+                          setModalOpen(true);
+                        }}
+                      >
+                        Update Status
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
-export default function ContactsPage() {
-  return <ResourceClient config={contactConfig} />;
+      {/* Update Status Dialog */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Contact Status</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Select
+              value={editContact?.status}
+              onValueChange={(value: LeadStatus) => handleStatusUpdate(value)}
+              disabled={isLoading}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(LEAD_STATUS).map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button 
+              type="button"
+              onClick={() => handleStatusUpdate(editContact?.status as LeadStatus)}
+              disabled={isLoading || !editContact?.status}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={isLoading}>
+                Cancel
+              </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }

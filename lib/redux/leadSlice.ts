@@ -1,99 +1,137 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { leadService, Lead, PaginatedLeadsResponse, GetAllLeadsParams } from '../services/leadService';
+import { createSlice, Dispatch } from "@reduxjs/toolkit";
+import axios from "axios";
+import { RootState } from "../store";
 
-interface LeadState extends PaginatedLeadsResponse {
-    status: 'idle' | 'loading' | 'succeeded' | 'failed';
-    error: string | null;
+interface Lead {
+  _id?: string;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  status?: string;
+  createdOn?: string;
+  updatedOn?: string;
+}
+
+interface LeadState {
+  data: Lead[];
+  loading: boolean;
+  error: string | null;
+  selectedLead: Lead | null;
 }
 
 const initialState: LeadState = {
-    leads: [],
-    totalPages: 1,
-    currentPage: 1,
-    totalLeads: 0,
-    status: 'idle',
-    error: null,
-};
-
-// Async Thunks
-export const fetchLeads = createAsyncThunk('lead/fetchLeads', async (params: GetAllLeadsParams, { rejectWithValue }) => {
-    try {
-        const data = await leadService.getAllLeads(params);
-        return data;
-    } catch (error: any) {
-        return rejectWithValue(error.message);
-    }
-});
-
-export const addNewLead = createAsyncThunk('lead/addNewLead', async (leadData: Omit<Lead, '_id' | 'createdOn' | 'updatedOn'>, { rejectWithValue }) => {
-    try {
-        const data = await leadService.addLead(leadData);
-        return data;
-    } catch (error: any) {
-        return rejectWithValue(error.message);
-    }
-});
-
-export const updateLead = createAsyncThunk('lead/updateLead', async ({ id, userData }: { id: string; userData: Partial<Lead> }, { rejectWithValue }) => {
-    try {
-        const data = await leadService.updateLead(id, userData);
-        console.log(userData)
-        console.log(data)
-        return data;
-    } catch (error: any) {
-        return rejectWithValue(error.message);
-    }
-});
-
-export const deleteLead = createAsyncThunk('lead/deleteLead', async (id: string, { rejectWithValue }) => {
-    try {
-        await leadService.deleteLead(id);
-        return id; 
-    } catch (error: any) {
-        return rejectWithValue(error.message);
-    }
-});
-
+  data: [],
+  loading: false,
+  error: null,
+  selectedLead: null,
+};  
 
 const leadSlice = createSlice({
-    name: 'leads',
-    initialState,
-    reducers: {},
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchLeads.pending, (state) => {
-                state.status = 'loading';
-            })
-            .addCase(fetchLeads.fulfilled, (state, action: PayloadAction<PaginatedLeadsResponse>) => {
-                state.status = 'succeeded';
-                state.leads = action.payload.leads;
-                state.totalPages = action.payload.totalPages;
-                state.currentPage = action.payload.currentPage;
-                state.totalLeads = action.payload.totalLeads;
-            })
-            .addCase(fetchLeads.rejected, (state, action) => {
-                state.status = 'failed';
-                state.error = action.payload as string;
-            })
-            // Add Lead
-            .addCase(addNewLead.fulfilled, (state, action: PayloadAction<Lead>) => {
-                // For simplicity, we can just refetch the list to ensure pagination is correct
-                // or optimistically add it if not on the last page.
-                state.status = 'idle'; // Trigger a refetch on the page
-            })
-            // Update Lead
-            .addCase(updateLead.fulfilled, (state, action: PayloadAction<Lead>) => {
-                const index = state.leads.findIndex(lead => lead._id === action.payload._id);
-                if (index !== -1) {
-                    state.leads[index] = action.payload;
-                }
-            })
-            // Delete Lead
-            .addCase(deleteLead.fulfilled, (state, action: PayloadAction<string>) => {
-                state.leads = state.leads.filter(lead => lead._id !== action.payload);
-                state.totalLeads -= 1;
-            });
+  name: "leads",
+  initialState,
+  reducers: {
+    setLeads: (state, action) => {
+      state.data = action.payload;
+      state.loading = false;
+      state.error = null;
+    },  
+    setLoading: (state, action) => {
+      state.loading = action.payload;
     },
-});
+    setError: (state, action) => {
+      state.error = action.payload;
+      state.loading = false;
+    },
+    setSelectedLead: (state, action) => {
+      state.selectedLead = action.payload;
+    },
+    clearSelectedLead: (state) => {
+      state.selectedLead = null;
+    },
+  },
+}); 
+
+export const { setLeads, setLoading, setError, setSelectedLead, clearSelectedLead } = leadSlice.actions;
+
+export const fetchLeads = () => async (dispatch: Dispatch) => {
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/leads`);
+    if (response.status === 200) {
+      dispatch(setLeads(response.data.data));
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
+
+export const fetchLeadById = (id: string) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/leads/${id}`);
+    const data: Lead = response.data;
+    if (response.status === 200) {
+      dispatch(setSelectedLead(data));    
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
+
+export const addLead = (lead: Lead) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/leads`, lead);
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
+
+export const updateLead = (id: string, lead: Lead) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/leads/${id}`, lead);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
+
+export const deleteLead = (id: string) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/leads/${id}`);
+    if (response.status === 200) {
+      return response.data;   
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
+
+export const selectLeads = (state: RootState) => state.leads.data;
+export const selectLeadById = (state: RootState) => state.leads.selectedLead;
+export const selectLoading = (state: RootState) => state.leads.loading;
+export const selectError = (state: RootState) => state.leads.error;
 
 export default leadSlice.reducer;

@@ -1,46 +1,36 @@
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+"use client";
+
+import { LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Menu, Search, UserCircle } from "lucide-react"; 
-import Link from 'next/link';
-import { Input } from "../ui/input";
 
-const mobileNavLinks = [
-  { name: "Dashboard", href: "/dashboard" },
-  { name: "Users", href: "/dashboard/users" },
-  { name: "Leads", href: "/dashboard/leads" },
-  { name: "Contacts", href: "/dashboard/contacts" },
-];
+export default function Header({ title, onMenuClick }: { title: string; onMenuClick?: () => void }) {
 
-export function Header() {
+  const handleLogout = () => {
+    // TODO: Add your logout logic here
+    alert("Logged out (placeholder)");
+    // router.push("/login"); // Uncomment if you want to redirect after logout
+  };
+
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white px-6">
-      
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="shrink-0 lg:hidden">
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle navigation menu</span>
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left">
-          <nav className="grid gap-6 ml-5 text-lg font-medium">
-            <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
-              GrowUp Inc.
-            </Link>
-            {mobileNavLinks.map(link => (
-              <Link key={link.name} href={link.href} className="text-muted-foreground hover:text-foreground">
-                {link.name}
-              </Link>
-            ))}
-          </nav>
-        </SheetContent>
-      </Sheet>
-
-      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        
-
-
+    <header className="flex items-center justify-between border-b bg-white px-6 py-4 shadow-sm">
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden"
+          onClick={onMenuClick}
+        >
+          <Menu className="h-8 w-8" />
+        </Button>
+        <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
       </div>
+      <button
+        onClick={handleLogout}
+        className="flex items-center gap-2 rounded-lg px-4 py-2 text-slate-600 transition-colors duration-200 hover:bg-red-100 hover:text-red-600"
+      >
+        <LogOut className="h-5 w-5" />
+        <span className="hidden sm:inline">Logout</span>
+      </button>
     </header>
   );
 }
