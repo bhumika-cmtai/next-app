@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { StoreProvider } from "@/lib/redux/StoreProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { ReduxProvider } from "@/lib/provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GrowUp Dashboard",
-  description: "Manage your business",
+  title: "GrowUp | Start Growing",
+  description: "GrowUp is a platform for small businesses to grow their business",
 };
 
 export default function RootLayout({
@@ -19,10 +19,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <StoreProvider>
+        <ReduxProvider>
           {children}
           <Toaster richColors />
-        </StoreProvider>
+        </ReduxProvider>
       </body>
     </html>
   );

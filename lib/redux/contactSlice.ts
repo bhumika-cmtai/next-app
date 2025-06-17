@@ -1,66 +1,137 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { contactService, PaginatedContactsResponse, GetAllContactsParams } from '../services/contactService';
-import type { Contact } from '../services/contactService';
+import { createSlice, Dispatch } from "@reduxjs/toolkit";
+import axios from "axios";
+import { RootState } from "../store";
 
-interface ContactState extends PaginatedContactsResponse {
-    status: 'idle' | 'loading' | 'succeeded' | 'failed';
-    error: string | null;
+interface Contact {
+  _id?: string;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  status?: string;
+  createdOn?: string;
+  updatedOn?: string;
+}
+
+interface ContactState {
+  data: Contact[];
+  loading: boolean;
+  error: string | null;
+  selectedContact: Contact | null;
 }
 
 const initialState: ContactState = {
-    contacts: [],
-    totalPages: 1,
-    currentPage: 1,
-    totalContacts: 0,
-    status: 'idle',
-    error: null,
-};
-
-export const fetchContacts = createAsyncThunk('contacts/fetchContacts', async (params: GetAllContactsParams, { rejectWithValue }) => {
-    try { return await contactService.getAllContacts(params); } 
-    catch (error: any) { return rejectWithValue(error.message); }
-});
-
-export const addNewContact = createAsyncThunk('contacts/addNewContact', async (contactData: Omit<Contact, '_id' | 'createdOn' | 'updatedOn'>, { rejectWithValue }) => {
-    try { return await contactService.addContact(contactData); } 
-    catch (error: any) { return rejectWithValue(error.message); }
-});
-
-export const updateContact = createAsyncThunk('contacts/updateContact', async ({ id, userData }: { id: string; userData: Partial<Contact> }, { rejectWithValue }) => {
-    try { return await contactService.updateContact(id, userData); } 
-    catch (error: any) { return rejectWithValue(error.message); }
-});
-
-export const deleteContact = createAsyncThunk('contacts/deleteContact', async (id: string, { rejectWithValue }) => {
-    try { await contactService.deleteContact(id); return id; } 
-    catch (error: any) { return rejectWithValue(error.message); }
-});
+  data: [],
+  loading: false,
+  error: null,
+  selectedContact: null,
+};  
 
 const contactSlice = createSlice({
-    name: 'contacts',
-    initialState,
-    reducers: {},
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchContacts.pending, (state) => { state.status = 'loading'; })
-            .addCase(fetchContacts.fulfilled, (state, action: PayloadAction<PaginatedContactsResponse>) => {
-                state.status = 'succeeded';
-                state.contacts = action.payload.contacts;
-                state.totalPages = action.payload.totalPages;
-                state.currentPage = action.payload.currentPage;
-                state.totalContacts = action.payload.totalContacts;
-            })
-            .addCase(fetchContacts.rejected, (state, action) => { state.status = 'failed'; state.error = action.payload as string; })
-            // .addCase(addNewContact.fulfilled, (state) => { state.status = 'idle'; })
-            .addCase(updateContact.fulfilled, (state, action: PayloadAction<Contact>) => {
-                const index = state.contacts.findIndex(c => c._id === action.payload._id);
-                if (index !== -1) state.contacts[index] = action.payload;
-            })
-            .addCase(deleteContact.fulfilled, (state, action: PayloadAction<string>) => {
-                state.contacts = state.contacts.filter(c => c._id !== action.payload);
-                state.totalContacts -= 1;
-            });
+  name: "contacts",
+  initialState,
+  reducers: {
+    setContacts: (state, action) => {
+      state.data = action.payload;
+      state.loading = false;
+      state.error = null;
+    },  
+    setLoading: (state, action) => {
+      state.loading = action.payload;
     },
-});
+    setError: (state, action) => {
+      state.error = action.payload;
+      state.loading = false;
+    },
+    setSelectedContact: (state, action) => {
+      state.selectedContact = action.payload;
+    },
+    clearSelectedContact: (state) => {
+      state.selectedContact = null;
+    },
+  },
+}); 
+
+export const { setContacts, setLoading, setError, setSelectedContact, clearSelectedContact } = contactSlice.actions;
+
+export const fetchContacts = () => async (dispatch: Dispatch) => {
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/contacts`);
+    if (response.status === 200) {
+      dispatch(setContacts(response.data.data));
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
+
+export const fetchContactById = (id: string) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/contacts/${id}`);
+    const data: Contact = response.data;
+    if (response.status === 200) {
+      dispatch(setSelectedContact(data));    
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
+
+export const addContact = (contact: Contact) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/contacts`, contact);
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
+
+export const updateContact = (id: string, contact: Contact) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/contacts/${id}`, contact);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
+
+export const deleteContact = (id: string) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/contacts/${id}`);
+    if (response.status === 200) {
+      return response.data;   
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
+
+export const selectContacts = (state: RootState) => state.contacts.data;
+export const selectContactById = (state: RootState) => state.contacts.selectedContact;
+export const selectLoading = (state: RootState) => state.contacts.loading;
+export const selectError = (state: RootState) => state.contacts.error;
 
 export default contactSlice.reducer;
