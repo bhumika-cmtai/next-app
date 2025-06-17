@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -41,9 +42,20 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-light-pink: var(--light-pink);
+  --color-pink-100: var(--pink-100);
+  --color-pink-200: var(--pink-200);
+  --color-gray-subtitle: var(--gray-subtitle);
+  --color-sea-green-100: var(--sea-green-100);
+  --color-gold-50: var(--gold-50);
+  --color-gold-200: var(--gold-200);
+  --color-purple-400: var(--purple-400);
+  --color-purple-500: var(--purple-500);
+  --color-purple-600: var(--purple-600);
 }
 
 body {
+  font-family: "Noto Sans", sans-serif;
   background: var(--background);
 }
 
@@ -80,6 +92,19 @@ body {
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --light-pink: #FCF3F3;
+  --pink-50: #FFF3F3;
+  --pink-100: #E5AEBA;
+  --pink-200: #DFA2D5;
+  --gray-subtitle: #5D5A5A; 
+  --sea-green-100: #98FFCE;
+  --gold-50: #FBF2D1;
+  --gold-200: oklch(0.9022 0.1548 94.96);
+  --purple-400: #A06CFF;
+  --purple-500: #7E69FF;
+  --purple-600: #A06CFF;
+  --font-sans-noto: "Noto Sans", sans-serif;
+
 }
 
 .dark {
