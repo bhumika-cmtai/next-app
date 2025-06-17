@@ -1,8 +1,8 @@
 // 'use client';
 
 // import { useEffect, useState, FormEvent } from 'react';
-// import { getUserById, updateUser } from '@/services/api';
-// import { User } from '@/types';
+// // import { getUserById, updateUser } from '@/lib/userService';
+// // import { User } from '@/types';
 // import toast from 'react-hot-toast';
 // import { ArrowLeft, Loader2 } from 'lucide-react';
 

@@ -1,11 +1,9 @@
-// components/(dashboard)/Header.tsx
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, Search, UserCircle } from "lucide-react"; // Added icons for a polished look
+import { Menu, Search, UserCircle } from "lucide-react"; 
 import Link from 'next/link';
 import { Input } from "../ui/input";
 
-// The navigation links for the mobile sidebar (Sheet)
 const mobileNavLinks = [
   { name: "Dashboard", href: "/dashboard" },
   { name: "Users", href: "/dashboard/users" },
@@ -17,7 +15,6 @@ export function Header() {
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white px-6">
       
-      {/* Mobile Navigation (Sheet component) */}
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="shrink-0 lg:hidden">
@@ -39,22 +36,9 @@ export function Header() {
         </SheetContent>
       </Sheet>
 
-      {/* Main Header Content */}
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         
-        {/* Search Bar (optional, but looks professional) */}
-        {/* <form className="ml-auto flex-1 sm:flex-initial">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-            />
-          </div>
-        </form> */}
 
-        {/* User Profile Dropdown (Placeholder) */}
 
       </div>
     </header>

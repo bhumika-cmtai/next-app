@@ -1,4 +1,3 @@
-// app/dashboard/users/_components/UserViewDialog.tsx
 "use client";
 
 import type { User } from "@/lib/services/userService";
@@ -13,7 +12,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-// Helper to get initials from a name
 const getInitials = (name: string) => {
   const names = name.split(" ");
   if (names.length > 1) {
@@ -28,7 +26,6 @@ interface UserViewDialogProps {
   user: User | null;
 }
 
-// A reusable component to display a piece of information
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="grid grid-cols-3 items-center gap-4 border-b pb-3">
@@ -41,7 +38,6 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 export function UserViewDialog({ isOpen, onOpenChange, user }: UserViewDialogProps) {
   if (!user) return null;
 
-  // API returns timestamps as strings, convert to number for Date object
   const createdDate = new Date(Number(user.createdOn)).toLocaleString();
   const updatedDate = new Date(Number(user.updatedOn)).toLocaleString();
 

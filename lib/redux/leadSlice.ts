@@ -1,4 +1,3 @@
-// lib/redux/leadSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { leadService, Lead, PaginatedLeadsResponse, GetAllLeadsParams } from '../services/leadService';
 
@@ -49,7 +48,7 @@ export const updateLead = createAsyncThunk('lead/updateLead', async ({ id, userD
 export const deleteLead = createAsyncThunk('lead/deleteLead', async (id: string, { rejectWithValue }) => {
     try {
         await leadService.deleteLead(id);
-        return id; // Return the id of the deleted lead
+        return id; 
     } catch (error: any) {
         return rejectWithValue(error.message);
     }
@@ -62,7 +61,6 @@ const leadSlice = createSlice({
     reducers: {},
     extraReducers: (builder) => {
         builder
-            // Fetch Leads
             .addCase(fetchLeads.pending, (state) => {
                 state.status = 'loading';
             })
@@ -81,7 +79,6 @@ const leadSlice = createSlice({
             .addCase(addNewLead.fulfilled, (state, action: PayloadAction<Lead>) => {
                 // For simplicity, we can just refetch the list to ensure pagination is correct
                 // or optimistically add it if not on the last page.
-                // Refetching is simpler and more reliable.
                 state.status = 'idle'; // Trigger a refetch on the page
             })
             // Update Lead

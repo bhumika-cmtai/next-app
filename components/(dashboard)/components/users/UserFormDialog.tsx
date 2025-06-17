@@ -1,4 +1,3 @@
-// app/dashboard/users/_components/UserFormDialog.tsx
 "use client";
 
 import { z } from "zod";
@@ -25,14 +24,13 @@ import { addNewUser, updateUser } from "@/lib/redux/userSlice"; // Import User f
 import type { User } from "@/lib/services/userService";
 
 
-// We can make the password required only when adding a new user.
-// Zod's `refine` is perfect for this conditional validation.
+
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Invalid email address."),
   phoneNumber: z.string().min(10, "Phone number seems too short."),
   role: z.enum(["sales", "developer", "admin"]),
-  password: z.string().optional(), // Make it optional at the base level
+  password: z.string().optional(),
 });
 
 interface UserFormDialogProps {
@@ -45,13 +43,11 @@ export function UserFormDialog({ isOpen, onOpenChange, user }: UserFormDialogPro
   const dispatch = useDispatch<AppDispatch>();
   const isEditMode = !!user;
 
-  // Refine the schema based on whether we are in edit mode or not
   const refinedSchema = formSchema.refine((data) => {
-    // If not in edit mode (i.e., adding a new user), the password must exist and be at least 4 chars.
     return isEditMode || (data.password && data.password.length >= 4);
   }, {
     message: "Password must be at least 4 characters for new users.",
-    path: ["password"], // Associate the error with the password field
+    path: ["password"], 
   });
 
   const form = useForm<z.infer<typeof refinedSchema>>({
@@ -66,14 +62,13 @@ export function UserFormDialog({ isOpen, onOpenChange, user }: UserFormDialogPro
   });
 
   useEffect(() => {
-    // When the user prop changes, reset the form
     if (user) {
         form.reset({
             name: user.name,
             email: user.email,
             phoneNumber: user.phoneNumber,
             role: user.role,
-            password: '', // Always clear password field on open
+            password: '', 
         });
     } else {
         form.reset({
@@ -84,34 +79,29 @@ export function UserFormDialog({ isOpen, onOpenChange, user }: UserFormDialogPro
             password: "",
         });
     }
-  }, [user, form, isOpen]); // Also reset on isOpen to clear form when re-opening for "Add"
+  }, [user, form, isOpen]); 
 
   const onSubmit = async (values: z.infer<typeof refinedSchema>) => {
     let promise;
     
     if (isEditMode) {
-        // For updating, we don't want to send an empty password.
         const { password, ...updateData } = values;
         const userDataToUpdate = password ? values : updateData;
 
-        // Dispatch the action and call .unwrap() to get a standard promise
         promise = dispatch(
             updateUser({ id: user!._id, userData: userDataToUpdate })
         ).unwrap();
     } else {
-        // For adding a new user, password is required by our refined schema.
-        // The type `Omit<User, ...>` matches the form values perfectly now.
-        promise = dispatch(addNewUser(values as any)).unwrap(); // `as any` is a pragmatic choice if TS still struggles with the complex Omit type.
+        promise = dispatch(addNewUser(values as any)).unwrap();
     }
         
     toast.promise(promise, {
       loading: isEditMode ? 'Updating user...' : 'Adding user...',
-      success: (data) => { // `data` is now the actual User payload, not an action
+      success: (data) => { 
         onOpenChange(false);
         return `User "${data.name}" ${isEditMode ? 'updated' : 'added'} successfully!`;
       },
-      error: (error) => { // `error` is the actual error thrown by the rejected thunk
-        // The error object might be the string from `rejectWithValue`
+      error: (error) => { 
         return error || 'An unknown error occurred.';
       },
     });

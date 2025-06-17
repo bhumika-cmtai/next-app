@@ -1,13 +1,11 @@
-// lib/services/userService.ts
 
-// First, let's define the User type based on your API response
 export interface User {
   _id: string;
   name: string;
   email: string;
-  password?: string; // Password might not always be returned
+  password?: string; 
   phoneNumber: string;
-  role: 'sales' | 'developer' | 'admin'; // Use a union type for roles
+  role: 'sales' | 'developer' | 'admin'; 
   status?: string;
   createdOn: string;
   updatedOn: string;
@@ -29,7 +27,6 @@ export interface PaginatedUsersResponse {
 
 const API_BASE_URL = 'https://growup-backend.vercel.app/v1/user';
 
-// Helper to handle the common response structure
 async function handleResponse<T>(response: Response): Promise<T> {
     const json = await response.json();
     if (!response.ok || json.errorCode !== 'NO') {

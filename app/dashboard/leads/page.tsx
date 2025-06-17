@@ -1,7 +1,4 @@
-// app/dashboard/leads/page.tsx
 "use client";
-// CORRECTED Import Path
-// import { ResourceClient, ResourceConfig } from "@/components/common/resource-management/ResourceClient";
 import { ResourceClient,ResourceConfig } from "@/components/(dashboard)/components/common/ResourceClient";
 import type { Lead } from "@/lib/services/leadService";
 import { fetchLeads, addNewLead, updateLead, deleteLead } from "@/lib/redux/leadSlice";

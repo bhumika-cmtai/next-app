@@ -33,7 +33,6 @@ interface UserTableProps {
   onDelete: (user: User) => void;
 }
 
-// Helper to get initials from a name
 const getInitials = (name: string) => {
   const names = name.split(" ");
   if (names.length > 1) {
@@ -82,7 +81,6 @@ export function UserTable({ users, isLoading, onEdit, onView ,onDelete }: UserTa
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      {/* You can add a real image source here if available */}
                       <AvatarImage src="" alt={user.name} />
                       <AvatarFallback className="bg-slate-200 font-medium text-slate-600">
                         {getInitials(user.name)}

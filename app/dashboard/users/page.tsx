@@ -1,4 +1,3 @@
-// app/dashboard/users/page.tsx
 "use client";
 import { ResourceClient, ResourceConfig } from "@/components/(dashboard)/components/common/ResourceClient";
 import type { User } from "@/lib/services/userService";

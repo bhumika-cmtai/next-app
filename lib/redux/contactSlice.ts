@@ -1,4 +1,3 @@
-// lib/redux/contactSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { contactService, PaginatedContactsResponse, GetAllContactsParams } from '../services/contactService';
 import type { Contact } from '../services/contactService';

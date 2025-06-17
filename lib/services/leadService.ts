@@ -1,12 +1,10 @@
-// lib/services/leadService.ts
 
-// Define the Lead type with its correct fields
 export interface Lead {
   _id: string;
   name: string;
   email: string;
   phoneNumber: string;
-  status: 'New' | 'Contacted' | 'NotInterested'; // <-- Correct field
+  status: 'New' | 'Contacted' | 'NotInterested';
   createdOn: string;
   updatedOn: string;
 }
@@ -22,7 +20,7 @@ export interface PaginatedLeadsResponse {
     leads: Lead[];
     totalPages: number;
     currentPage: number;
-    totalLeads: number; // <-- Corrected typo from totalLead to totalLeads
+    totalLeads: number; 
 }
 
 const API_BASE_URL = 'https://growup-backend.vercel.app/v1/lead';

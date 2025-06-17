@@ -1,13 +1,11 @@
-// lib/services/contactService.ts
 
-// Define the Contact type based on your API response
 export interface Contact {
   _id: string;
   name: string;
   email: string;
   phoneNumber: string;
   message: string;
-  status: 'New' | 'Contacted' | 'NotInterested'; // Assuming these are the possible statuses
+  status: 'New' | 'Contacted' | 'NotInterested'; 
   createdOn: string;
   updatedOn: string;
 }

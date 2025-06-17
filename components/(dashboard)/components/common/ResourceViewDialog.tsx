@@ -1,14 +1,12 @@
-// components/common/resource-management/ResourceViewDialog.tsx
 "use client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ResourceItem } from "./ResourceClient";
 import { ReactNode } from "react";
 
-// The definition for a single field in the view dialog
 export interface ViewFieldDef<T extends ResourceItem> {
   label: string;
-  render: (item: T) => ReactNode; // A function to render the field's value
+  render: (item: T) => ReactNode; 
 }
 
 interface ResourceViewDialogProps<T extends ResourceItem> {

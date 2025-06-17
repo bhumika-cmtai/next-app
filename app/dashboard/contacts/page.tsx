@@ -1,6 +1,4 @@
-// app/dashboard/contacts/page.tsx
 "use client";
-// import { ResourceClient, ResourceConfig } from "@/components/common/resource-management/ResourceClient";
 import { ResourceClient, ResourceConfig } from "@/components/(dashboard)/components/common/ResourceClient";
 import type { Contact } from "@/lib/services/contactService";
 import { fetchContacts, addNewContact, updateContact, deleteContact } from "@/lib/redux/contactSlice";
