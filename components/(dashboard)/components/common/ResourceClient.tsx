@@ -1,4 +1,3 @@
-// components/common/resource-management/ResourceClient.tsx
 "use client";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -47,7 +46,7 @@ export function ResourceClient<T extends ResourceItem>({ config }: ResourceClien
       const itemsKey = config.nounPlural.toLowerCase();      
       const totalItemsKey = `total${config.nounPlural}`;
       return {
-        items: sliceState[itemsKey] || [],  // Default to empty array
+        items: sliceState[itemsKey] || [],  
         status: sliceState.status,
         totalItems: sliceState[totalItemsKey] || 0,
         totalPages: sliceState.totalPages,
@@ -61,10 +60,9 @@ export function ResourceClient<T extends ResourceItem>({ config }: ResourceClien
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
 
-  // Corrected useEffect - runs only once on component mount
   useEffect(() => {
     dispatch(config.reduxActions.fetch({ page: 1, limit: 10 }));
-  }, [dispatch, config.reduxActions.fetch]); // Keep dispatch and fetch action as deps
+  }, [dispatch, config.reduxActions.fetch]); 
 
   const handlePageChange = (direction: "next" | "prev") => {
     const newPage = direction === "next" ? currentPage + 1 : currentPage - 1;
@@ -78,40 +76,33 @@ export function ResourceClient<T extends ResourceItem>({ config }: ResourceClien
   const handleEditItem = (item: T) => { setSelectedItem(item); setIsFormOpen(true); };
   const handleDeleteItem = (item: T) => { setSelectedItem(item); setIsDeleteConfirmOpen(true); };
 
-  // --- THIS IS THE CORRECTED GENERIC FUNCTION ---
   const confirmDelete = () => {
     if (!selectedItem) return;
 
-    // Use the generic `delete` action from the config
     const promise = dispatch(config.reduxActions.delete(selectedItem._id)).unwrap();
 
     toast.promise(promise, {
       loading: `Deleting ${config.noun.toLowerCase()}...`,
       success: () => {
-        // Use the generic `items` array from the selector
         if (items.length === 1 && currentPage > 1) {
           handlePageChange("prev");
         }
-        // Use the generic `noun` and `selectedItem` for the message
         return `${config.noun} "${selectedItem.name}" deleted successfully.`;
       },
       error: (err) => `Failed to delete ${config.noun.toLowerCase()}: ${err.message}`,
     });
 
     setIsDeleteConfirmOpen(false);
-    // Use the generic state setter
     setSelectedItem(null);
   };
   
   return (
     <>
       <Card>
-        {/* Corrected JSX Structure */}
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
               <CardTitle className="text-xl">{config.nounPlural}</CardTitle>
-              {/* <CardDescription>Manage all {config.nounPlural.toLowerCase()} in your system.</CardDescription> */}
             </div>
             { config.noun.toLowerCase()!=="contact" && <Button size="sm" className="h-9 gap-1 bg-gray-00 text-white bg-black hover:cursor-pointer" onClick={handleAddItem}>
                   <PlusCircle className="h-4 w-4" />
@@ -147,7 +138,6 @@ export function ResourceClient<T extends ResourceItem>({ config }: ResourceClien
         </CardFooter>
       </Card>
 
-      {/* Dialogs */}
       <ResourceViewDialog<T>
         isOpen={isViewOpen}
         onOpenChange={setIsViewOpen}

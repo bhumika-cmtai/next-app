@@ -1,4 +1,3 @@
-// components/common/resource-management/ResourceTable.tsx
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -6,11 +5,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MoreHorizontal, Pencil, Trash2, Eye, UserX } from "lucide-react";
 import { ResourceItem } from "./ResourceClient";
 
-// Definition for a single column
 export interface ColumnDef<T> {
   accessorKey: keyof T;
   header: string;
-  cell: (item: T) => React.ReactNode; // A function to render the cell content
+  cell: (item: T) => React.ReactNode;
 }
 
 interface ResourceTableProps<T extends ResourceItem> {
