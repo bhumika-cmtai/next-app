@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, ChangeEvent, FormEvent } from "react";
+import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import {
   Card,
   CardContent,
@@ -37,7 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Upload, Edit, Trash2 } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchUsers, selectUsers, selectLoading, selectError, User, selectPagination, selectCurrentPage, addUser, updateUser, deleteUser } from "@/lib/redux/userSlice";
+import { fetchUsers, selectUsers, selectLoading, selectError, User, selectPagination, selectCurrentPage } from "@/lib/redux/userSlice";
 import { AppDispatch } from "@/lib/store";
 import ImportUser from "./importUser";
 
@@ -45,7 +45,7 @@ export default function Users() {
   const dispatch = useDispatch<AppDispatch>();
   const users: User[] = useSelector(selectUsers);
   const loading: boolean = useSelector(selectLoading);
-  const error = useSelector(selectError);
+  // const error = useSelector(selectError);
   const pagination = useSelector(selectPagination);
   const currentPage = useSelector(selectCurrentPage);
 

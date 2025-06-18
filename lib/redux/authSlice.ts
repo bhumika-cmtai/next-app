@@ -81,13 +81,25 @@ export const login = ({ email, password }: { email: string; password: string }) 
     dispatch(setUser(userRes.data.data));
     dispatch(setError(null));
     return userRes.data.data;
-  } catch (error: any) {
-    const message = error?.response?.data?.errorMessage || error.message || "Unknown error";
-    dispatch(setError(message));
-    return null;
-  } finally {
-    dispatch(setIsLoading(false));
+  } catch (error: unknown) {
+  let message = "Unknown error";
+
+  if (error instanceof Error) {
+    message = error.message;
+  } else if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    typeof (error as { response?: { data?: { errorMessage?: string } } }).response?.data?.errorMessage === "string"
+  ) {
+    message = (error as { response: { data: { errorMessage: string } } }).response.data.errorMessage;
   }
+
+  dispatch(setError(message));
+  return null;
+} finally {
+  dispatch(setIsLoading(false));
+}
 };
 
 export const logout = () => async (dispatch: Dispatch) => {
