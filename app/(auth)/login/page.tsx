@@ -75,7 +75,7 @@ const Login = () => {
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
                 <Input
                   id="email"
                   type="email"
@@ -91,7 +91,7 @@ const Login = () => {
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
                 <Input
                   id="password"
                   type="password"
@@ -144,12 +144,6 @@ const Login = () => {
             </Button>
           </CardFooter>
         </form>
-        <div className="px-6 pb-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="font-medium text-primary hover:underline">
-            Sign up
-          </Link>
-        </div>
       </Card>
     </div>
   );

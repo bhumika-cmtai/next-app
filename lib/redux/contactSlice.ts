@@ -2,7 +2,7 @@ import { createSlice, Dispatch } from "@reduxjs/toolkit";
 import axios from "axios";
 import { RootState } from "../store";
 
-interface Contact {
+export interface Contact {
   _id?: string;
   name: string;
   email: string;
@@ -13,11 +13,18 @@ interface Contact {
   updatedOn?: string;
 }
 
+export interface Pagination {
+  currentPage: number;
+  totalPages: number;
+  totalContacts: number;
+}
+
 interface ContactState {
   data: Contact[];
   loading: boolean;
   error: string | null;
   selectedContact: Contact | null;
+  pagination: Pagination;
 }
 
 const initialState: ContactState = {
@@ -25,14 +32,22 @@ const initialState: ContactState = {
   loading: false,
   error: null,
   selectedContact: null,
-};  
+  pagination: {
+    currentPage: 1,
+    totalPages: 1,
+    totalContacts: 0,
+  },
+  };  
 
 const contactSlice = createSlice({
   name: "contacts",
   initialState,
   reducers: {
     setContacts: (state, action) => {
-      state.data = action.payload;
+      state.data = action.payload.contacts;
+      state.pagination.totalContacts = action.payload.totalContacts;
+      state.pagination.totalPages = action.payload.totalPages;
+      state.pagination.currentPage = action.payload.currentPage;
       state.loading = false;
       state.error = null;
     },  
@@ -43,6 +58,12 @@ const contactSlice = createSlice({
       state.error = action.payload;
       state.loading = false;
     },
+    setPagination: (state, action) => {
+      state.pagination = action.payload;
+    },
+    setCurrentPage: (state, action) => {
+      state.pagination.currentPage = action.payload;
+    },
     setSelectedContact: (state, action) => {
       state.selectedContact = action.payload;
     },
@@ -52,11 +73,11 @@ const contactSlice = createSlice({
   },
 }); 
 
-export const { setContacts, setLoading, setError, setSelectedContact, clearSelectedContact } = contactSlice.actions;
+export const { setContacts, setLoading, setError, setSelectedContact, clearSelectedContact, setPagination, setCurrentPage } = contactSlice.actions;
 
 export const fetchContacts = () => async (dispatch: Dispatch) => {
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/contacts`);
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contact/getAllContacts`);
     if (response.status === 200) {
       dispatch(setContacts(response.data.data));
     } else {
@@ -71,7 +92,7 @@ export const fetchContacts = () => async (dispatch: Dispatch) => {
 export const fetchContactById = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/contacts/${id}`);
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contact/getContactById/${id}`);
     const data: Contact = response.data;
     if (response.status === 200) {
       dispatch(setSelectedContact(data));    
@@ -87,7 +108,7 @@ export const fetchContactById = (id: string) => async (dispatch: Dispatch) => {
 export const addContact = (contact: Contact) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/contacts`, contact);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contact/addContact`, contact);
     if (response.status === 201) {
       return response.data;
     } else {
@@ -102,7 +123,7 @@ export const addContact = (contact: Contact) => async (dispatch: Dispatch) => {
 export const updateContact = (id: string, contact: Contact) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/contacts/${id}`, contact);
+    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contact/updateContact/${id}`, contact);
     if (response.status === 200) {
       return response.data;
     } else {
@@ -117,7 +138,7 @@ export const updateContact = (id: string, contact: Contact) => async (dispatch: 
 export const deleteContact = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/contacts/${id}`);
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contact/deleteContact/${id}`);
     if (response.status === 200) {
       return response.data;   
     } else {
@@ -133,5 +154,9 @@ export const selectContacts = (state: RootState) => state.contacts.data;
 export const selectContactById = (state: RootState) => state.contacts.selectedContact;
 export const selectLoading = (state: RootState) => state.contacts.loading;
 export const selectError = (state: RootState) => state.contacts.error;
+export const selectPagination = (state: RootState) => state.contacts.pagination;
+export const selectCurrentPage = (state: RootState) => state.contacts.pagination.currentPage;
+export const selectTotalPages = (state: RootState) => state.contacts.pagination.totalPages;
+export const selectTotalContacts = (state: RootState) => state.contacts.pagination.totalContacts;
 
 export default contactSlice.reducer;

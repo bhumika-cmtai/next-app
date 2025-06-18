@@ -2,15 +2,21 @@ import { createSlice, Dispatch } from "@reduxjs/toolkit";
 import axios from "axios";
 import { RootState } from "../store";
 
- export interface User {
+export interface User {
   _id?: string;
   name: string;
   email: string;
-  phone: string;
+  phoneNumber: string;
   role: string;
-  status: string;
+  status?: string;
   createdOn?: string;
   updatedOn?: string;
+}
+
+export interface Pagination {
+  currentPage: number;
+  totalPages: number;
+  totalUsers: number;
 }
 
 export interface UserState {
@@ -18,6 +24,7 @@ export interface UserState {
   loading: boolean;
   error: string | null;
   selectedUser: User | null;
+  pagination: Pagination;
 }
 
 const initialState: UserState = {
@@ -25,6 +32,11 @@ const initialState: UserState = {
   loading: false,
   error: null,
   selectedUser: null,
+  pagination: {
+    currentPage: 1,
+    totalPages: 1,
+    totalUsers: 0,
+  },
 };  
 
 const userSlice = createSlice({
@@ -32,7 +44,10 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setUsers: (state, action) => {
-      state.data = action.payload;
+      state.data = action.payload.users;
+      state.pagination.totalPages = action.payload.totalPages;
+      state.pagination.totalUsers = action.payload.totalUsers;
+      state.pagination.currentPage = action.payload.currentPage;
       state.loading = false;
       state.error = null;
     },  
@@ -43,6 +58,12 @@ const userSlice = createSlice({
       state.error = action.payload;
       state.loading = false;
     },
+    setPagination: (state, action) => {
+      state.pagination = action.payload;
+    },
+    setCurrentPage: (state, action) => {
+      state.pagination.currentPage = action.payload;
+    },
     setSelectedUser: (state, action) => {
       state.selectedUser = action.payload;
     },
@@ -52,13 +73,20 @@ const userSlice = createSlice({
   },
 }); 
 
-export const { setUsers, setLoading, setError, setSelectedUser, clearSelectedUser } = userSlice.actions;
+export const { setUsers, setLoading, setError, setSelectedUser, clearSelectedUser, setCurrentPage } = userSlice.actions;
 
-export const fetchUsers = () => async (dispatch: Dispatch) => {
+export const fetchUsers = (params?: { search?: string; status?: string; page?: number }) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/users`);
+    const query = [];
+    if (params?.search) query.push(`search=${encodeURIComponent(params.search)}`);
+    if (params?.status && params.status !== 'all') query.push(`status=${encodeURIComponent(params.status)}`);
+    if (params?.page) query.push(`page=${params.page}`);
+    const queryString = query.length ? `?${query.join('&')}` : '';
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/getallUsers${queryString}`);
     if (response.status === 200) {
       dispatch(setUsers(response.data.data));
+      if (params?.page) dispatch(setCurrentPage(params.page));
     } else {
       dispatch(setError(response.data.message));
     }
@@ -88,6 +116,21 @@ export const addUser = (user: User) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/users`, user);
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
+
+export const addManyUsers = (users: User[]) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/addManyUser`, users);
     if (response.status === 201) {
       return response.data;
     } else {
@@ -133,5 +176,9 @@ export const selectUsers = (state: RootState) => state.users.data;
 export const selectUserById = (state: RootState) => state.users.selectedUser;
 export const selectLoading = (state: RootState) => state.users.loading;
 export const selectError = (state: RootState) => state.users.error;
+export const selectPagination = (state: RootState) => state.users.pagination;
+export const selectCurrentPage = (state: RootState) => state.users.pagination.currentPage;
+export const selectTotalPages = (state: RootState) => state.users.pagination.totalPages;
+export const selectTotalUsers = (state: RootState) => state.users.pagination.totalUsers;
 
 export default userSlice.reducer;

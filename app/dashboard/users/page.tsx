@@ -37,7 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Upload, Edit, Trash2 } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchUsers, selectUsers, selectLoading, selectError, User } from "@/lib/redux/userSlice";
+import { fetchUsers, selectUsers, selectLoading, selectError, User, selectPagination, selectCurrentPage, addUser, updateUser, deleteUser } from "@/lib/redux/userSlice";
 import { AppDispatch } from "@/lib/store";
 import ImportUser from "./importUser";
 
@@ -46,44 +46,57 @@ export default function Users() {
   const users: User[] = useSelector(selectUsers);
   const loading: boolean = useSelector(selectLoading);
   const error = useSelector(selectError);
+  const pagination = useSelector(selectPagination);
+  const currentPage = useSelector(selectCurrentPage);
 
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [status, setStatus] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", status: "Active" });
+  const [form, setForm] = useState({ name: "", email: "", phoneNumber: "", status: "New" });
   const [formLoading, setFormLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
 
+  // Debounce search input
   useEffect(() => {
-    dispatch(fetchUsers());
-  }, [dispatch]);
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
 
-  // Filtered users
-  const filteredUsers = useMemo(() => {
-    return users.filter(
-      (user: User) =>
-        user.name.toLowerCase().includes(search.toLowerCase()) &&
-        (status ? user.status === status : true)
-    );
-  }, [users, search, status]);
-
-  // Pagination (simple, 1 page for demo)
-  const pageUsers = filteredUsers;
+  // Fetch users on mount and when filters/page change
+  useEffect(() => {
+    dispatch(fetchUsers({ search: debouncedSearch, status, page: currentPage }));
+  }, [dispatch, debouncedSearch, status, currentPage]);
 
   // Handlers
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    // Reset to first page on filter change
+    // No need to dispatch here, debounced effect will handle it
+  };
+  const handleStatusChange = (val: string) => {
+    setStatus(val);
+    dispatch(fetchUsers({ search: debouncedSearch, status: val, page: 1 }));
+  };
+  const handlePageChange = (page: number) => {
+    dispatch(fetchUsers({ search: debouncedSearch, status, page }));
+  };
+
   const openAddModal = () => {
     setEditUser(null);
-    setForm({ name: "", email: "", phone: "", status: "Active" });
+    setForm({ name: "", email: "", phoneNumber: "", status: "New" });
     setModalOpen(true);
   };
 
 
   const openEditModal = (user: User) => {
     setEditUser(user);
-    setForm({ name: user.name, email: user.email, phone: user.phone, status: user.status });
+    setForm({ name: user.name, email: user.email, phoneNumber: user.phoneNumber || "", status: user.status || "New" });
     setModalOpen(true);
   };
 
@@ -136,14 +149,16 @@ export default function Users() {
           <Input
             placeholder="Search users..."
             value={search}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+            onChange={handleSearchChange}
             className="w-full sm:w-48"
           />
-          <Select value={status} onValueChange={setStatus}>
+          <Select value={status} onValueChange={handleStatusChange}>
             <SelectTrigger className="w-full sm:w-32">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="New">New</SelectItem>
               <SelectItem value="Active">Active</SelectItem>
               <SelectItem value="Inactive">Inactive</SelectItem>
             </SelectContent>
@@ -184,14 +199,14 @@ export default function Users() {
                       Loading...
                     </TableCell>
                   </TableRow>
-                ) : pageUsers.length === 0 ? (
+                ) : users.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8">
                       No users found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  pageUsers.map((user: User, idx: number) => (
+                  users.map((user: User, idx: number) => (
                     <TableRow key={user._id}>
                       <TableCell>{idx + 1}</TableCell>
                       <TableCell>
@@ -203,10 +218,10 @@ export default function Users() {
                         </div>
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.phone}</TableCell>
+                      <TableCell>{user.phoneNumber || '-'}</TableCell>
                       <TableCell>
                         <Badge variant={user.status === "Active" ? "default" : "secondary"}>
-                          {user.status}
+                          {user.status || 'N/A'}
                         </Badge>
                       </TableCell>
                       <TableCell>{user.createdOn}</TableCell>
@@ -247,9 +262,9 @@ export default function Users() {
                                   required
                                 />
                                 <Input
-                                  name="phone"
+                                  name="phoneNumber"
                                   placeholder="Phone"
-                                  value={form.phone}
+                                  value={form.phoneNumber}
                                   onChange={handleFormChange}
                                   required
                                 />
@@ -325,18 +340,17 @@ export default function Users() {
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious href="#" />
+              <PaginationPrevious href="#" onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)} />
             </PaginationItem>
+            {Array.from({ length: pagination.totalPages }, (_, i) => (
+              <PaginationItem key={i + 1}>
+                <PaginationLink href="#" isActive={currentPage === i + 1} onClick={() => handlePageChange(i + 1)}>
+                  {i + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
             <PaginationItem>
-              <PaginationLink href="#" isActive>
-                1
-              </PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#">2</PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationNext href="#" />
+              <PaginationNext href="#" onClick={() => currentPage < pagination.totalPages && handlePageChange(currentPage + 1)} />
             </PaginationItem>
           </PaginationContent>
         </Pagination>
@@ -368,9 +382,9 @@ export default function Users() {
               required
             />
             <Input
-              name="phone"
+              name="phoneNumber"
               placeholder="Phone"
-              value={form.phone}
+              value={form.phoneNumber}
               onChange={handleFormChange}
               required
             />

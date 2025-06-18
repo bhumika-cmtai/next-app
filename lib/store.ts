@@ -2,12 +2,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import userReducer from './redux/userSlice';
 import leadReducer from './redux/leadSlice';
 import contactReducer from './redux/contactSlice';
+import authReducer from './redux/authSlice';
 
 export const store = configureStore({
   reducer: {
     users: userReducer,
     leads: leadReducer,
-    contacts: contactReducer
+    contacts: contactReducer,
+    auth: authReducer
   },
 });
 

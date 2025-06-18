@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -32,47 +32,26 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, Loader2 } from "lucide-react";
-
-// Types from leads page
-const LEAD_STATUS = {
-  NEW: "New",
-  CONTACTED: "Contacted",
-} as const;
-
-type LeadStatus = typeof LEAD_STATUS[keyof typeof LEAD_STATUS];
-
-interface Contact {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  status: LeadStatus;
-}
-
-// Dummy data
-const dummyContacts: Contact[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "+1234567890",
-    status: LEAD_STATUS.NEW,
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    phone: "+1987654321",
-    status: LEAD_STATUS.CONTACTED,
-  },
-];
+import { useSelector, useDispatch } from "react-redux";
+import { fetchContacts, selectContacts, selectLoading, selectError, Contact, selectPagination, selectCurrentPage, addContact, updateContact, deleteContact } from "@/lib/redux/contactSlice";
+import { AppDispatch } from "@/lib/store";
 
 export default function Contacts() {
-  const [contacts] = useState<Contact[]>(dummyContacts);
+  const dispatch = useDispatch<AppDispatch>();
+  const contacts = useSelector(selectContacts);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
+  const pagination = useSelector(selectPagination);
+  const currentPage = useSelector(selectCurrentPage);
+
   const [search, setSearch] = useState("");
   const [editContact, setEditContact] = useState<Contact | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchContacts());
+  }, [dispatch]);
 
   // Filtered contacts
   const filteredContacts = useMemo(() => {
@@ -85,21 +64,21 @@ export default function Contacts() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case LEAD_STATUS.NEW:
+      case "New":
         return "bg-blue-500";
-      case LEAD_STATUS.CONTACTED:
+      case "Contacted":
         return "bg-yellow-500";
       default:
         return "bg-gray-500";
     }
   };
 
-  const handleStatusUpdate = async (status: LeadStatus) => {
+  const handleStatusUpdate = async (status: string) => {
     setIsLoading(true);
     try {
       // Here you would update the contact's status
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating API call
-      console.log('Updating status for contact:', editContact?.id, 'to:', status);
+      console.log('Updating status for contact:', editContact?._id, 'to:', status);
       setModalOpen(false);
     } finally {
       setIsLoading(false);
@@ -135,7 +114,7 @@ export default function Contacts() {
               </TableHeader>
               <TableBody>
                 {filteredContacts.map((contact, idx) => (
-                  <TableRow key={contact.id}>
+                  <TableRow key={contact._id}>
                     <TableCell>{idx + 1}</TableCell>
                     <TableCell>
                       <div className="font-medium">{contact.name}</div>
@@ -153,7 +132,7 @@ export default function Contacts() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(contact.status) + " text-white"}>
+                      <Badge className={getStatusColor(contact.status as string) + " text-white"}>
                         {contact.status}
                       </Badge>
                     </TableCell>
@@ -186,25 +165,25 @@ export default function Contacts() {
           <div className="py-4">
             <Select
               value={editContact?.status}
-              onValueChange={(value: LeadStatus) => handleStatusUpdate(value)}
+              onValueChange={(value: string) => handleStatusUpdate(value)}
               disabled={isLoading}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select Status" />
               </SelectTrigger>
               <SelectContent>
-                {Object.values(LEAD_STATUS).map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
+                <SelectItem value="New">New</SelectItem>
+                <SelectItem value="Contacted">Contacted</SelectItem>
+                <SelectItem value="Not Interested">Not Interested</SelectItem>
+                <SelectItem value="Interested">Interested</SelectItem>
+                <SelectItem value="Converted">Converted</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <DialogFooter className="flex gap-2">
             <Button 
               type="button"
-              onClick={() => handleStatusUpdate(editContact?.status as LeadStatus)}
+                onClick={() => handleStatusUpdate(editContact?.status as string)}
               disabled={isLoading || !editContact?.status}
             >
               {isLoading ? (
