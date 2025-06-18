@@ -2,9 +2,9 @@ import React from 'react';
 
 const Hero = () => {
   return (
-    <section className="max-w-7xl relative z-10 text-center px-4 " id="home">
+    <section className="max-w-7xl w-full relative z-10 text-center px-4 " id="home">
       <div>
-        <div className="flex flex-col ">
+        <div className="flex flex-col">
             <div className='grid grid-cols-6 justify-between'>
                 <div className='col-span-4 flex gap-2 flex-col mx-auto'>     
                     <h1 className="text-6xl  md:text-8xl mb-4 font-bold font-sans-noto tracking-wide bg-gradient-to-r from-purple-400 to-pink-200 bg-clip-text text-transparent drop-shadow-md drop-shadow-gray-700 ">

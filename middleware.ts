@@ -23,12 +23,17 @@ export default function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
 
   // Public paths that don't require authentication
-  const publicPaths = ['/','/login', '/register', '/forgot-password'];
+  if (pathname === '/') {
+    // If it's the homepage, always allow access, regardless of login status.
+    return NextResponse.next();
+  }
+  const publicPaths = ['/login', '/register', '/forgot-password'];
   
   // Check if the path is public
   const isPublicPath = publicPaths.includes(pathname);
 
   // If the path is public and user is logged in, redirect to dashboard
+  
   if (isPublicPath && token) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
