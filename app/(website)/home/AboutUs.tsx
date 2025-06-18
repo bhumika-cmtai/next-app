@@ -33,7 +33,7 @@ export default function AboutUs() {
           transition={{ duration: 0.8 }}
           className="text-center mb-12 md:mb-16" 
         >
-          <h2 className="text-4xl md:text-5xl md:text-5xl font-bold mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4">
             <span className='bg-gradient-to-r from-black to-purple-400 bg-clip-text text-transparent'>ABOUT</span> <span className='bg-gradient-to-r from-purple-400 to-[#ffc6d2] bg-clip-text text-transparent'>US</span>
           </h2>
         </motion.div>
@@ -51,7 +51,7 @@ export default function AboutUs() {
               alt="About Us Team Illustration"
               width={600}
               height={500}
-              className="w-full h-auto rounded-3xl"
+              className="w-[400px] lg:w-[600px] h-auto rounded-3xl place-self-center"
             />
           </motion.div>
 
@@ -61,7 +61,7 @@ export default function AboutUs() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="text-center lg:text-left"
           >
-            <p className="text-black  leading-relaxed text-base md:text-lg font-medium">
+            <p className="text-black leading-relaxed text-base md:text-lg font-medium">
               They Were Inspired By Mr. Gaurav Prajapati And Mr. Priya Darling, Who Brought This Vision Into Action For
               The Platform... In Which They Are Providing Work From Home Opportunities For All And A Rich Budget Into
               Digital Requirements And Job Roles That They Can Do From Home For An Extra Income To Support Their Family.

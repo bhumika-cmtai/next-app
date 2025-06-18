@@ -80,7 +80,7 @@ const WhyChooseUs: React.FC = () => {
                 src="/whychooseus.png"
                 width={389}
                 height={429}
-                className=''
+                className='hidden lg:block w-[240px] lg:w-[400px] h-auto object-contain'
               />
             </div>
           </div>
