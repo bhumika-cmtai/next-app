@@ -43,7 +43,7 @@ const WhoCanJoin: React.FC = () => {
                     transition={{ duration: 0.8 }}
                     className="text-center mb-16"
                   >
-                    <h2 className="text-6xl font-bold mb-4 bg-gradient-to-r from-black via-purple-400 via-50% to-75% to-pink-100 bg-clip-text text-transparent">
+                    <h2 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-black via-purple-400 via-50% to-75% to-pink-100 bg-clip-text text-transparent">
                           WHO CAN JOIN US?
                     </h2>
             </motion.div>

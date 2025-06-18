@@ -9,8 +9,7 @@ export default function AboutUs() {
   const isInView = useInView(ref, { once: true })
 
   return (
-    <section ref={ref} className="py-20 relative overflow-hidden">
-      {/* Background Elements */}
+    <section ref={ref} className="py-16 md:py-20 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
           animate={{
@@ -27,19 +26,20 @@ export default function AboutUs() {
         </motion.div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-16"
+          className="text-center mb-12 md:mb-16" 
         >
-          <h2 className="text-6xl font-bold mb-4">
+          <h2 className="text-4xl md:text-5xl md:text-5xl font-bold mb-4">
             <span className='bg-gradient-to-r from-black to-purple-400 bg-clip-text text-transparent'>ABOUT</span> <span className='bg-gradient-to-r from-purple-400 to-[#ffc6d2] bg-clip-text text-transparent'>US</span>
           </h2>
         </motion.div>
 
-        <div className="max-w-7xl grid lg:grid-cols-2 gap-10 items-center justify-center">
+        
+        <div className="max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-y-12 lg:gap-x-16 items-center">
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
@@ -59,9 +59,9 @@ export default function AboutUs() {
             initial={{ opacity: 0, x: 50 }}
             animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className=""
+            className="text-center lg:text-left"
           >
-            <p className="text-black leading-relaxed text-lg font-medium ">
+            <p className="text-black  leading-relaxed text-base md:text-lg font-medium">
               They Were Inspired By Mr. Gaurav Prajapati And Mr. Priya Darling, Who Brought This Vision Into Action For
               The Platform... In Which They Are Providing Work From Home Opportunities For All And A Rich Budget Into
               Digital Requirements And Job Roles That They Can Do From Home For An Extra Income To Support Their Family.

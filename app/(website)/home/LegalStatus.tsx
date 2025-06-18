@@ -54,8 +54,8 @@ const LegalStatus: React.FC = () => {
 
         <div className="mt-16 flex flex-col space-y-12">
           <div className="relative w-full overflow-hidden h-32">
-            <div className="absolute top-0 left-0 h-full w-24 bg-gradient-to-r from-white to-transparent z-10" />
-            <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-white to-transparent z-10" />
+            <div className="absolute top-0 left-0 h-full w-24 z-10" />
+            <div className="absolute top-0 right-0 h-full w-24 z-10" />
             
             <motion.div
               className="absolute top-0 left-0 flex"
@@ -77,8 +77,8 @@ const LegalStatus: React.FC = () => {
           </div>
 
           <div className="relative w-full overflow-hidden h-20">
-            <div className="absolute top-0 left-0 h-full w-24 bg-gradient-to-r from-white to-transparent z-10" />
-            <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-white to-transparent z-10" />
+            <div className="absolute top-0 left-0 h-full w-24  z-10" />
+            <div className="absolute top-0 right-0 h-full w-24  z-10" />
 
             <motion.div
               className="absolute top-0 left-0 flex"

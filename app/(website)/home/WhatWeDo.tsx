@@ -31,11 +31,11 @@ const WhatWeDo = () => {
           <span className='text-black'>WHAT</span> <span className='bg-gradient-to-r from-purple-400 to-pink-100 bg-clip-text '>WE</span>  <span className='bg-gradient-to-r from-purple-400 to-pink-100 bg-clip-text '>DO</span>
         </h2>
 
-        <div className="flex gap-4 mx-12">
+        <div className="flex flex-col lg:flex-row gap-4 mx-12">
           {servicesData.map((service, index) => (
             <div 
               key={index}
-              className="lg:w-[300px] bg-gradient-to-b from-yellow-400 to-95% to-yellow-100 p-6 rounded-3xl border border-purple-400 shadow-md text-center flex flex-col items-center transition-transform duration-300 hover:-translate-y-2"
+              className="lg:w-[300px] bg-gradient-to-b w-[300px] from-yellow-400 to-95% to-yellow-100 p-6 rounded-3xl border border-purple-400 shadow-md text-center flex flex-col items-center transition-transform duration-300 hover:-translate-y-2"
             >
               <div className="mb-6">
                 <service.icon className="text-purple-500" size={48} strokeWidth={1.5} />

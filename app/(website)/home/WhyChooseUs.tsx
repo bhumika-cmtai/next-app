@@ -27,7 +27,7 @@ const WhyChooseUs: React.FC = () => {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-6xl font-bold mb-4 bg-gradient-to-r from-black via-purple-400 via-50% to-75% to-pink-100 bg-clip-text text-transparent">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-black via-purple-400 via-50% to-75% to-pink-100 bg-clip-text text-transparent">
                 WHY CHOOSE US
           </h2>
         </motion.div>
@@ -55,9 +55,9 @@ const WhyChooseUs: React.FC = () => {
               ))}
             </div>
 
-            <div className="mt-6 flex justify-center">
+            <div className="mt-6 flex flex-col md:flex-row justify-center">
                 <div className="max-w-[400px] backdrop-blur-sm px-4 py-2 rounded-2xl border border-purple-400 flex items-center space-x-4 shadow-sm hover:shadow-lg transition-shadow duration-300">
-                  <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
+                  <div className="flex-shrink-0 w-16 h-16 flex flex-col items-center justify-center">
                       <Image 
                         alt={bottomFeature.title}
                         src={bottomFeature.icon}
