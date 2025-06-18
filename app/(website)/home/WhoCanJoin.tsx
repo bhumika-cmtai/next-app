@@ -35,23 +35,21 @@ const WhoCanJoin: React.FC = () => {
  ]
 
   return (
-    <section ref={ref} className="min-h-screen w-full bg-gradient-to-r from-purple-50 via-white to-green-50 py-16 md:py-24 flex items-center">
+    <section ref={ref} className="min-h-screen w-full py-16 md:py-24 flex items-center">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-4">
-            <span className="text-gray-800">WHO </span>
-            <span className="text-purple-600">CAN JOIN?</span>
-          </h2>
+          <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+                    transition={{ duration: 0.8 }}
+                    className="text-center mb-16"
+                  >
+                    <h2 className="text-6xl font-bold mb-4 bg-gradient-to-r from-black via-purple-400 via-50% to-75% to-pink-100 bg-clip-text text-transparent">
+                          WHO CAN JOIN US?
+                    </h2>
+            </motion.div>
           <p className='text-center font-semibold text-lg text-gray-700 max-w-3xl mx-auto'>
-            “ Wherever You’re From A Village Or A Metro, We Provide Equal Earning Opportunities To Everyone ”
-          </p>
-        </motion.div>
-        
+            “ Wherever You're From A Village Or A Metro, We Provide Equal Earning Opportunities To Everyone ”
+          </p>        
         <div className='mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10 justify-items-center'>
             {usersData.map((user)=> (
                 <div key={user.title} className='bg-gradient-to-br from-purple-400/40 to-gold-200/70 w-full max-w-[240px] h-[300px] border border-purple-400 rounded-3xl p-6 flex flex-col items-center justify-around shadow-md hover:shadow-xl transition-shadow duration-300'>

@@ -5,6 +5,7 @@ import { Noto_Sans } from 'next/font/google';
 import AboutUs from './home/AboutUs';
 import WhyChooseUs from './home/WhyChooseUs';
 import WhoCanJoin from './home/WhoCanJoin';
+import LegalStatus from './home/LegalStatus';
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
       <AboutUs />
       <WhyChooseUs />
       <WhoCanJoin />
+      <LegalStatus />
     </main>
   );
 }
