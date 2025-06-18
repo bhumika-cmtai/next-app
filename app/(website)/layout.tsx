@@ -1,3 +1,4 @@
+import Footer from "@/components/(website)/Footer";
 import Header from "@/components/(website)/Header";
 import { Noto_Sans } from 'next/font/google';
 
@@ -22,7 +23,7 @@ export default function Layout({
         <main className="py-20 px-10">
           {children}
         </main>
-
+      <Footer />
       </div>
     </div>
   );

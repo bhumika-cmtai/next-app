@@ -1,62 +1,101 @@
-"use client"; 
+"use client";
 
-import { MoveRight } from 'lucide-react';
+import { MoveRight, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 30) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 30);
     };
-
     window.addEventListener('scroll', handleScroll);
-
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []); 
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = isMenuOpen ? 'hidden' : 'auto';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isMenuOpen]);
+
+  const navLinks = [
+    { href: "#home", label: "Home" },
+    { href: "#about", label: "About Us" },
+    { href: "#join", label: "Who Can Join?" },
+    { href: "#contact", label: "Contact Us" },
+  ];
 
   return (
     <header
       className={`
         fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ease-in-out
-        ${isScrolled ? 'bg-white shadow-md' : 'bg-transparent'}
+        ${isScrolled || isMenuOpen ? 'bg-white shadow-md' : 'bg-transparent'}
       `}
     >
       <nav className='max-w-7xl container flex items-center justify-between p-4 mx-auto'>
-        <div className="hidden lg:block text-xl font-bold">LOGO</div>
-        
-        <ul className='flex gap-8 text-gray-800 font-semibold text-lg'>
-          <Link href="#home">
-            <li className='cursor-pointer hover:text-purple-600 transition-colors'>Home</li>
-          </Link>
-          <Link href="#about">
-            <li className='cursor-pointer hover:text-purple-600 transition-colors'>About Us</li>
-          </Link>
-          <Link href="#join">
-            <li className='cursor-pointer hover:text-purple-600 transition-colors'>Who Can Join?</li>
-          </Link>
-          <Link href="#contact">
-            <li className='cursor-pointer hover:text-purple-600 transition-colors'>Contact Us</li>
-          </Link>
+        <div className="text-xl font-bold">LOGO</div>
+
+        <ul className='hidden lg:flex gap-8 text-gray-800 font-semibold text-lg'>
+          {navLinks.map((link) => (
+            <Link key={link.href} href={link.href}>
+              <li className='cursor-pointer hover:text-purple-600 transition-colors'>{link.label}</li>
+            </Link>
+          ))}
         </ul>
-        <div className="rounded-full bg-gradient-to-b from-sea-green-100 to-gold-200 p-1 hover:shadow-lg transition-shadow">
+
+        <div className="hidden lg:block p-1 rounded-full bg-gradient-to-r from-yellow-400 to-green-300">
           <Link
             href="#"
-            className="flex h-full w-full items-center justify-center gap-[6px] back bg-sea-green-100 rounded-full  px-4 py-2 font-semibold text-gray-800 transition-colors"
+            className="flex items-center justify-center gap-1 bg-green-200 rounded-full 
+                       px-4 py-2 font-semibold text-gray-800 transition-all text-lg"
+          >
+            Sign Up
+            <MoveRight size={18} />
+          </Link>
+        </div>
+
+        <div className="lg:hidden">
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="text-gray-800"
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </div>
+      </nav>
+
+      <div
+        className={`
+          lg:hidden absolute top-full left-0 w-full bg-white overflow-hidden transition-all duration-500 ease-in-out
+          ${isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}
+        `}
+      >
+        <ul className='flex flex-col items-center gap-6 p-8 text-lg'>
+          {navLinks.map((link) => (
+            <Link key={link.href} href={link.href} onClick={() => setIsMenuOpen(false)}>
+              <li className='cursor-pointer hover:text-purple-600 transition-colors'>{link.label}</li>
+            </Link>
+          ))}
+        </ul>
+        <div className="p-4 border-t border-gray-200 flex justify-center">
+          <Link
+            href="#"
+            onClick={() => setIsMenuOpen(false)}
+            className="flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-semibold text-gray-800 transition-shadow hover:shadow-lg bg-gradient-to-r from-green-300 via-yellow-200 to-green-300 bg-[length:200%_auto] hover:bg-[right_center]"
           >
             Sign up
             <MoveRight size={16} strokeWidth={2.5} />
           </Link>
         </div>
-      </nav>
+      </div>
     </header>
   );
 };

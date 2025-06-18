@@ -3,7 +3,6 @@ import React from 'react';
 
 const Hero = () => {
   return (
-    // relative and z-10 are important to place this content ON TOP of the blobs
     <section className="max-w-7xl relative z-10 text-center px-4 " id="home">
       <div>
         <div className="flex flex-col ">

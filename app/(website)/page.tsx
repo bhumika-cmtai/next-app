@@ -6,6 +6,7 @@ import AboutUs from './home/AboutUs';
 import WhyChooseUs from './home/WhyChooseUs';
 import WhoCanJoin from './home/WhoCanJoin';
 import LegalStatus from './home/LegalStatus';
+import Achievements from './home/Achievements';
 
 export default function HomePage() {
   return (
@@ -16,6 +17,7 @@ export default function HomePage() {
       <WhyChooseUs />
       <WhoCanJoin />
       <LegalStatus />
+      <Achievements />
     </main>
   );
 }
