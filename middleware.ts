@@ -23,7 +23,7 @@ export default function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
 
   // Public paths that don't require authentication
-  const publicPaths = ['/login', '/register', '/forgot-password'];
+  const publicPaths = ['/','/login', '/register', '/forgot-password'];
   
   // Check if the path is public
   const isPublicPath = publicPaths.includes(pathname);
