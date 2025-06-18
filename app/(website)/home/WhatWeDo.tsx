@@ -27,15 +27,15 @@ const WhatWeDo = () => {
     // relative and z-10 places this content ON TOP of the blobs
     <section className="relative z-10 py-20 px-4">
       <div className="container mx-auto">
-        <h2 className="text-center text-4xl md:text-5xl font-bold mb-16">
-          WHAT <span className="text-purple-400">WE DO</span>
+        <h2 className="text-center text-4xl md:text-5xl font-bold mb-16 bg-gradient-to-r from-black  via-65% via-purple-400 to-pink-200 bg-clip-text text-transparent">
+          <span className='text-black'>WHAT</span> <span className='bg-gradient-to-r from-purple-400 to-pink-100 bg-clip-text '>WE</span>  <span className='bg-gradient-to-r from-purple-400 to-pink-100 bg-clip-text '>DO</span>
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex gap-4 mx-12">
           {servicesData.map((service, index) => (
             <div 
               key={index}
-              className="bg-gold-50 p-8 rounded-3xl border border-gold-200/60 shadow-lg text-center flex flex-col items-center transition-transform duration-300 hover:-translate-y-2"
+              className="lg:w-[300px] bg-gradient-to-b from-yellow-400 to-95% to-yellow-100 p-6 rounded-3xl border border-purple-400 shadow-md text-center flex flex-col items-center transition-transform duration-300 hover:-translate-y-2"
             >
               <div className="mb-6">
                 <service.icon className="text-purple-500" size={48} strokeWidth={1.5} />
@@ -43,7 +43,7 @@ const WhatWeDo = () => {
               <h3 className="font-semibold text-lg text-gray-800 mb-4 h-12 flex items-center justify-center">
                 {service.title}
               </h3>
-              <p className="text-sm text-gray-subtitle leading-relaxed">
+              <p className="text-left text-gray-subtitle leading-relaxed">
                 {service.description}
               </p>
             </div>

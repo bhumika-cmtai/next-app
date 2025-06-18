@@ -30,10 +30,10 @@ const Header = () => {
         ${isScrolled ? 'bg-white shadow-md' : 'bg-transparent'}
       `}
     >
-      <nav className='container flex items-center justify-between p-4 mx-auto'>
+      <nav className='max-w-7xl container flex items-center justify-between p-4 mx-auto'>
         <div className="hidden lg:block text-xl font-bold">LOGO</div>
         
-        <ul className='flex gap-8 text-base text-gray-800 font-medium'>
+        <ul className='flex gap-8 text-gray-800 font-semibold text-lg'>
           <Link href="#home">
             <li className='cursor-pointer hover:text-purple-600 transition-colors'>Home</li>
           </Link>
@@ -47,10 +47,10 @@ const Header = () => {
             <li className='cursor-pointer hover:text-purple-600 transition-colors'>Contact Us</li>
           </Link>
         </ul>
-        <div className="rounded-full bg-gradient-to-b from-sea-green-100 to-gold-200 p-0.5 hover:shadow-lg transition-shadow">
+        <div className="rounded-full bg-gradient-to-b from-sea-green-100 to-gold-200 p-1 hover:shadow-lg transition-shadow">
           <Link
             href="#"
-            className="flex h-full w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-2 font-semibold text-gray-800 transition-colors"
+            className="flex h-full w-full items-center justify-center gap-[6px] back bg-sea-green-100 rounded-full  px-4 py-2 font-semibold text-gray-800 transition-colors"
           >
             Sign up
             <MoveRight size={16} strokeWidth={2.5} />

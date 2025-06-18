@@ -23,7 +23,7 @@ const CircularBlob = ({
 
   return (
     <div
-      className={`absolute ${sizeClasses[size]} bg-grow-light-purple rounded-full blur-sm`}
+      className={`absolute ${sizeClasses[size]} bg-gradient-to-b from-purple-400 to-pink-200 rounded-full blur-sm`}
       style={{
         ...position,
         opacity,
