@@ -1,4 +1,3 @@
-import CircularBlob from '@/components/ui/circularBlob';
 import React from 'react';
 
 const Hero = () => {

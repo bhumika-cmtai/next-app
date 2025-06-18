@@ -33,16 +33,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, Loader2 } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchContacts, selectContacts, selectLoading, selectError, Contact, selectPagination, selectCurrentPage, addContact, updateContact, deleteContact } from "@/lib/redux/contactSlice";
+import { fetchContacts, selectContacts, Contact} from "@/lib/redux/contactSlice";
 import { AppDispatch } from "@/lib/store";
 
 export default function Contacts() {
   const dispatch = useDispatch<AppDispatch>();
   const contacts = useSelector(selectContacts);
-  const loading = useSelector(selectLoading);
-  const error = useSelector(selectError);
-  const pagination = useSelector(selectPagination);
-  const currentPage = useSelector(selectCurrentPage);
+  // const loading = useSelector(selectLoading);
+  // const error = useSelector(selectError);
+  // const pagination = useSelector(selectPagination);
+  // const currentPage = useSelector(selectCurrentPage);
 
   const [search, setSearch] = useState("");
   const [editContact, setEditContact] = useState<Contact | null>(null);

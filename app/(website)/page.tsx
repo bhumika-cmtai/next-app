@@ -1,7 +1,5 @@
-import Link from 'next/link';
 import Hero from './home/Hero'
 import WhatWeDo from './home/WhatWeDo';
-import { Noto_Sans } from 'next/font/google';
 import AboutUs from './home/AboutUs';
 import WhyChooseUs from './home/WhyChooseUs';
 import WhoCanJoin from './home/WhoCanJoin';

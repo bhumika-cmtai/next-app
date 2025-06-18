@@ -33,7 +33,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Upload, Edit, Trash2, Phone, Mail } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
-import { fetchLeads, selectLeads, selectLoading, selectError, Lead, selectPagination, selectCurrentPage, addLead, updateLead, deleteLead } from "@/lib/redux/leadSlice";
+import { fetchLeads, selectLeads,  Lead} from "@/lib/redux/leadSlice";
 import { AppDispatch } from "@/lib/store";
 import { useSelector, useDispatch } from "react-redux";
 import ImportLeads from "./importLeads";
@@ -41,10 +41,10 @@ import ImportLeads from "./importLeads";
 export default function Leads() {
   const dispatch = useDispatch<AppDispatch>();
   const leads = useSelector(selectLeads);
-  const loading = useSelector(selectLoading);
-  const error = useSelector(selectError);
-  const pagination = useSelector(selectPagination);
-  const currentPage = useSelector(selectCurrentPage);
+  // const loading = useSelector(selectLoading);
+  // const error = useSelector(selectError);
+  // const pagination = useSelector(selectPagination);
+  // const currentPage = useSelector(selectCurrentPage);
 
 
   const [search, setSearch] = useState("");

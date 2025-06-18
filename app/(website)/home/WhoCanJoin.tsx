@@ -48,7 +48,7 @@ const WhoCanJoin: React.FC = () => {
                     </h2>
             </motion.div>
           <p className='text-center font-semibold text-lg text-gray-700 max-w-3xl mx-auto'>
-            “ Wherever You're From A Village Or A Metro, We Provide Equal Earning Opportunities To Everyone ”
+            '' Wherever You're From A Village Or A Metro, We Provide Equal Earning Opportunities To Everyone''
           </p>        
         <div className='mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10 justify-items-center'>
             {usersData.map((user)=> (
