@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,7 +19,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import Cookies from 'js-cookie';
 
-const Login = () => {
+// LoginForm component that uses useSearchParams
+const LoginForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -62,6 +63,74 @@ const Login = () => {
   };
 
   return (
+    <form onSubmit={handleSubmit}>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              className="pl-10"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
+            <Input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              className="pl-10"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="remember"
+            checked={rememberMe}
+            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+            disabled={isLoading}
+          />
+          <label
+            htmlFor="remember"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Remember me
+          </label>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button className="w-full" type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Please wait
+            </>
+          ) : (
+            "Sign In"
+          )}
+        </Button>
+      </CardFooter>
+    </form>
+  );
+};
+
+// Main Login page component
+const Login = () => {
+  return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-2 text-center">
@@ -70,80 +139,9 @@ const Login = () => {
             Enter your email and password to access your account
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  className="pl-10"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  className="pl-10"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="remember" 
-                  checked={rememberMe}
-                  onCheckedChange={(checked: boolean | "indeterminate") => setRememberMe(checked as boolean)}
-                  disabled={isLoading}
-                />
-                <Label 
-                  htmlFor="remember" 
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Remember me
-                </Label>
-              </div>
-              <Link 
-                href="/forgot-password" 
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                'Sign in'
-              )}
-            </Button>
-          </CardFooter>
-        </form>
+        <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+          <LoginForm />
+        </Suspense>
       </Card>
     </div>
   );
