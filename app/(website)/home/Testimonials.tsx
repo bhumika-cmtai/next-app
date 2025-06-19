@@ -104,7 +104,7 @@ const Testimonials = () => {
 
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % randomizedTestimonials.length);
-    }, 6000);
+    }, 3000);
     
     return () => clearInterval(interval);
   }, [randomizedTestimonials.length]); 

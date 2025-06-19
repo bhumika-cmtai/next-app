@@ -41,7 +41,7 @@ const WhoCanJoin: React.FC = () => {
                     initial={{ opacity: 0, y: 50 }}
                     animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
                     transition={{ duration: 0.8 }}
-                    className="text-center mb-16"
+                    className="text-center mb-8"
                   >
                     <h2 className="text-4xl md:text-5xl font-bold mb-4 pb-5 bg-gradient-to-r from-black via-purple-400 via-50% to-75% to-pink-100 bg-clip-text text-transparent">
                           WHO CAN JOIN US?

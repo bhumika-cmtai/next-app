@@ -12,11 +12,11 @@ const Footer: React.FC = () => {
   ];
 
   const usefulLinks = [
-    { name: "Home", href: "/" },
-    { name: "About Us", href: "/about" },
-    { name: "What We Offer", href: "/offer" },
-    { name: "What We Do", href: "/what-we-do" },
-    { name: "Why Choose Us?", href: "/why-us" },
+    { name: "Home", href: "#" },
+    { name: "About Us", href: "#aboutus" },
+    { name: "What We Do", href: "#whatwedo" },
+    { name: "Who Can Join", href: "#join" },
+    { name: "Why Choose Us?", href: "#whychooseus" },
   ];
   
   const supportLinks = [
