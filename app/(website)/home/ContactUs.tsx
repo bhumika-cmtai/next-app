@@ -13,14 +13,14 @@ const ContactInfoItem = ({ icon, title, children }: { icon: string, title: strin
     </div>
     <div>
       <p className="font-semibold text-gray-700">{title}</p>
-      <p className="text-gray-600">{children}</p>
+      <div className="text-gray-600">{children}</div>
     </div>
   </div>
 );
 
 const ContactUs = () => {
   return (
-    <section className="relative w-full py-10 overflow-hidden">
+    <section className="relative w-full py-10 overflow-hidden" id="contactus">
       {/* Background Emblem Image */}
       <div className="absolute inset-0 flex items-center justify-center z-0 mt-20">
         <Image
@@ -64,7 +64,10 @@ const ContactUs = () => {
                 icon="/phoneImg.png"
               >
                 {/* Replace with your actual phone number */}
-                +91 98765 43210
+                <React.Fragment>
+                  <div><span className='font-medium text-gray-600 '>Gaurav prajapati</span>: 7318368107</div>
+                  <div><span className='font-medium text-gray-600 '>Priya Verma</span>: +91 98765 43210</div>
+                </React.Fragment>
               </ContactInfoItem>
                <ContactInfoItem
                 title="Email Address"
@@ -77,14 +80,17 @@ const ContactUs = () => {
             
             {/* Social Icons */}
             <div className="flex items-center gap-4 mt-10">
-              <a href="#" className=" rounded-lg">
+              <a href="https://www.instagram.com/growup_india_?igsh=MTIxeDZ5aDRqbjI5aA==" className=" rounded-lg">
                 <Image src="/instagram.png" alt="Instagram" width={24} height={24} />
               </a>
-              <a href="#" className=" rounded-lg ">
-                <Image src="/facebook.png" alt="Facebook" width={24} height={24} />
+              <a href="https://youtube.com/@growup_india_01?feature=shared" className=" rounded-lg ">
+                <Image src="/youtube.png" alt="youTube" width={24} height={24} />
               </a>
-              <a href="#" className=" rounded-lg">
+              <a href="https://x.com/GrowUp_india_?t=ynPhvGl3FYJDB-2QJmzxiQ&s=09" className=" rounded-lg">
                 <Image src="/twitter.png" alt="Twitter" width={24} height={24} />
+              </a>
+              <a href="https://www.linkedin.com/in/grow-up-a25b69294?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" className=" rounded-lg">
+                <Image src="/linkedin.png" alt="LinkedIn" width={24} height={24} />
               </a>
             </div>
           </div>
@@ -124,7 +130,7 @@ const ContactUs = () => {
                 <div className='bg-gradient-to-r from-green-300 to-gold-200 p-1 rounded-lg'>
                     <button 
                     type="submit"
-                    className="w-full bg-white rounded-lg p-3 font-bold  tracking-wider text-gray-600 text-lg hover:cursor-pointer hover:bg-gray-50  transition-colors duration-300"
+                    className="w-full bg-white rounded-lg p-3 font-bold  tracking-wider text-gray-600 text-lg hover:cursor-pointer hover:bg-sea-green-100/90  transition-colors duration-300"
                     >
                     send message
                     </button>

@@ -9,7 +9,7 @@ export default function AboutUs() {
   const isInView = useInView(ref, { once: true })
 
   return (
-    <section ref={ref} className="py-10 md:py-20 max-w-7xl relative overflow-hidden">
+    <section ref={ref} className="py-10 md:py-20 max-w-7xl relative overflow-hidden" id="aboutus">
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
           animate={{

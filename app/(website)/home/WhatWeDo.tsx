@@ -25,7 +25,7 @@ const WhatWeDo = () => {
     ];
   return (
     // relative and z-10 places this content ON TOP of the blobs
-    <section className="relative z-10 py-20 px-4">
+    <section className="relative z-10 py-20 px-4" id='whatwedo'>
       <div className="container mx-auto">
         <h2 className="text-center text-4xl md:text-5xl font-bold mb-16 bg-gradient-to-r from-black  via-65% via-purple-400 to-pink-200 bg-clip-text text-transparent">
           <span className='text-black'>WHAT</span> <span className='bg-gradient-to-r from-purple-400 to-pink-100 bg-clip-text '>WE</span>  <span className='bg-gradient-to-r from-purple-400 to-pink-100 bg-clip-text '>DO</span>

@@ -61,7 +61,7 @@ const testimonialsData = [
   },
   {
     id: 8,
-    text: "Grow up is the best platform online where u can work online and earn money 😊 Mein college student hu mere sare kharche yaha ki earning se purre hote hai bs 4-5 hours work karta hu best hai yeh platform aur sir aur ma'am ka support bhi bhut hai ❤, payment bhi time pr milta hai",
+    text: "Grow Up best platform hai online earning ke liye 😊 Main college student hoon, 4-5 ghante kaam karke apne saare kharche nikal leta hoon. Sir aur Ma'am ka support bhi bht acha hai ❤ aur payment time pe milta hai!",
     name: "Aakash",
     image: "akashImg.jpg",
     nameColor: "text-green-500",
@@ -114,7 +114,7 @@ const Testimonials = () => {
   };
 
   return (
-    <section className="relative max-w-7xl py-10 md:px-4">
+    <section className="relative max-w-7xl py-10 md:px-4" id='testimonial'>
       <div className="container mx-auto px-4">
         {/* Header Section */}
         <div className="text-center md:text-left max-w-xl mx-auto md:mx-0 mb-16 md:mb-20 md:ml-10">

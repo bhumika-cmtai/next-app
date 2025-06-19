@@ -35,7 +35,7 @@ const WhoCanJoin: React.FC = () => {
  ]
 
   return (
-    <section ref={ref} className="min-h-screen w-full py-10 max-w-7xl flex items-center">
+    <section ref={ref} className="min-h-screen w-full py-10 max-w-7xl flex items-center" id='join'>
       <div className="container mx-auto px-4">
           <motion.div
                     initial={{ opacity: 0, y: 50 }}

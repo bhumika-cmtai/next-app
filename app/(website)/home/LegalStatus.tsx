@@ -36,7 +36,7 @@ const LegalStatus: React.FC = () => {
   const isInView = useInView(ref, { once: true, amount: 0.2 });
 
   return (
-    <section ref={ref} className="w-full py-16 md:py-24">
+    <section ref={ref} className="w-full relative" id="legalstatus">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 50 }}

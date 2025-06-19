@@ -42,7 +42,7 @@ const Footer: React.FC = () => {
               At GrowUp, your growth is our mission. Join our team today and start earning while learning—right from your home!
             </p>
             <div className="flex space-x-4 mt-6">
-              <a href="#" aria-label="Instagram" className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform hover:scale-110">
+              <a href="https://www.instagram.com/growup_india_?igsh=MTIxeDZ5aDRqbjI5aA==" aria-label="Instagram" className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform hover:scale-110">
                 <Image
                   alt="Instagram icon"
                   src="/instagram.png"
@@ -50,18 +50,26 @@ const Footer: React.FC = () => {
                   height={30}
                 /> 
               </a>
-              <a href="#" aria-label="Facebook" className="w-10 h-10 rounded-lg flex items-center justify-center  transition-transform hover:scale-110">
+              <a href="https://youtube.com/@growup_india_01?feature=shared" aria-label="Youtube" className="w-10 h-10 rounded-lg flex items-center justify-center  transition-transform hover:scale-110">
                 <Image
-                  alt="facebook icon"
-                  src="/facebook.png"
+                  alt="youtube icon"
+                  src="/youtube.png"
                   width={30}
                   height={30}
                 />
               </a>
-              <a href="#" aria-label="Twitter" className="w-10 h-10 rounded-lg flex items-center justify-center  transition-transform hover:scale-110">
+              <a href="https://x.com/GrowUp_india_?t=ynPhvGl3FYJDB-2QJmzxiQ&s=09" aria-label="Twitter" className="w-10 h-10 rounded-lg flex items-center justify-center  transition-transform hover:scale-110">
                 <Image
                   alt="twitter icon"
                   src="/twitter.png"
+                  width={30}
+                  height={30}
+                />
+              </a>
+              <a href="https://www.linkedin.com/in/grow-up-a25b69294?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app " aria-label="Twitter" className="w-10 h-10 rounded-lg flex items-center justify-center  transition-transform hover:scale-110">
+                <Image
+                  alt="linkedin icon"
+                  src="/linkedin.png"
                   width={30}
                   height={30}
                 />

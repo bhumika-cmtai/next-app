@@ -80,7 +80,8 @@ const Achievements: React.FC = () => {
   return (
     <section 
       ref={ref} 
-      className="max-w-7xl py-16 md:py-24  "
+      className="max-w-7xl py-16 md:py-24 "
+      id='achievements'
     >
       <div className="container mx-auto px-4">
         <motion.div
@@ -89,7 +90,7 @@ const Achievements: React.FC = () => {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-2xl md:text-6xl font-bold uppercase tracking-widest bg-gradient-to-r from-purple-400 to-pink-100 bg-clip-text text-transparent">
+          <h2 className="text-2xl md:text-6xl font-bold uppercase tracking-wider bg-gradient-to-r from-purple-400 to-pink-100 bg-clip-text text-transparent">
             Achievements
           </h2>
         </motion.div>
