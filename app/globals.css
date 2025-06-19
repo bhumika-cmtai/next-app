@@ -164,3 +164,19 @@ body {
   }
 }
 
+.container-border-gradient {
+  border-width: 2px;
+  border-style: solid;
+  border-image: linear-gradient(to bottom left, #98FFCE, #7E69FF) 1;
+  border-radius: 100px;
+  padding: 10px;
+  
+}
+.box-border-gradient {
+  border-width: 2px;
+  border-style: solid;
+  border-image: linear-gradient(to bottom left, #98FFCE, #7E69FF) 1;
+  border-radius: 200px;
+  padding: 10px;
+
+}
