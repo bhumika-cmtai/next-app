@@ -62,9 +62,7 @@ export default function AboutUs() {
             className="text-center lg:text-left"
           >
             <p className="text-black leading-relaxed text-base md:text-lg font-medium">
-              They Were Inspired By Mr. Gaurav Prajapati And Mr. Priya Darling, Who Brought This Vision Into Action For
-              The Platform... In Which They Are Providing Work From Home Opportunities For All And A Rich Budget Into
-              Digital Requirements And Job Roles That They Can Do From Home For An Extra Income To Support Their Family.
+              They were founded by Mr. Gaurav Prajapati and Ms. Priya Verma, who brought with them one vision for this platform — to make income generation easy, secure, and hassle-free for all Indians. Having years of experience combined and a rich insight into digital requirements and job gaps, they built an ecosystem that matches ordinary people to productive and meaningful work.
             </p>
           </motion.div>
         </div>
