@@ -8,7 +8,7 @@ const Hero = () => {
     <section className="max-w-7xl w-full relative z-10 text-center px-4 " id="home">
       <div>
         <div className="flex flex-col">
-            <div className=' lg:grid lg:grid-cols-6 justify-between'>
+            <div className=' lg:grid lg:grid-cols-6 justify-between '>
                 <div className='lg:col-span-4 flex gap-2 flex-col mx-auto'>     
                     <motion.h1
                       initial={{ opacity: 0, y: -50 }}
@@ -28,7 +28,7 @@ const Hero = () => {
                     </motion.div>
                 </div>
 
-               <div className=' lg:col-span-1 w-[320px] h-auto  overflow-hidden rounded-xl'>       
+               <div className=' lg:col-span-2 col-start-5 w-[320px] h-auto  overflow-hidden rounded-xl'>       
                     <Image 
                       src="/liveVideo2-unscreen.gif"
                       alt='livevideo'
@@ -60,7 +60,7 @@ const Hero = () => {
             initial={{ scale: 0, opacity: 0 }}
             whileInView={{ scale: 1, opacity: 0.2 }}
             viewport={{ once: true }}
-            transition={{ duration: 1.5, ease: "easeInOut" }} className='absolute block  top-[260px] -left-[150px] lg:top-[240px] lg:-left-[300px] lg:h-[600px] h-[200px] w-[200px] lg:w-[600px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20'>
+            transition={{ duration: 1, ease: "easeInOut" }} className='absolute block  top-[260px] -left-[150px] lg:top-[240px] lg:-left-[300px] lg:h-[600px] h-[200px] w-[200px] lg:w-[600px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20'>
             </motion.div>
         </div>
         <div></div>

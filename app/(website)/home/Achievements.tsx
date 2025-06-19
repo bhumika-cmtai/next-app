@@ -80,7 +80,7 @@ const Achievements: React.FC = () => {
   return (
     <section 
       ref={ref} 
-      className="w-full py-16 md:py-24  "
+      className="max-w-7xl py-16 md:py-24  "
     >
       <div className="container mx-auto px-4">
         <motion.div

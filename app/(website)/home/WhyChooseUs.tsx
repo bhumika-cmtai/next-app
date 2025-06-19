@@ -19,7 +19,7 @@ const WhyChooseUs: React.FC = () => {
   const isInView = useInView(ref, { once: true })
 
   return (
-    <section ref={ref} className="min-h-screen w-full py-16 md:py-24 flex items-center">
+    <section ref={ref} className="min-h-screen max-w-7xl flex items-center">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 50 }}

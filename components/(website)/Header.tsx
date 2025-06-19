@@ -1,6 +1,7 @@
 "use client";
 
 import { MoveRight, Menu, X } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 
@@ -39,8 +40,16 @@ const Header = () => {
         ${isScrolled || isMenuOpen ? 'bg-white shadow-md' : 'bg-transparent'}
       `}
     >
-      <nav className='max-w-7xl container flex items-center justify-between p-4 mx-auto'>
-        <div className="text-xl font-bold">LOGO</div>
+      <nav className='max-w-7xl container flex items-center justify-between p-2 mx-auto'>
+        <div className="text-xl font-bold ">
+          <Image
+            src="/logoImg1.png"
+            width={100}
+            height={100}
+            alt='grow up logo'
+            className='w-[60px] md:w-[80px] h-auto '
+          />
+        </div>
 
         <ul className='hidden lg:flex gap-8 text-gray-800 font-semibold text-lg'>
           {navLinks.map((link) => (
@@ -50,11 +59,11 @@ const Header = () => {
           ))}
         </ul>
 
-        <div className="hidden lg:block p-1 rounded-full bg-gradient-to-r from-yellow-400 to-green-300">
+        <div className="hidden lg:block  ">
           <Link
             href="#"
-            className="flex items-center justify-center gap-1 bg-green-200 rounded-full 
-                       px-4 py-2 font-semibold text-gray-800 transition-all text-lg"
+            className="flex items-center justify-center gap-1 bg-sea-green-100 rounded-full 
+                       px-4 py-2 font-semibold text-gray-800 transition-all text-lg border-2 border-sea-green-100 drop-shadow-gold-200/70 drop-shadow-lg"
           >
             Sign Up
             <MoveRight size={18} />
@@ -89,7 +98,8 @@ const Header = () => {
           <Link
             href="#"
             onClick={() => setIsMenuOpen(false)}
-            className="flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-semibold text-gray-800 transition-shadow hover:shadow-lg bg-gradient-to-r from-green-300 via-yellow-200 to-green-300 bg-[length:200%_auto] hover:bg-[right_center]"
+            className="flex items-center justify-center gap-1 bg-sea-green-100 rounded-full 
+                       px-4 py-2 font-semibold text-gray-800 transition-all text-lg border-2 border-sea-green-100 drop-shadow-gold-200/70 drop-shadow-lg bg-[length:200%_auto] hover:bg-[right_center]"
           >
             Sign up
             <MoveRight size={16} strokeWidth={2.5} />

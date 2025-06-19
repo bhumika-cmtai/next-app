@@ -35,7 +35,7 @@ const WhoCanJoin: React.FC = () => {
  ]
 
   return (
-    <section ref={ref} className="min-h-screen w-full py-16 md:py-24 flex items-center">
+    <section ref={ref} className="min-h-screen w-full py-10 max-w-7xl flex items-center">
       <div className="container mx-auto px-4">
           <motion.div
                     initial={{ opacity: 0, y: 50 }}
@@ -43,7 +43,7 @@ const WhoCanJoin: React.FC = () => {
                     transition={{ duration: 0.8 }}
                     className="text-center mb-16"
                   >
-                    <h2 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-black via-purple-400 via-50% to-75% to-pink-100 bg-clip-text text-transparent">
+                    <h2 className="text-4xl md:text-5xl font-bold mb-4 pb-5 bg-gradient-to-r from-black via-purple-400 via-50% to-75% to-pink-100 bg-clip-text text-transparent">
                           WHO CAN JOIN US?
                     </h2>
             </motion.div>
