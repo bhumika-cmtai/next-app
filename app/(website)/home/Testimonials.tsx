@@ -2,7 +2,6 @@
 import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
 
-// --- DATA ---
 const testimonialsData = [
   {
     id: 1,
@@ -38,12 +37,10 @@ const testimonialsData = [
   }
 ];
 
-// --- MAIN COMPONENT ---
 const Testimonials = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  // Auto-slide functionality
   useEffect(() => {
     if (isAutoPlaying) {
       const interval = setInterval(() => {
@@ -58,7 +55,6 @@ const Testimonials = () => {
   };
 
   return (
-    // FIX 1: Removed `overflow-hidden` from this section to prevent clipping the profile image.
     <section className="relative w-full py-10 md:py-20 md:px-4">
       <div className="container mx-auto px-4">
         {/* Header Section */}
@@ -71,7 +67,7 @@ const Testimonials = () => {
         </div>
 
         <div 
-          className="relative pb-28"
+          className="relative pb-16 mb-10"
           onMouseEnter={() => setIsAutoPlaying(false)}
           onMouseLeave={() => setIsAutoPlaying(true)}
         >
@@ -124,7 +120,7 @@ const Testimonials = () => {
                 src="/testimonial-blob2.png"
                 width={600}
                 height={430}
-                className='hidden lg:absolute lg:block  lg:-top-[80px] lg:right-[250px] h-auto w-[600px] z-0'
+                className='hidden lg:absolute lg:block lg:-top-[80px] lg:right-[250px] h-auto w-[600px] z-0'
             />
           </div>
           

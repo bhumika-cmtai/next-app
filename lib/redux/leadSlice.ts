@@ -78,7 +78,7 @@ export const { setLeads, setLoading, setError, setSelectedLead, clearSelectedLea
 
 export const fetchLeads = () => async (dispatch: Dispatch) => {
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/lead/getAllLeads`);
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/getAllLeads`);
     if (response.status === 200) {
       dispatch(setLeads(response.data.data));
     } else {
@@ -93,7 +93,7 @@ export const fetchLeads = () => async (dispatch: Dispatch) => {
 export const fetchLeadById = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/lead/getLeadById/${id}`);
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/getLead/${id}`);
     const data: Lead = response.data;
     if (response.status === 200) {
       dispatch(setSelectedLead(data));    
@@ -109,7 +109,7 @@ export const fetchLeadById = (id: string) => async (dispatch: Dispatch) => {
 export const addLead = (lead: Lead) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/lead/addLead`, lead);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/addLead`, lead);
     if (response.status === 201) {
       return response.data;
     } else {
@@ -124,7 +124,7 @@ export const addLead = (lead: Lead) => async (dispatch: Dispatch) => {
 export const updateLead = (id: string, lead: Lead) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/lead/updateLead/${id}`, lead);
+    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/updateLead/${id}`, lead);
     if (response.status === 200) {
       return response.data;
     } else {
@@ -139,7 +139,7 @@ export const updateLead = (id: string, lead: Lead) => async (dispatch: Dispatch)
 export const deleteLead = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/lead/deleteLead/${id}`);
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/deleteLead/${id}`);
     if (response.status === 200) {
       return response.data;   
     } else {

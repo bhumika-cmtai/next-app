@@ -77,7 +77,7 @@ export const { setContacts, setLoading, setError, setSelectedContact, clearSelec
 
 export const fetchContacts = () => async (dispatch: Dispatch) => {
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contact/getAllContacts`);
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/getAllContact`);
     if (response.status === 200) {
       dispatch(setContacts(response.data.data));
     } else {
@@ -92,7 +92,7 @@ export const fetchContacts = () => async (dispatch: Dispatch) => {
 export const fetchContactById = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contact/getContactById/${id}`);
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/getContact/${id}`);
     const data: Contact = response.data;
     if (response.status === 200) {
       dispatch(setSelectedContact(data));    
@@ -108,7 +108,7 @@ export const fetchContactById = (id: string) => async (dispatch: Dispatch) => {
 export const addContact = (contact: Contact) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contact/addContact`, contact);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/addContact`, contact);
     if (response.status === 201) {
       return response.data;
     } else {
@@ -123,7 +123,7 @@ export const addContact = (contact: Contact) => async (dispatch: Dispatch) => {
 export const updateContact = (id: string, contact: Contact) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contact/updateContact/${id}`, contact);
+    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/updateContact/${id}`, contact);
     if (response.status === 200) {
       return response.data;
     } else {
@@ -138,7 +138,7 @@ export const updateContact = (id: string, contact: Contact) => async (dispatch: 
 export const deleteContact = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contact/deleteContact/${id}`);
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/deleteContact/${id}`);
     if (response.status === 200) {
       return response.data;   
     } else {

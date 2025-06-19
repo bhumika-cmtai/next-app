@@ -3,7 +3,6 @@ import React, { useEffect, useRef } from 'react';
 import { motion, useInView, animate } from "framer-motion";
 import Image from 'next/image';
 
-// A reusable counter component
 type CounterProps = {
   from: number;
   to: number;

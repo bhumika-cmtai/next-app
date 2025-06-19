@@ -83,7 +83,7 @@ export const fetchUsers = (params?: { search?: string; status?: string; page?: n
     if (params?.status && params.status !== 'all') query.push(`status=${encodeURIComponent(params.status)}`);
     if (params?.page) query.push(`page=${params.page}`);
     const queryString = query.length ? `?${query.join('&')}` : '';
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/getallUsers${queryString}`);
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getallUsers${queryString}`);
     if (response.status === 200) {
       dispatch(setUsers(response.data.data));
       if (params?.page) dispatch(setCurrentPage(params.page));
@@ -99,7 +99,7 @@ export const fetchUsers = (params?: { search?: string; status?: string; page?: n
 export const fetchLeadById = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/users/${id}`);
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getUser/${id}`);
         const data: User = response.data;
     if (response.status === 200) {
       dispatch(setSelectedUser(data));    
@@ -115,7 +115,7 @@ export const fetchLeadById = (id: string) => async (dispatch: Dispatch) => {
 export const addUser = (user: User) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/users`, user);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users`, user);
     if (response.status === 201) {
       return response.data;
     } else {
@@ -130,7 +130,7 @@ export const addUser = (user: User) => async (dispatch: Dispatch) => {
 export const addManyUsers = (users: User[]) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/addManyUser`, users);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/addManyUser`, users);
     if (response.status === 201) {
       return response.data;
     } else {
@@ -145,7 +145,7 @@ export const addManyUsers = (users: User[]) => async (dispatch: Dispatch) => {
 export const updateUser = (id: string, user: User) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/users/${id}`, user);
+    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/updateUser/${id}`, user);
     if (response.status === 200) {
       return response.data;
     } else {
@@ -160,7 +160,7 @@ export const updateUser = (id: string, user: User) => async (dispatch: Dispatch)
 export const deleteUser = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/routes/users/${id}`);
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/deleteUser/${id}`);
     if (response.status === 200) {
       return response.data;   
     } else {
