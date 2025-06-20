@@ -42,7 +42,7 @@ const Page = () => {
           </div>
         </div>
 
-        {/* blob for right - UNCHANGED as requested */}
+        {/* blob for right -  */}
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           whileInView={{ scale: 1, opacity: 0.2 }}
@@ -50,7 +50,7 @@ const Page = () => {
           transition={{ duration: 1.5, ease: "easeInOut" }}
           className="absolute block -right-[100px] top-[60px] lg:-top-[40px] lg:-right-[240px] h-[200px] w-[200px] lg:h-[460px] lg:w-[460px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
         ></motion.div>
-        {/* blob for left - UNCHANGED as requested */}
+        {/* blob for left -  */}
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           whileInView={{ scale: 1, opacity: 0.2 }}

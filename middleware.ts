@@ -23,7 +23,7 @@ export default function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
 
   // Public paths that don't require authentication
-  if (pathname === '/') {
+  if (pathname === '/' ) {
     // If it's the homepage, always allow access, regardless of login status.
     return NextResponse.next();
   }
