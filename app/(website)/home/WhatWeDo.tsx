@@ -19,7 +19,7 @@ const WhatWeDo = () => {
         },
         {
             icon: Headset,
-            title: 'CUSTOMER SUPPORT SERVICES',
+            title: 'CUSTOMER SUPPORT SERVICES WORK',
             description: 'Work As A Support Executive From Home. Support Customers Through Chat, Phone, Or Email To Solve Their Issues, Walk Them Through Services, Or Assist In Account-Related Matters.',
         },
     ];
