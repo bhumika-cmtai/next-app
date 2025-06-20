@@ -2,64 +2,93 @@
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import Link from "next/link";
-
 
 const Page = () => {
   return (
     <section
-      className="max-w-7xl w-full relative z-10 px-4 py-4 mx-auto overflow-hidden"
-      id="get-started"
+      className="w-full min-h-screen relative flex items-center justify-center px-4 py-8 bg-[#F8FAFF] overflow-hidden"
+      id="login"
     >
-      <div className="w-full flex justify-center min-h-screen ">
-        <div className="relative w-full max-w-3xl flex items-center ">
-            <Image 
-              src="/loginImg.png"
-              width={300}
-              height={300}
-              alt="Login Image"
-              className=""
-            />
-          <div className="w-full max-w-md mx-auto rounded-3xl p-[2px] bg-gradient-to-b from-[#A6F4C5] to-[#B6A7FF]">
-            <div className="w-full h-full flex flex-col items-center gap-2 rounded-[22px] bg-white/90 backdrop-blur-sm p-8 shadow-xl ">
-              {/* Login FORM*/}
-              <h1 className="font-bold text-2xl bg-gradient-to-r from-black via-purple-400 to-pink-200 via-60% bg-clip-text text-transparent">Login</h1>
-              <div className="w-full rounded-2xl p-[1.5px] bg-[linear-gradient(90deg,_#c6ffdd_0%,_#fbd786_50%,_#f7797d_100%)] bg-[length:200%_auto] transition-all duration-500 hover:bg-[position:100%_0] shadow-md hover:shadow-lg">
-                <div className="flex flex-col w-full items-center gap-4 rounded-[14px] bg-white py-10">
-                  <div className="flex flex-col gap-4">
-                    <input type="text" placeholder="Email" className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"/>
-                    <input type="password" placeholder="Password" className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"/>
-                    {/* <input type="text" placeholder="Your Mobile Number" className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"/> */}
-                    <div className="w-full mx-auto rounded-3xl p-[2px] bg-gradient-to-b from-[#A6F4C5] to-[#B6A7FF] hover:from-gold-200 hover:to-purple-500 transition-all duration-500">
-                        <button className="w-full h-full text-center rounded-[22px] bg-white/90 backdrop-blur-sm px-4 py-1">
-                            Sign In
-                        </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className="w-full max-w-6xl flex flex-col md:flex-row items-center md:items-end justify-center gap-8 lg:gap-16 relative z-10">
+        
+        {/* Left Side: Illustration */}
+        <div className="flex justify-center">
+          <Image
+            src="/loginImg.png"
+            width={300}
+            height={300}
+            alt="Login Illustration"
+            className="hidden md:block md:w-[300px] object-contain"
+          />
         </div>
 
-        {/* blob for right -  */}
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          whileInView={{ scale: 1, opacity: 0.2 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.5, ease: "easeInOut" }}
-          className="absolute block -right-[100px] top-[60px] lg:-top-[40px] lg:-right-[100px] h-[200px] w-[200px] lg:h-[300px] lg:w-[300px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
-        ></motion.div>
-        {/* blob for left -  */}
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          whileInView={{ scale: 1, opacity: 0.2 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, ease: "easeInOut" }}
-          className="absolute block top-[260px] -left-[150px] lg:top-[240px] lg:-left-[300px] lg:h-[600px] h-[200px] w-[200px] lg:w-[600px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
-        ></motion.div>
+        {/* Right Side: Form */}
+        <div className="w-full max-w-md bg-gradient-to-br from-[#F0FAF7]/80 to-[#EFF8FF]/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl">
+          <h1 className="text-4xl font-bold text-gray-900 mb-6">sign in</h1>
+
+          <form className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Email Address
+              </label>
+              <div className="rounded-xl p-[1.5px] bg-gradient-to-r from-purple-300 via-cyan-400 to-green-300">
+                <input
+                  type="email"
+                  className="w-full px-3 py-2 bg-white rounded-[10px] border-none outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Password
+              </label>
+              <div className="rounded-xl p-[1.5px] bg-gradient-to-r from-purple-300 via-cyan-400 to-green-300">
+                <input
+                  type="password"
+                  className="w-full px-3 py-2 bg-white rounded-[10px] border-none outline-none"
+                />
+              </div>
+              <div className="text-right mt-2">
+                <a
+                  href="#"
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  Forgot your password?
+                </a>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <div className="rounded-xl p-[1.5px] bg-gradient-to-r from-purple-300 via-cyan-400 to-green-300">
+                <button
+                  type="submit"
+                  className="w-full px-3 py-2 bg-white text-gray-700 font-semibold rounded-[10px]"
+                >
+                  Sign in
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
 
+      {/* blob for right -  */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        whileInView={{ scale: 1, opacity: 0.2 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.5, ease: "easeInOut" }}
+        className="absolute block -right-[100px] top-[60px] lg:-top-[40px] lg:-right-[100px] h-[200px] w-[200px] lg:h-[300px] lg:w-[300px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
+      ></motion.div>
+      {/* blob for left -  */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        whileInView={{ scale: 1, opacity: 0.2 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1, ease: "easeInOut" }}
+        className="absolute block top-[260px] -left-[150px] lg:top-[240px] lg:-left-[300px] lg:h-[600px] h-[200px] w-[200px] lg:w-[600px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
+      ></motion.div>
     </section>
   );
 };
