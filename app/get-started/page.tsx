@@ -2,6 +2,7 @@
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 
 const Page = () => {
@@ -67,9 +68,9 @@ const Page = () => {
                 <div className="flex w-full items-center gap-4 rounded-[14px] bg-white p-4">
                   <div className="flex-shrink-0">
                     <Image
-                      src="/workFromHomeIcon.png"
-                      width={48}
-                      height={48}
+                      src="/skillImg.png"
+                      width={60}
+                      height={60}
                       alt="assessment icon"
                       className="object-contain"
                     />
@@ -113,16 +114,16 @@ const Page = () => {
             </div>
           </div>
 
-          {/* Illustration positioned absolutely relative to the wrapper */}
-          {/* <div className="absolute -bottom-16 -right-16 z-20 hidden lg:block">
+          {/* Security Illustration  */}
+          <div className="absolute -bottom-16 -right-32 z-20 hidden lg:block">
             <Image
-              src="/hero-illustration.svg" // Replace with your illustration path
+              src="/authImg.png" // Replace with your illustration path
               alt="Security illustration"
               width={300}
               height={300}
               className="pointer-events-none"
             />
-          </div> */}
+          </div>
         </div>
 
         {/* blob for right - UNCHANGED as requested */}
@@ -144,15 +145,26 @@ const Page = () => {
       </div>
 
       {/* Legal Documents Section */}
-      <div className="mt-28 flex items-center justify-center gap-3">
-        <Image
-          src="/document-icon.svg" // Replace with your icon path
-          width={28}
-          height={28}
-          alt="Document icon"
-        />
-        <p className="font-semibold text-gray-700">Legal Documents:</p>
+      <div className="mt-10 flex flex-col items-center justify-center gap-3">
+        <div className="flex items-center gap-2">
+            <Image
+              src="/legalImg.png" // Replace with your icon path
+              width={40}
+              height={40}
+              alt="Document icon"
+              />
+            <div className="text-lg font-semibold text-black">Legal Documents:</div>
+          </div>
+        <div className="border-t-2 border-t-black w-full flex justify-center pt-4">
+          <div className="flex flex-col gap-2 items-start">
+            <p className="text-left">PAN Card</p>
+            <p className="text-left">Udyam Registration Certificate</p>
+            <p className="text-left">GST Certificate</p>
+            <p className="text-left"> <Link className="underline" href="/privacy-policy">Privacy-Policy</Link> | <Link className="underline" href="/Terms and Conditions">Terms and Conditions</Link></p>
+          </div>
+        </div>
       </div>
+
     </section>
   );
 };
