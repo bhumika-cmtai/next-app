@@ -30,7 +30,7 @@ const Page = () => {
                     <input type="text" placeholder="4 Digit TL Code" className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"/>
                     <input type="text" placeholder="Your Name" className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"/>
                     <input type="text" placeholder="Your Mobile Number" className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"/>
-                    <div className="w-[100px] mx-auto rounded-3xl p-[2px] bg-gradient-to-b from-[#A6F4C5] to-[#B6A7FF] hover:from-gold-200 hover:to-purple-500 transition-all duration-500">
+                    <div className="w-full mx-auto rounded-3xl p-[2px] bg-gradient-to-b from-[#A6F4C5] to-[#B6A7FF] hover:from-gold-200 hover:to-purple-500 transition-all duration-500">
                         <button className="w-full h-full text-center rounded-[22px] bg-white/90 backdrop-blur-sm px-4 py-1">
                             Submit
                         </button>
@@ -48,7 +48,7 @@ const Page = () => {
           whileInView={{ scale: 1, opacity: 0.2 }}
           viewport={{ once: true }}
           transition={{ duration: 1.5, ease: "easeInOut" }}
-          className="absolute block -right-[100px] top-[60px] lg:-top-[40px] lg:-right-[240px] h-[200px] w-[200px] lg:h-[460px] lg:w-[460px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
+          className="absolute block -right-[100px] top-[60px] lg:-top-[40px] lg:-right-[100px] h-[200px] w-[200px] lg:h-[300px] lg:w-[300px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
         ></motion.div>
         {/* blob for left -  */}
         <motion.div
