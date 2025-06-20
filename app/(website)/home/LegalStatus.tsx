@@ -15,8 +15,8 @@ const bankLogos = [
   { src: '/bankOfBarodaIcon.png', alt: 'Bank of Baroda', height: 45 },
   { src: '/canaraBankIcon.png', alt: 'Canara Bank', height: 45 },
   { src: '/hdfcIcon.png', alt: 'HDFC Bank', height: 45 },
-  { src: '/iciciBankIcon.png', alt: 'ICICI Bank', height: 45 },
-  { src: '/yesBankIcon.png', alt: 'Yes Bank', height: 45 },
+  { src: '/IciciBankIcon.png', alt: 'ICICI Bank', height: 45 },
+  { src: '/yesBankIcon.png', alt: 'Yes Bank', height: 60 },
   { src: '/upstoxIcon.png', alt: 'Upstox', height: 45 },
 ];
 
@@ -90,7 +90,7 @@ const LegalStatus: React.FC = () => {
                   <Image
                     src={logo.src}
                     alt={logo.alt}
-                    width={150}
+                    width={200}
                     height={logo.height}
                     className="object-contain"
                   />
