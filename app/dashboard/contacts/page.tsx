@@ -33,55 +33,72 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, Loader2 } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchContacts, selectContacts, Contact} from "@/lib/redux/contactSlice";
-import { AppDispatch } from "@/lib/store";
+import { fetchContacts, selectContacts, Contact, updateContact } from "@/lib/redux/contactSlice";
+import { AppDispatch, RootState } from "@/lib/store";
 
 export default function Contacts() {
   const dispatch = useDispatch<AppDispatch>();
   const contacts = useSelector(selectContacts);
-  // const loading = useSelector(selectLoading);
-  // const error = useSelector(selectError);
-  // const pagination = useSelector(selectPagination);
-  // const currentPage = useSelector(selectCurrentPage);
+  const { loading: isListLoading, error } = useSelector((state: RootState) => state.contacts);
 
   const [search, setSearch] = useState("");
   const [editContact, setEditContact] = useState<Contact | null>(null);
+  
+  // State for the modal and its selected status
   const [modalOpen, setModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [newStatus, setNewStatus] = useState<string>("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     dispatch(fetchContacts());
   }, [dispatch]);
 
-  // Filtered contacts
+  // Filter contacts based on search input
   const filteredContacts = useMemo(() => {
+    if (!search) return contacts;
+    const lowercasedSearch = search.toLowerCase();
     return contacts.filter((contact) =>
-      contact.name.toLowerCase().includes(search.toLowerCase()) ||
-      contact.email.toLowerCase().includes(search.toLowerCase()) ||
-      contact.phone.includes(search)
+      contact.name.toLowerCase().includes(lowercasedSearch) ||
+      contact.email.toLowerCase().includes(lowercasedSearch) ||
+      (contact.phone && contact.phone.includes(lowercasedSearch))
     );
   }, [contacts, search]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "New":
-        return "bg-blue-500";
-      case "Contacted":
-        return "bg-yellow-500";
-      default:
-        return "bg-gray-500";
+  // Function to open the dialog and set the initial status
+  const openUpdateModal = (contact: Contact) => {
+    setEditContact(contact);
+    setNewStatus(contact.status || "New"); // Set current status or default to 'New'
+    setModalOpen(true);
+  };
+
+  // Dispatches the update action to the Redux store
+  const handleStatusUpdate = async () => {
+    if (!editContact || !editContact._id || !newStatus) return;
+
+    setIsUpdating(true);
+    try {
+      // Dispatch the update action with only the status field
+      const result = await dispatch(updateContact(editContact._id, { status: newStatus }));
+
+      if (result) {
+        // If the update was successful, close the modal and refetch contacts
+        setModalOpen(false);
+        dispatch(fetchContacts());
+      }
+      // Error handling is managed by the slice, but you could add UI feedback here
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-  const handleStatusUpdate = async (status: string) => {
-    setIsLoading(true);
-    try {
-      // Here you would update the contact's status
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulating API call
-      console.log('Updating status for contact:', editContact?._id, 'to:', status);
-      setModalOpen(false);
-    } finally {
-      setIsLoading(false);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "New": return "bg-blue-500";
+      case "Contacted": return "bg-yellow-500";
+      case "Interested": return "bg-green-500";
+      case "Not Interested": return "bg-red-500";
+      case "Converted": return "bg-purple-500";
+      default: return "bg-gray-500";
     }
   };
 
@@ -89,7 +106,7 @@ export default function Contacts() {
     <div className="w-full mx-auto mt-2">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <h1 className="text-3xl font-bold">Contacts</h1>
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
           <Input
             placeholder="Search contacts..."
             value={search}
@@ -109,47 +126,63 @@ export default function Contacts() {
                   <TableHead>Name</TableHead>
                   <TableHead>Contact Info</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredContacts.map((contact, idx) => (
-                  <TableRow key={contact._id}>
-                    <TableCell>{idx + 1}</TableCell>
-                    <TableCell>
-                      <div className="font-medium">{contact.name}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm">{contact.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm">{contact.phone}</span>
-                        </div>
+                {isListLoading && contacts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <div className="flex justify-center items-center gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span>Loading contacts...</span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(contact.status as string) + " text-white"}>
-                        {contact.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditContact(contact);
-                          setModalOpen(true);
-                        }}
-                      >
-                        Update Status
-                      </Button>
+                  </TableRow>
+                ) : filteredContacts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      No contacts found.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredContacts.map((contact, idx) => (
+                    <TableRow key={contact._id}>
+                      <TableCell>{idx + 1}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{contact.name}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm">{contact.email}</span>
+                          </div>
+                          {contact.phone && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-gray-500" />
+                              <span className="text-sm">{contact.phone}</span>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`${getStatusColor(contact.status as string)} text-white`}>
+                          {contact.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openUpdateModal(contact)}
+                        >
+                          Update Status
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -160,13 +193,13 @@ export default function Contacts() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Update Contact Status</DialogTitle>
+            <DialogTitle>Update Status for {editContact?.name}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <Select
-              value={editContact?.status}
-              onValueChange={(value: string) => handleStatusUpdate(value)}
-              disabled={isLoading}
+              value={newStatus}
+              onValueChange={(value: string) => setNewStatus(value)}
+              disabled={isUpdating}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select Status" />
@@ -174,19 +207,24 @@ export default function Contacts() {
               <SelectContent>
                 <SelectItem value="New">New</SelectItem>
                 <SelectItem value="Contacted">Contacted</SelectItem>
-                <SelectItem value="Not Interested">Not Interested</SelectItem>
                 <SelectItem value="Interested">Interested</SelectItem>
+                <SelectItem value="Not Interested">Not Interested</SelectItem>
                 <SelectItem value="Converted">Converted</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <DialogFooter className="flex gap-2">
-            <Button 
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={isUpdating}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
               type="button"
-                onClick={() => handleStatusUpdate(editContact?.status as string)}
-              disabled={isLoading || !editContact?.status}
+              onClick={handleStatusUpdate}
+              disabled={isUpdating || newStatus === editContact?.status}
             >
-              {isLoading ? (
+              {isUpdating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
@@ -195,11 +233,6 @@ export default function Contacts() {
                 'Save Changes'
               )}
             </Button>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isLoading}>
-                Cancel
-              </Button>
-            </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>

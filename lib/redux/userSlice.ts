@@ -8,6 +8,7 @@ export interface User {
   email: string;
   phoneNumber: string;
   role: string;
+  password?: string;
   status?: string;
   createdOn?: string;
   updatedOn?: string;
@@ -103,6 +104,7 @@ export const fetchLeadById = (id: string) => async (dispatch: Dispatch) => {
         const data: User = response.data;
     if (response.status === 200) {
       dispatch(setSelectedUser(data));    
+      dispatch(setLoading(false)); 
     } else {
       dispatch(setError(response.data.message));
     }
@@ -115,11 +117,13 @@ export const fetchLeadById = (id: string) => async (dispatch: Dispatch) => {
 export const addUser = (user: User) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users`, user);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/addUser`, user);
     if (response.status === 201) {
+      dispatch(setLoading(false));
       return response.data;
     } else {
       dispatch(setError(response.data.message));
+      return null;
     }
   } catch (error: unknown) {
     const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
@@ -133,6 +137,7 @@ export const addManyUsers = (users: User[]) => async (dispatch: Dispatch) => {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/addManyUser`, users);
     if (response.status === 201) {
       return response.data;
+      dispatch(setLoading(false));
     } else {
       dispatch(setError(response.data.message));
     }
@@ -147,6 +152,7 @@ export const updateUser = (id: string, user: User) => async (dispatch: Dispatch)
   try {
     const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/updateUser/${id}`, user);
     if (response.status === 200) {
+      dispatch(setLoading(false));
       return response.data;
     } else {
       dispatch(setError(response.data.message));
@@ -162,6 +168,7 @@ export const deleteUser = (id: string) => async (dispatch: Dispatch) => {
   try {
     const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/deleteUser/${id}`);
     if (response.status === 200) {
+      dispatch(setLoading(false));
       return response.data;   
     } else {
       dispatch(setError(response.data.message));

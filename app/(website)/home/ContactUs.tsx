@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const ContactInfoItem = ({ icon, title, children }: { icon: string, title: string, children: React.ReactNode }) => (
   <div className="flex items-center gap-4">
@@ -57,7 +58,7 @@ const ContactUs = () => {
                 icon="/locationImg.png"
               >
                 {/* Replace with your actual location */}
-                123 Work-From-Home Lane, India
+                226010, Gomti Nagar Lucknow, Uttar Pradesh, India
               </ContactInfoItem>
               <ContactInfoItem
                 title="Phone Number"
@@ -74,7 +75,7 @@ const ContactUs = () => {
                 icon="/mailImg.png"
               >
                 {/* Replace with your actual email */}
-                growup@gmail.com
+                <Link href="mailto:officialgrowup01@gmail.com">officialgrowup01@gmail.com</Link>
               </ContactInfoItem>
             </div>
             

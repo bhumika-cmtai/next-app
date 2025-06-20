@@ -120,18 +120,23 @@ export const addContact = (contact: Contact) => async (dispatch: Dispatch) => {
   }
 };
 
-export const updateContact = (id: string, contact: Contact) => async (dispatch: Dispatch) => {
+export const updateContact = (id: string, contactData: Partial<Contact>) => async (dispatch: Dispatch) => {
+  // The service only needs the fields to update, not the whole object
   dispatch(setLoading(true));
   try {
-    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/updateContact/${id}`, contact);
+    const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/updateContact/${id}`, contactData);
+    dispatch(setLoading(false)); // Turn off loading after call
     if (response.status === 200) {
-      return response.data;
+      return response.data; // Return data on success
     } else {
       dispatch(setError(response.data.message));
+      return null; // Return null on failure
     }
-  } catch (error: unknown) {
-    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    dispatch(setError(message || "Unknown error"));
+  } catch (error: any) {
+    const message = error.response?.data?.message || error.message || "Unknown error";
+    dispatch(setError(message));
+    dispatch(setLoading(false));
+    return null; // Return null on error
   }
 };
 

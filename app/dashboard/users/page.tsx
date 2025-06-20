@@ -37,7 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Upload, Edit, Trash2 } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchUsers, selectUsers, selectLoading, selectError, User, selectPagination, selectCurrentPage } from "@/lib/redux/userSlice";
+import { fetchUsers, selectUsers, selectLoading, selectError, User, selectPagination, selectCurrentPage,addUser,updateUser,deleteUser as deleteUserAction, } from "@/lib/redux/userSlice";
 import { AppDispatch } from "@/lib/store";
 import ImportUser from "./importUser";
 
@@ -107,32 +107,60 @@ export default function Users() {
 
 
   const handleFormStatus = (val: string) => setForm({ ...form, status: val });
-  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormLoading(true);
-    setTimeout(() => {
-      if (editUser) {
-        // This is just a placeholder, actual update logic should be via redux
-        // setUsers((prev) => prev.map((u) => (u.id === editUser.id ? { ...u, ...form } : u)));
+    try {
+      let response;
+      if (editUser && editUser._id) {
+        // For updates, merge existing user data with form data to create the payload
+        const updatedUserPayload: User = { ...editUser, ...form };
+        response = await dispatch(updateUser(editUser._id, updatedUserPayload));
       } else {
-        // setUsers((prev) => [
-        //   ...prev,
-        //   { ...form, id: Date.now(), joined: new Date().toISOString().slice(0, 10) },
-        // ]);
+        // For adding, create a new user object with required fields
+        const newUserPayload: User = {
+          ...form,
+          role: "user", // Default role
+          password: "defaultPassword123", // Backend requires password on creation
+        };
+        response = await dispatch(addUser(newUserPayload));
       }
+
+      if (response) {
+        setModalOpen(false);
+        setEditUser(null);
+        // Refresh the user list to show the new/updated user
+        dispatch(fetchUsers({ search: debouncedSearch, status, page: currentPage }));
+      }
+      // If response is null, the slice has already dispatched an error.
+    } catch (error) {
+      console.error("An unexpected error occurred during form submission:", error);
+    } finally {
       setFormLoading(false);
-      setModalOpen(false);
-    }, 1000);
+    }
   };
 
+ // *change here* - Implemented user deletion logic
+  const handleDelete = async () => {
+    if (!deleteUser || !deleteUser._id) return;
 
-  const handleDelete = () => {
     setDeleteLoading(true);
-    setTimeout(() => {
-      // setUsers((prev) => prev.filter((u) => u.id !== deleteUser?.id));
+    try {
+      const response = await dispatch(deleteUserAction(deleteUser._id));
+      if (response) {
+        setDeleteUser(null); // Close the confirmation dialog
+        
+        // If the last item on a page is deleted, fetch the previous page
+        const newPage = users.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
+        
+        // Refresh the user list
+        dispatch(fetchUsers({ search: debouncedSearch, status, page: newPage }));
+      }
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+    } finally {
       setDeleteLoading(false);
-      setDeleteUser(null);
-    }, 1000);
+    }
   };
 
   const handleImportSuccess = () => {
@@ -212,7 +240,7 @@ export default function Users() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar>
-                            <AvatarFallback>{user.name[0]}</AvatarFallback>
+                            <AvatarFallback>{user.name?.[0].toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <span className="font-medium">{user.name}</span>
                         </div>
@@ -393,6 +421,7 @@ export default function Users() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="New">New</SelectItem>
                 <SelectItem value="Active">Active</SelectItem>
                 <SelectItem value="Inactive">Inactive</SelectItem>
               </SelectContent>
