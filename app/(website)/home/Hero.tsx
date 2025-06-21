@@ -2,10 +2,37 @@
 import Image from 'next/image';
 import React from 'react';
 import {motion} from 'motion/react'
-
+import PopupPoster from './PopupPoster';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 const Hero = () => {
+  const [isPopupOpen, setPopupOpen] = useState(false);
+
+  useEffect(() => {
+    
+    const timer = setTimeout(() => {
+      setPopupOpen(true);
+    }, 1500); 
+
+    return () => clearTimeout(timer);
+  }, []); 
+
+   const handleClosePopup = () => {
+    setPopupOpen(false);
+  };
   return (
     <section className="max-w-7xl w-full relative z-10 text-center px-4 " id="home">
+       <PopupPoster isOpen={isPopupOpen} onClose={handleClosePopup}>
+        <Link href="/get-started" >
+          <Image 
+          src="/posterImg.jpg"
+          alt='job popup'
+          width={300}
+          height={300}
+          className='h-auto w-[300px]'
+          />
+        </Link>
+      </PopupPoster>
       <div>
         <div className="flex flex-col">
             <div className=' lg:grid lg:grid-cols-6 justify-between '>
