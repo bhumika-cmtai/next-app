@@ -8,6 +8,7 @@ import {
   FileText,
   Contact,
   LogOut,
+  User,
   X,
 } from "lucide-react";
 
@@ -16,6 +17,7 @@ const navigation = [
   { name: "Users", href: "/dashboard/users", icon: Users },
   { name: "Leads", href: "/dashboard/leads", icon: FileText },
   { name: "Contacts", href: "/dashboard/contacts", icon: Contact },
+  { name: "Clients", href: "/dashboard/clients", icon: User },
   { name: "Logout", href: "/logout", icon: LogOut },
 ];
 

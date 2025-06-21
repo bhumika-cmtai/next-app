@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import userReducer from './redux/userSlice';
 import leadReducer from './redux/leadSlice';
 import contactReducer from './redux/contactSlice';
+import clientReducer from './redux/clientSlice';
 import authReducer from './redux/authSlice';
 
 export const store = configureStore({
@@ -9,7 +10,8 @@ export const store = configureStore({
     users: userReducer,
     leads: leadReducer,
     contacts: contactReducer,
-    auth: authReducer
+    auth: authReducer,
+    clients: clientReducer
   },
 });
 
