@@ -40,10 +40,10 @@ const Header = () => {
         ${isScrolled || isMenuOpen ? 'bg-white shadow-md' : 'bg-transparent'}
       `}
     >
-      <nav className='max-w-7xl container flex items-center justify-between p-2 mx-auto px-4'>
+      <nav className='max-w-7xl container flex items-center justify-between p-1 mx-auto px-4'>
         <div className="text-xl font-bold ">
           <Image
-            src="/logoImg1.png"
+            src="/logoImg3.png"
             width={100}
             height={100}
             alt='grow up logo'
