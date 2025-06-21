@@ -13,6 +13,7 @@ export const config = {
      * 6. all auth routes (/login, /register, /forgot-password)
      */
     '/((?!api|_next|fonts|examples|[\\w-]+\\.\\w+|login|register|forgot-password).*)',
+    '/resources/:path*', // Protect all resources paths
   ],
 };
 
@@ -32,14 +33,16 @@ export default function middleware(request: NextRequest) {
   // Check if the path is public
   const isPublicPath = publicPaths.includes(pathname);
 
+  // Check if the path is a protected resource
+  const isProtectedResource = pathname.startsWith('/resources/');
+
   // If the path is public and user is logged in, redirect to dashboard
-  
   if (isPublicPath && token) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // If the path is protected and user is not logged in, redirect to login
-  if (!isPublicPath && !token) {
+  // If the path is protected (including protected resources) and user is not logged in, redirect to login
+  if ((!isPublicPath || isProtectedResource) && !token) {
     const from = encodeURIComponent(pathname);
     return NextResponse.redirect(
       new URL(`/login?from=${from}`, request.url)

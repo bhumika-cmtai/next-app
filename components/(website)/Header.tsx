@@ -27,7 +27,7 @@ const Header = () => {
   }, [isMenuOpen]);
 
   const navLinks = [
-    { href: "#home", label: "Home" },
+    { href: "/", label: "Home" },
     { href: "#aboutus", label: "About Us" },
     { href: "#join", label: "Who Can Join?" },
     { href: "#contactus", label: "Contact Us" },
@@ -61,7 +61,7 @@ const Header = () => {
 
         <div className="hidden lg:block  ">
           <Link
-            href="#"
+            href="/get-started"
             className="flex items-center justify-center gap-1 bg-sea-green-100 rounded-full 
                        px-4 py-2 font-semibold text-gray-800 transition-all text-lg border-2 border-sea-green-100 drop-shadow-gold-200/70 drop-shadow-lg"
           >
@@ -96,7 +96,7 @@ const Header = () => {
         </ul>
         <div className="p-4 border-t border-gray-200 flex justify-center">
           <Link
-            href="#"
+            href="/get-started"
             onClick={() => setIsMenuOpen(false)}
             className="flex items-center justify-center gap-1 bg-sea-green-100 rounded-full 
                        px-4 py-2 font-semibold text-gray-800 transition-all text-lg border-2 border-sea-green-100 drop-shadow-gold-200/70 drop-shadow-lg bg-[length:200%_auto] hover:bg-[right_center]"

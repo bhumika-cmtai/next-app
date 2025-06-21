@@ -252,7 +252,9 @@ export default function Users() {
                           {user.status || 'N/A'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{user.createdOn}</TableCell>
+                      <TableCell>
+                      {user.createdOn ? new Date(parseInt(user.createdOn, 10)).toLocaleDateString() : '-'}
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Dialog open={modalOpen && editUser?._id === user._id} onOpenChange={(open) => {

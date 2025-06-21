@@ -205,7 +205,7 @@ export default function Leads() {
                       <TableCell>{lead.source}</TableCell>
                       <TableCell><Badge className={`${getStatusColor(lead.status)} text-white`}>{lead.status}</Badge></TableCell>
                       <TableCell><div className="max-w-[200px] truncate text-sm text-gray-600">{lead.message || '-'}</div></TableCell>
-                      <TableCell>{lead.createdOn ? new Date(lead.createdOn).toLocaleDateString() : '-'}</TableCell>
+                      <TableCell>{lead.createdOn ? new Date(parseInt(lead.createdOn)).toLocaleDateString() : '-'}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button size="icon" variant="ghost" onClick={() => openEditModal(lead)}><Edit className="w-4 h-4" /></Button>

@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
   ];
   
   const supportLinks = [
-      { name: "Contact", href: "/contact" },
+      { name: "Contact", href: "#contact" },
   ];
 
   return (
@@ -131,7 +131,7 @@ const Footer: React.FC = () => {
           <p className="mb-4 sm:mb-0 font-medium text-gray-700">
             © 2025 Grow up || All Rights Reserved
           </p>
-          <Link href="/terms" className="hover:text-black transition-colors font-medium text-gray-700">
+          <Link href="/https://earn4files.yolasite.com/resources/1.png" className="hover:text-black transition-colors font-medium text-gray-700">
             Terms & Conditions
           </Link>
         </div>

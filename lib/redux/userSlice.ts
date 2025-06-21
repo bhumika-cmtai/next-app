@@ -80,7 +80,7 @@ export const fetchUsers = (params?: { search?: string; status?: string; page?: n
   dispatch(setLoading(true));
   try {
     const query = [];
-    if (params?.search) query.push(`search=${encodeURIComponent(params.search)}`);
+    if (params?.search) query.push(`searchQuery=${encodeURIComponent(params.search)}`);
     if (params?.status && params.status !== 'all') query.push(`status=${encodeURIComponent(params.status)}`);
     if (params?.page) query.push(`page=${params.page}`);
     const queryString = query.length ? `?${query.join('&')}` : '';
