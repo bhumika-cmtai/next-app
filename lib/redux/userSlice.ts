@@ -10,6 +10,7 @@ export interface User {
   role: string;
   password?: string;
   status?: string;
+  tlcode?:string;
   createdOn?: string;
   updatedOn?: string;
 }

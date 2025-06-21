@@ -216,6 +216,7 @@ export default function Users() {
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>TLCode</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -252,6 +253,7 @@ export default function Users() {
                           {user.status || 'N/A'}
                         </Badge>
                       </TableCell>
+                      <TableCell>{user.tlcode || '-'}</TableCell>
                       <TableCell>
                       {user.createdOn ? new Date(parseInt(user.createdOn, 10)).toLocaleDateString() : '-'}
                       </TableCell>

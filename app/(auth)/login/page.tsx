@@ -18,6 +18,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import Cookies from 'js-cookie';
+import { motion } from "framer-motion";
+import Image from 'next/image';
 
 // LoginForm component that uses useSearchParams
 const LoginForm = () => {
@@ -49,8 +51,7 @@ const LoginForm = () => {
         toast.success("Successfully logged in!");
 
         // Redirect to the intended page or dashboard
-        const from = searchParams.get('from') || '/dashboard';
-        router.push(from);
+        router.push("/dashboard");
       } else {
         toast.error("Invalid email or password");
       }
@@ -69,35 +70,39 @@ const LoginForm = () => {
           <Label htmlFor="email">Email</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              className="pl-10"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={isLoading}
-            />
+            <div className={`rounded-xl p-[1.5px] ${isLoading ? "bg-gray-200" :"bg-gradient-to-r from-purple-300 via-cyan-400 to-green-300 "}`}>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                className={`w-full px-3 py-2 bg-white rounded-[10px] border-none outline-none pl-10 ${isLoading && "bg-gray-200"}`}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                />
+              </div>
           </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              className="pl-10"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isLoading}
-            />
+            <div className={`rounded-xl p-[1.5px] ${isLoading ? "bg-gray-200" :"bg-gradient-to-r from-purple-300 via-cyan-400 to-green-300 "}`}>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                className="w-full px-3 py-2 bg-white rounded-[10px] border-none outline-none pl-10"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 mb-4">
           <Checkbox
             id="remember"
             checked={rememberMe}
@@ -128,23 +133,51 @@ const LoginForm = () => {
   );
 };
 
-// Main Login page component
-const Login = () => {
+const Login = () =>{
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-          <CardDescription>
-            Enter your email and password to access your account
-          </CardDescription>
-        </CardHeader>
-        <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
-          <LoginForm />
-        </Suspense>
-      </Card>
-    </div>
-  );
-};
+    <section
+      className="w-full min-h-screen relative flex items-center justify-center px-4 py-8 bg-[#F8FAFF] overflow-hidden"
+      id="login"
+    >
+      <div className="w-full max-w-6xl flex flex-col md:flex-row items-center md:items-end justify-center gap-8 lg:gap-16 relative z-10">
+        
+        {/* Left Side: Illustration */}
+        <div className="flex justify-center">
+          <Image
+            src="/loginImg.png"
+            width={300}
+            height={300}
+            alt="Login Illustration"
+            className="hidden md:block md:w-[300px] object-contain"
+          />
+        </div>
+
+        {/* Right Side: Form */}
+        <div className="w-full max-w-md bg-gradient-to-br from-[#F0FAF7]/80 to-[#EFF8FF]/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl">
+          <h1 className="text-4xl font-bold text-gray-900 mb-6">Admin Login</h1>
+         <LoginForm />
+        </div>
+      </div>
+
+      {/* blob for right -  */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        whileInView={{ scale: 1, opacity: 0.2 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.5, ease: "easeInOut" }}
+        className="absolute block -right-[100px] top-[60px] lg:-top-[40px] lg:-right-[100px] h-[200px] w-[200px] lg:h-[300px] lg:w-[300px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
+      ></motion.div>
+      {/* blob for left -  */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        whileInView={{ scale: 1, opacity: 0.2 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1, ease: "easeInOut" }}
+        className="absolute block top-[260px] -left-[150px] lg:top-[240px] lg:-left-[300px] lg:h-[600px] h-[200px] w-[200px] lg:w-[600px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
+      ></motion.div>
+    </section>
+  )
+}
+
 
 export default Login;
