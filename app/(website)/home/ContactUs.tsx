@@ -66,8 +66,8 @@ const ContactUs = () => {
               >
                 {/* Replace with your actual phone number */}
                 <React.Fragment>
-                  <div><span className='font-medium text-gray-600 '>Gaurav prajapati</span>: 7318368107</div>
-                  <div><span className='font-medium text-gray-600 '>Priya Verma</span>: +91 98765 43210</div>
+                  <div><span className='font-medium text-gray-600 '>Gaurav prajapati</span>:  +91 7318368107</div>
+                  <div><span className='font-medium text-gray-600 '>Priya Verma</span>:  +91 98765 43210</div>
                 </React.Fragment>
               </ContactInfoItem>
                <ContactInfoItem
