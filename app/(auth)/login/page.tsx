@@ -65,7 +65,7 @@ const LoginForm = () => {
       });
 
       toast.success("Successfully logged in!");
-      router.push("/"); 
+      router.push("/team"); 
 
     } catch (error: any) {
       const errorMessage = error.response?.data?.errorMessage || error.message || "An error occurred while logging in";

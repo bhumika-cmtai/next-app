@@ -1,3 +1,5 @@
+// authSlice.ts
+
 import { createSlice, Dispatch } from "@reduxjs/toolkit";
 import axios from "axios";
 import { RootState } from "../store";
@@ -10,7 +12,7 @@ export interface User {
   address: string;
   phone: string;
   status: string;
-  role: string;
+  role: string; // Ensure role is part of the User interface
   createdOn: string;
   updatedOn: string;
 }
@@ -37,7 +39,7 @@ const authSlice = createSlice({
   reducers: {
     setUser: (state, action) => {
       state.user = action.payload;
-      state.isAuthenticated = true;
+      state.isAuthenticated = !!action.payload; // Set based on payload existence
       state.isLoading = false;
       state.error = null;
     },
@@ -46,97 +48,78 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.error = null;
     },
-    setIsAuthenticated: (state, action) => {
-      state.isAuthenticated = action.payload;
-    },
     setIsLoading: (state, action) => {
       state.isLoading = action.payload;
     },
     setError: (state, action) => {
       state.error = action.payload;
       state.isLoading = false;
-    },  
+    },
+    logoutUser: (state) => {
+      state.user = null;
+      state.isAuthenticated = false;
+    }
   },
 });
 
-export const { setUser, setUsers, setIsAuthenticated, setIsLoading, setError } = authSlice.actions;
+export const { setUser, setUsers, setIsLoading, setError, logoutUser } = authSlice.actions;
 
 export const login = ({ email, password }: { email: string; password: string }) => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
+  dispatch(setError(null)); // Clear previous errors
+
   try {
-    // 1. Call login API
-    const loginRes = await axios.post("/api/routes/auth", { email, password });
-    if (loginRes.status !== 200) {
-      dispatch(setError(loginRes.data.errorMessage || "Login failed"));
-      dispatch(setIsLoading(false));
-      return null;
-    }
-    // 2. Fetch user details (role, etc)
-    const userRes = await axios.get(`/api/routes/auth?email=${encodeURIComponent(email)}`);
-    if (userRes.status !== 200 || !userRes.data.data) {
-      dispatch(setError("Could not fetch user details"));
-      dispatch(setIsLoading(false));
-      return null;
-    }
-    dispatch(setUser(userRes.data.data));
-    dispatch(setError(null));
-    return userRes.data.data;
-  } catch (error: unknown) {
-  let message = "Unknown error";
+    const response = await axios.post(`/auth/user/login`, { email, password });
 
-  if (error instanceof Error) {
-    message = error.message;
-  } else if (
-    typeof error === "object" &&
-    error !== null &&
-    "response" in error &&
-    typeof (error as { response?: { data?: { errorMessage?: string } } }).response?.data?.errorMessage === "string"
-  ) {
-    message = (error as { response: { data: { errorMessage: string } } }).response.data.errorMessage;
-  }
-
-  dispatch(setError(message));
-  return null;
-} finally {
-  dispatch(setIsLoading(false));
-}
-};
-
-export const logout = () => async (dispatch: Dispatch) => {
-  dispatch(setIsLoading(true));
-  try {
-    const response = await axios.post("/api/routes/auth");
-    if (response.status === 200) {
-      dispatch(setUser(null));
-      dispatch(setIsAuthenticated(false));
+    // Expect API to return { data: { user, token } }
+    if (response.status === 200 && response.data?.data?.user && response.data?.data?.token) {
+      const { user, token } = response.data.data;
+      
+      dispatch(setUser(user));
+      
+      // Return the full data object for the component to use
+      return { user, token };
     } else {
-      dispatch(setError(response.data.message));
+      const errorMessage = response.data?.errorMessage || "Login failed: Invalid response from server.";
+      dispatch(setError(errorMessage));
+      return null;
     }
-  } catch (error: unknown) {    
-    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    dispatch(setError(message || "Unknown error"));
+  } catch (error: unknown) {
+    let message = "An unknown error occurred.";
+
+    if (axios.isAxiosError(error) && error.response) {
+      message = error.response.data?.errorMessage || error.message || "Login failed.";
+    } else if (error instanceof Error) {
+      message = error.message;
+    }
+
+    dispatch(setError(message));
+    return null;
   } finally {
     dispatch(setIsLoading(false));
   }
 };
 
-export const registerUser = (user: { email: string; password: string; name?: string; role?: string }) => async (dispatch: Dispatch) => {
+
+export const logout = () => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
   try {
-    const response = await axios.put("/api/routes/auth", user);
-    if (response.status === 200 || response.status === 201) {
-      dispatch(setUser(response.data.data));
-    } else {
-      dispatch(setError(response.data.errorMessage || "Registration failed"));
-    }
+    // You may want to call an API endpoint to invalidate the token server-side
+    // For now, we'll just clear the client state.
+    // await axios.post("/api/auth/logout"); 
+    dispatch(logoutUser());
   } catch (error: any) {
-    const message = error?.response?.data?.errorMessage || error.message || "Unknown error";
+    const message = error?.response?.data?.message || error.message || "Logout failed";
     dispatch(setError(message));
   } finally {
     dispatch(setIsLoading(false));
   }
 };
 
+
+// Other thunks like registerUser...
+
+// Selectors
 export const selectUser = (state: RootState) => state.auth.user;
 export const selectUsers = (state: RootState) => state.auth.users;
 export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
