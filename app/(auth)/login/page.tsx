@@ -88,7 +88,7 @@ const LoginForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-md bg-gradient-to-br from-[#F0FAF7]/80 to-[#EFF8FF]/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-none">
+    <Card className="w-full max-w-sm bg-gradient-to-br from-[#F0FAF7]/80 to-[#EFF8FF]/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-none">
       <CardHeader className="text-center p-0 mb-6">
         <CardTitle className="text-4xl font-bold text-gray-900">
           Sign In
@@ -184,7 +184,7 @@ const LoginPage = () => {
         </div>
 
         {/* Right Side: Form */}
-        <Suspense fallback={<div className="w-full max-w-md h-[450px] bg-white/50 rounded-3xl animate-pulse"></div>}>
+        <Suspense fallback={<div className="w-full max-w-md h-[650px] bg-white/50 rounded-3xl animate-pulse"></div>}>
           <LoginForm />
         </Suspense>
 
