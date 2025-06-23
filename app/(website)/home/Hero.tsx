@@ -21,7 +21,7 @@ const Hero = () => {
     setPopupOpen(false);
   };
   return (
-    <section className="max-w-7xl w-full relative z-10 text-center px-4 " id="home">
+    <section className="max-w-7xl w-full relative  text-center px-4 " id="home">
        <PopupPoster isOpen={isPopupOpen} onClose={handleClosePopup}>
         <Link href="/get-started" >
           <Image 

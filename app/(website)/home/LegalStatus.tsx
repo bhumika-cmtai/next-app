@@ -77,8 +77,8 @@ const LegalStatus: React.FC = () => {
           </div>
 
           <div className="relative w-full overflow-hidden h-20">
-            <div className="absolute top-0 left-0 h-full w-24  z-10" />
-            <div className="absolute top-0 right-0 h-full w-24  z-10" />
+            <div className="absolute top-0 left-0 h-full w-24  " />
+            <div className="absolute top-0 right-0 h-full w-24  " />
 
             <motion.div
               className="absolute top-0 left-0 flex"

@@ -162,7 +162,7 @@ const Page = () => {
             <p className="text-left">PAN Card</p>
             <p className="text-left">Udyam Registration Certificate</p>
             <p className="text-left">GST Certificate</p>
-            <p className="text-left"> <Link className="underline" href="/privacy-policy">Privacy-Policy</Link> | <Link className="underline" href="/Terms and Conditions">Terms and Conditions</Link></p>
+            <p className="text-left"> <Link className="underline" href="/privacy-policy">Privacy-Policy</Link> | <Link className="underline" href="/terms-and-conditions">Terms and Conditions</Link></p>
           </div>
         </div>
       </div>

@@ -23,7 +23,7 @@ const ContactUs = () => {
   return (
     <section className="relative w-full py-10 overflow-hidden" id="contactus">
       {/* Background Emblem Image */}
-      <div className="absolute inset-0 flex items-center justify-center z-0 mt-20">
+      <div className="absolute inset-0 flex items-center justify-center  mt-20">
         <Image
           src="/govtOfIndiaIcon.png" 
           alt="Government Emblem"
@@ -33,7 +33,7 @@ const ContactUs = () => {
         />
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 relative">
         {/* Main Title */}
         <div className="text-center mb-12 md:mb-16">
           <h1 className="text-4xl md:text-5xl font-bold uppercase bg-gradient-to-r from-black via-purple-400 via-60% to-pink-200 bg-clip-text text-transparent">
