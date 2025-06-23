@@ -179,6 +179,21 @@ export const deleteUser = (id: string) => async (dispatch: Dispatch) => {
     dispatch(setError(message || "Unknown error"));
   }
 };
+export const fetchTlCode = (tlcode: string) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getTlCode/${tlcode}`);
+        const data: User = response.data;
+    if (response.status === 200) { 
+      dispatch(setLoading(false)); 
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
+};
 
 export const selectUsers = (state: RootState) => state.users.data;
 export const selectUserById = (state: RootState) => state.users.selectedUser;

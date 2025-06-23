@@ -8,6 +8,7 @@ export interface Client {
   email: string;
   phoneNumber: string;
   status: string;
+  tlCode?: string;
   createdOn?: string;
   updatedOn?: string;
 }

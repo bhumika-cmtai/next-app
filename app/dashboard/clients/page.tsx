@@ -175,6 +175,7 @@ export default function Clients() {
                   <TableHead>Client</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>TlCode</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -196,6 +197,7 @@ export default function Clients() {
                         </div>
                       </TableCell>
                       <TableCell><Badge className={`${getStatusColor(client.status)} text-white`}>{client.status}</Badge></TableCell>
+                      <TableCell>{client.tlCode}</TableCell>
                       <TableCell>{client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : '-'}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">

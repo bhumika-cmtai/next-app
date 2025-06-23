@@ -2,19 +2,11 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox"; // Make sure you have this component
 import { Mail, Lock, Loader2 } from "lucide-react";
-import Link from "next/link";
+
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Cookies from 'js-cookie';
@@ -55,7 +47,7 @@ const Page = () => {
 
         toast.success("Successfully logged in!");
 
-        router.push("/dashboard");
+        router.push("/");
 
       } catch (error: any) {
         // Show a more specific error toast
