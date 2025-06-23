@@ -43,7 +43,7 @@ const Header = () => {
       <nav className='max-w-7xl container flex items-center justify-between p-1 mx-auto px-4'>
         <div className="text-xl font-bold ">
           <Image
-            src="/logoImg3.png"
+            src="/growupIcon.png"
             width={100}
             height={100}
             alt='grow up logo'
