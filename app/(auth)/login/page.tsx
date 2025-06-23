@@ -14,86 +14,117 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Lock, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Cookies from 'js-cookie';
 import { motion } from "framer-motion";
 import Image from 'next/image';
+import axios from 'axios';
 
-// LoginForm component that uses useSearchParams
 const LoginForm = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
+  const handleAdminLogin = async () => {
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // TODO: Replace with your actual API call
-      if (email === "admin@gmail.com" && password === "admin123") {
-        // Set auth token cookie
-        Cookies.set('auth-token', 'dummy-token', {
-          expires: rememberMe ? 30 : 1, // 30 days if remember me is checked, 1 day if not
-          secure: true,
+      if (password === "admin123") {
+        Cookies.set('auth-token', 'dummy-admin-token', {
+          expires: rememberMe ? 30 : 1, 
+          secure: process.env.NODE_ENV !== 'development',
           sameSite: 'lax'
         });
 
-        // Show success message
-        toast.success("Successfully logged in!");
-
-        // Redirect to the intended page or dashboard
+        toast.success("Admin successfully logged in!");
         router.push("/dashboard");
       } else {
-        toast.error("Invalid email or password");
+        toast.error("Invalid admin password");
       }
     } catch (error) {
-      toast.error("An error occurred while logging in");
-      console.error("Login error:", error);
-    } finally {
-      setIsLoading(false);
+      toast.error("An error occurred during admin login");
+      console.error("Admin Login error:", error);
     }
   };
 
+  const handleUserLogin = async () => {
+    try {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/user/login`, { email, password });
+      
+      const data = response.data;
+      const token = data.data.token;
+
+      Cookies.set('user-token', token, {
+        expires: rememberMe ? 30 : undefined, 
+        secure: process.env.NODE_ENV !== 'development',
+        sameSite: 'lax'
+      });
+
+      toast.success("Successfully logged in!");
+      router.push("/"); 
+
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.errorMessage || error.message || "An error occurred while logging in";
+      toast.error(errorMessage);
+      console.error("User Login error:", error);
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    if (email.toLowerCase() === "admin@gmail.com") {
+      await handleAdminLogin();
+    } else {
+      await handleUserLogin();
+    }
+    
+    setIsLoading(false);
+  };
+
   return (
-    <form onSubmit={handleSubmit}>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
-            <div className={`rounded-xl p-[1.5px] ${isLoading ? "bg-gray-200" :"bg-gradient-to-r from-purple-300 via-cyan-400 to-green-300 "}`}>
+    <Card className="w-full max-w-md bg-gradient-to-br from-[#F0FAF7]/80 to-[#EFF8FF]/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-none">
+      <CardHeader className="text-center p-0 mb-6">
+        <CardTitle className="text-4xl font-bold text-gray-900">
+          Sign In
+        </CardTitle>
+        <CardDescription>
+          Enter your credentials to access your account.
+        </CardDescription>
+      </CardHeader>
+      
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4 p-0">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
-                className={`w-full px-3 py-2 bg-white rounded-[10px] border-none outline-none pl-10 ${isLoading && "bg-gray-200"}`}
+                placeholder="m@example.com"
+                className="pl-10"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
-                />
-              </div>
+              />
+            </div>
           </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-2 h-5 w-5 text-gray-400" />
-            <div className={`rounded-xl p-[1.5px] ${isLoading ? "bg-gray-200" :"bg-gradient-to-r from-purple-300 via-cyan-400 to-green-300 "}`}>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 id="password"
                 type="password"
                 placeholder="Enter your password"
-                className="w-full px-3 py-2 bg-white rounded-[10px] border-none outline-none pl-10"
+                className="pl-10"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -101,39 +132,39 @@ const LoginForm = () => {
               />
             </div>
           </div>
-        </div>
-        <div className="flex items-center space-x-2 mb-4">
-          <Checkbox
-            id="remember"
-            checked={rememberMe}
-            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-            disabled={isLoading}
-          />
-          <label
-            htmlFor="remember"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Remember me
-          </label>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button className="w-full" type="submit" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Please wait
-            </>
-          ) : (
-            "Sign In"
-          )}
-        </Button>
-      </CardFooter>
-    </form>
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox
+              id="remember"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              disabled={isLoading}
+            />
+            <label
+              htmlFor="remember"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Remember me
+            </label>
+          </div>
+        </CardContent>
+        <CardFooter className="p-0 pt-6">
+          <Button className="w-full" type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Please wait
+              </>
+            ) : (
+              "Sign In"
+            )}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   );
 };
 
-const Login = () =>{
+const LoginPage = () => {
   return (
     <section
       className="w-full min-h-screen relative flex items-center justify-center px-4 py-8 bg-[#F8FAFF] overflow-hidden"
@@ -153,13 +184,13 @@ const Login = () =>{
         </div>
 
         {/* Right Side: Form */}
-        <div className="w-full max-w-md bg-gradient-to-br from-[#F0FAF7]/80 to-[#EFF8FF]/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl">
-          <h1 className="text-4xl font-bold text-gray-900 mb-6">Admin Login</h1>
-         <LoginForm />
-        </div>
+        <Suspense fallback={<div className="w-full max-w-md h-[450px] bg-white/50 rounded-3xl animate-pulse"></div>}>
+          <LoginForm />
+        </Suspense>
+
       </div>
 
-      {/* blob for right -  */}
+      {/* Background Blobs */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         whileInView={{ scale: 1, opacity: 0.2 }}
@@ -167,7 +198,6 @@ const Login = () =>{
         transition={{ duration: 1.5, ease: "easeInOut" }}
         className="absolute block -right-[100px] top-[60px] lg:-top-[40px] lg:-right-[100px] h-[200px] w-[200px] lg:h-[300px] lg:w-[300px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
       ></motion.div>
-      {/* blob for left -  */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         whileInView={{ scale: 1, opacity: 0.2 }}
@@ -179,5 +209,4 @@ const Login = () =>{
   )
 }
 
-
-export default Login;
+export default LoginPage;

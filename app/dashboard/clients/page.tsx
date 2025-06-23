@@ -175,7 +175,7 @@ export default function Clients() {
                   <TableHead>Client</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>TlCode</TableHead>
+                  <TableHead>TLCode</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
