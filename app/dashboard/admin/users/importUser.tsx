@@ -185,7 +185,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                 city: row[fieldMapping.city] || "",
                 role: row[fieldMapping.role] || "user",
                 password: generatedPassword,
-                status: row[fieldMapping.status] || "new",
+                status: row[fieldMapping.status] || "Active",
                 leaderCode: row[fieldMapping.leaderCode] || "",
                 abhi_aap_kya_karte_hai: row[fieldMapping.abhi_aap_kya_karte_hai] || "",
                 work_experience: row[fieldMapping.work_experience] || "",
@@ -196,22 +196,26 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
             console.log('Mapped users:', mappedData);
             const response = await dispatch(addManyUsers(mappedData));
             if (response.payload) {
-              toast.success(`Successfully parsed ${mappedData.length} users`);
+              toast.success(`Successfully imported ${mappedData.length} users`);
               handleReset();
               onOpenChange(false);
               onImportSuccess?.();
+            } else {
+              toast.error("Failed to import users: " + (response.error?.message || "Unknown error"));
             }
           } catch (error) {
             toast.error("Error processing data: " + (error as Error).message);
+          } finally {
+            setIsProcessing(false);
           }
         },
         error: (error) => {
           toast.error("Error parsing CSV: " + error.message);
+          setIsProcessing(false);
         },
       });
     } catch (error) {
       toast.error("Import failed: " + (error as Error).message);
-    } finally {
       setIsProcessing(false);
     }
   };

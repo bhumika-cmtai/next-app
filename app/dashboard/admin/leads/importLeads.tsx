@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, ChangeEvent, DragEvent } from "react";
-import { FileUp, X } from "lucide-react";
+import { useState, ChangeEvent, DragEvent, useEffect } from "react";
+import { FileUp, X, Loader2 } from "lucide-react";
 import Papa from "papaparse";
 import {
   Dialog,
@@ -29,6 +29,9 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { addManyLeads } from "@/lib/redux/leadSlice";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/lib/store";
 
 interface ImportUserProps {
   open: boolean;
@@ -39,35 +42,39 @@ interface ImportUserProps {
 interface ParsedUser {
   name: string;
   email: string;
-  phone: string;
+  phoneNumber: string;
   qualification: string;
   city: string;
   date_of_birth: string;
   gender: string;
   message: string;
   status: string;
-  bio?: string;
+  source: string;
+  portal_Name: string;
   password?: string;
-  role?: string;
 }
 
 export default function ImportUser({ open, onOpenChange, onImportSuccess }: ImportUserProps) {
+  const dispatch = useDispatch<AppDispatch>();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileHeaders, setFileHeaders] = useState<string[]>([]);
   const [previewData, setPreviewData] = useState<any[]>([]);
+  const [allData, setAllData] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 5;
   const [fieldMapping, setFieldMapping] = useState<Record<string, string>>({
     name: "",
     email: "",
-    phone: "",
+    phoneNumber: "",
     qualification: "",
     city: "",
     date_of_birth: "",
     gender: "",
     message: "",
     status: "",
-    bio: "",
-    password: "",
-    role: "",
+    source: "",
+    portal_Name: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -109,18 +116,34 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      preview: 5,
       complete: (results) => {
         if (results.data.length > 0 && typeof results.data[0] === 'object' && results.data[0] !== null) {
           const headers = Object.keys(results.data[0] as object);
           setFileHeaders(headers);
-          setPreviewData(results.data);
+          setAllData(results.data);
+          setTotalPages(Math.ceil(results.data.length / itemsPerPage));
+          setCurrentPage(1);
+          setPreviewData(results.data.slice(0, itemsPerPage));
         }
       },
       error: (error) => {
         toast.error("Error reading CSV file: " + error.message);
       }
     });
+  };
+
+  useEffect(() => {
+    if (allData.length > 0) {
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      setPreviewData(allData.slice(startIndex, endIndex));
+    }
+  }, [currentPage, allData]);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   const handleFieldMapping = (field: string, value: string) => {
@@ -131,7 +154,15 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
   };
 
   const handleImport = async () => {
-    if (!selectedFile || Object.values(fieldMapping).some(v => !v)) return;
+    const requiredFields = ["name", "email", "phoneNumber"];
+    const missingRequiredFields = requiredFields.filter(field => !fieldMapping[field]);
+    
+    if (!selectedFile || missingRequiredFields.length > 0) {
+      if (missingRequiredFields.length > 0) {
+        toast.error(`Please map required fields: ${missingRequiredFields.join(", ")}`);
+      }
+      return;
+    }
     
     setIsProcessing(true);
     
@@ -139,39 +170,49 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       Papa.parse(selectedFile, {
         header: true,
         skipEmptyLines: true,
-        complete: (results) => {
-          const mappedData = results.data.map((row: any) => {
-            const mappedUser: ParsedUser = {
-              name: row[fieldMapping.name],
-              email: row[fieldMapping.email],
-              phone: row[fieldMapping.phone],
-              qualification: row[fieldMapping.qualification],
-              city: row[fieldMapping.city],
-              date_of_birth: row[fieldMapping.date_of_birth],
-              gender: row[fieldMapping.gender],
-              message: row[fieldMapping.message],
-              status: row[fieldMapping.status],
-              bio: fieldMapping.bio ? row[fieldMapping.bio] : undefined,
-              password: fieldMapping.password ? row[fieldMapping.password] : undefined,
-              role: fieldMapping.role ? row[fieldMapping.role] : undefined,
-            };
-            return mappedUser;
-          });
+        complete: async (results) => {
+          try {
+            const mappedData = results.data.map((row: any) => {
+              const mappedUser: ParsedUser = {
+                name: row[fieldMapping.name],
+                email: row[fieldMapping.email],
+                phoneNumber: row[fieldMapping.phoneNumber],
+                qualification: row[fieldMapping.qualification],
+                city: row[fieldMapping.city],
+                date_of_birth: row[fieldMapping.date_of_birth],
+                gender: row[fieldMapping.gender],
+                message: row[fieldMapping.message],
+                status: row[fieldMapping.status],
+                source: row[fieldMapping.source] || "",
+                portal_Name: row[fieldMapping.portal_Name] || "",
+                password: fieldMapping.password ? row[fieldMapping.password] : undefined,
+              };
+              return mappedUser;
+            });
 
-          console.log('Mapped leads:', mappedData);
-          toast.success(`Successfully parsed ${mappedData.length} leads`);
-          
-          handleReset();
-          onOpenChange(false);
-          onImportSuccess?.();
+            console.log('Mapped leads:', mappedData);
+            const response = await dispatch(addManyLeads(mappedData));
+            if (response.payload) {
+              toast.success(`Successfully imported ${mappedData.length} leads`);
+              handleReset();
+              onOpenChange(false);
+              onImportSuccess?.();
+            } else {
+              toast.error("Failed to import leads: " + (response.error?.message || "Unknown error"));
+            }
+          } catch (error) {
+            toast.error("Error processing data: " + (error as Error).message);
+          } finally {
+            setIsProcessing(false);
+          }
         },
         error: (error) => {
           toast.error("Error parsing CSV: " + error.message);
+          setIsProcessing(false);
         },
       });
     } catch (error) {
       toast.error("Import failed: " + (error as Error).message);
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -180,19 +221,22 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     setSelectedFile(null);
     setFileHeaders([]);
     setPreviewData([]);
+    setAllData([]);
+    setCurrentPage(1);
+    setTotalPages(1);
     setFieldMapping({
       name: "",
       email: "",
-      phone: "",
+      phoneNumber: "",
       qualification: "",
       city: "",
       date_of_birth: "",
       gender: "",
       message: "",
       status: "",
-      bio: "",
+      source: "",
+      portal_Name: "",
       password: "",
-      role: "",
     });
   };
 
@@ -272,15 +316,21 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                   <div className="space-y-6">
                     <div className="border rounded-lg p-6 bg-muted/50">
                       <h3 className="text-lg font-semibold mb-6">Preview & Field Mapping</h3>
+                      <p className="text-sm text-muted-foreground mb-4">Fields marked with <span className="text-red-500">*</span> are required</p>
                       <div className="flex gap-6 overflow-x-auto pb-4">
-                        {Object.keys(fieldMapping).map((field) => (
+                        {Object.keys(fieldMapping).map((field) => {
+                          const isRequired = ["name", "email", "phoneNumber"].includes(field);
+                          return (
                           <div key={field} className="min-w-[200px]">
-                            <label className="text-sm font-medium capitalize block mb-2">{field.replace('_', ' ')}</label>
+                            <label className="text-sm font-medium capitalize block mb-2">
+                              {field.replace(/_/g, ' ')}
+                              {isRequired && <span className="text-red-500 ml-1">*</span>}
+                            </label>
                             <Select
                               value={fieldMapping[field]}
                               onValueChange={(value) => handleFieldMapping(field, value)}
                             >
-                              <SelectTrigger className="w-full bg-white">
+                              <SelectTrigger className={`w-full bg-white ${isRequired && !fieldMapping[field] ? "border-red-500" : ""}`}>
                                 <SelectValue placeholder="Unmapped" />
                               </SelectTrigger>
                               <SelectContent>
@@ -292,7 +342,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                               </SelectContent>
                             </Select>
                           </div>
-                        ))}
+                        )})}
                       </div>
                     </div>
 
@@ -320,7 +370,92 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                           </TableBody>
                         </Table>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-2">Showing first 5 rows of data</p>
+                      <div className="flex items-center justify-between mt-4">
+                        <p className="text-sm text-muted-foreground">
+                          Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, allData.length)} of {allData.length} entries
+                        </p>
+                        {totalPages > 1 && (
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              disabled={currentPage === 1}
+                            >
+                              Previous
+                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant={currentPage === 1 ? "default" : "outline"}
+                                size="sm"
+                                className="w-8 h-8 p-0"
+                                onClick={() => handlePageChange(1)}
+                              >
+                                1
+                              </Button>
+                              
+                              {currentPage > 3 && (
+                                <span className="px-2">...</span>
+                              )}
+                              
+                              {totalPages > 1 && currentPage !== 1 && currentPage !== totalPages && (
+                                <>
+                                  {currentPage > 2 && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="w-8 h-8 p-0"
+                                      onClick={() => handlePageChange(currentPage - 1)}
+                                    >
+                                      {currentPage - 1}
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    className="w-8 h-8 p-0"
+                                  >
+                                    {currentPage}
+                                  </Button>
+                                  {currentPage < totalPages - 1 && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="w-8 h-8 p-0"
+                                      onClick={() => handlePageChange(currentPage + 1)}
+                                    >
+                                      {currentPage + 1}
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+                              
+                              {currentPage < totalPages - 2 && (
+                                <span className="px-2">...</span>
+                              )}
+                              
+                              {totalPages > 1 && (
+                                <Button
+                                  variant={currentPage === totalPages ? "default" : "outline"}
+                                  size="sm"
+                                  className="w-8 h-8 p-0"
+                                  onClick={() => handlePageChange(totalPages)}
+                                >
+                                  {totalPages}
+                                </Button>
+                              )}
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              disabled={currentPage === totalPages}
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -333,11 +468,19 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
           <div className="flex gap-2">
             <Button
               type="button"
-              disabled={!selectedFile || Object.values(fieldMapping).some(v => !v) || isProcessing}
+              disabled={!selectedFile || ["name", "email", "phoneNumber"].some(field => !fieldMapping[field]) || isProcessing}
               onClick={handleImport}
               size="lg"
+              className="min-w-[150px]"
             >
-              {isProcessing ? "Processing..." : "Import Leads"}
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Import Leads"
+              )}
             </Button>
             <DialogClose asChild>
               <Button type="button" variant="outline" size="lg">
