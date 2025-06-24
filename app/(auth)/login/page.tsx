@@ -61,7 +61,7 @@ const LoginForm = () => {
       if (result.user.role === 'admin') {
         router.push('/dashboard/admin/users');
       } else {
-        router.push('/dashboard/user');
+        router.push('/dashboard/team');
       }
     }
   };

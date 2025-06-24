@@ -55,7 +55,7 @@ const Hero = () => {
                     </motion.div>
                 </div>
 
-               <div className=' lg:col-span-2 col-start-5 w-[320px] h-auto  overflow-hidden rounded-xl'>       
+               <div className=' lg:col-span-2 col-start-5 w-[320px] sm:place-self-center lg:place-self-start h-auto  overflow-hidden rounded-xl'>       
                     <Image 
                       src="/liveVideo2-unscreen.gif"
                       alt='livevideo'

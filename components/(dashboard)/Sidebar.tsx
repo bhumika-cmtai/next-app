@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutGrid },
-  { name: "Users", href: "/dashboard/users", icon: Users },
-  { name: "Leads", href: "/dashboard/leads", icon: FileText },
-  { name: "Contacts", href: "/dashboard/contacts", icon: Contact },
-  { name: "Clients", href: "/dashboard/clients", icon: User },
+  { name: "Dashboard", href: "/dashboard/admin", icon: LayoutGrid },
+  { name: "Users", href: "/dashboard/admin/users", icon: Users },
+  { name: "Leads", href: "/dashboard/admin/leads", icon: FileText },
+  { name: "Contacts", href: "/dashboard/admin/contacts", icon: Contact },
+  { name: "Clients", href: "/dashboard/admin/clients", icon: User },
   { name: "Logout", href: "/logout", icon: LogOut },
 ];
 

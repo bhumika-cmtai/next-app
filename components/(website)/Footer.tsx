@@ -115,14 +115,7 @@ const Footer: React.FC = () => {
               ))}
             </ul>
             
-            <h3 className="text-lg font-bold mb-4">Newsletter</h3>
-            <div className="relative p-[2px] rounded-full bg-gradient-to-r from-green-300 to-yellow-400">
-               <input 
-                 type="email" 
-                 placeholder="Your email*"
-                 className="w-full bg-green-100/80 rounded-full py-3 px-6 text-sm text-gray-700 placeholder-gray-500 border-none focus:ring-2 focus:ring-green-400 focus:outline-none"
-               />
-            </div>
+            
           </div>
 
         </div>
