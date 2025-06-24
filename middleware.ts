@@ -28,7 +28,7 @@ export default function middleware(request: NextRequest) {
     // If it's the homepage, always allow access, regardless of login status.
     return NextResponse.next();
   }
-  const publicPaths = ['/get-started','/login', '/register', '/forgot-password', '/members/login', '/privacy-policy', '/terms-and-conditions','/get-started', '/team'];
+  const publicPaths = ['/login', '/register', '/forgot-password', '/members/login'];
   
   // Check if the path is public
   const isPublicPath = publicPaths.includes(pathname);

@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 
-// Import shadcn/ui components
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,9 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { cn } from '@/lib/utils'; // Make sure to import cn utility
+import { cn } from '@/lib/utils'; 
 
-// Define the type for a single lead
 interface Lead {
   id: number;
   name: string;
@@ -33,25 +31,20 @@ interface Lead {
   reason?: string;
 }
 
-// Hardcoded data for the leads table
 const initialLeads: Lead[] = [
   { id: 1, name: 'Alice Johnson', phoneNumber: '555-0101', status: 'New' },
   { id: 2, name: 'Bob Williams', phoneNumber: '555-0102', status: 'New' },
   { id: 3, name: 'Charlie Brown', phoneNumber: '555-0103', status: 'New' },
 ];
 
-// Define status types for cleaner usage in the Select component
 type Status = 'Interested' | 'Not Interested';
 
 const TeamsPage = () => {
-  // State for the "User Dashboard" section
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
 
-  // State for the "Get Leads" section
   const [showLeadsTable, setShowLeadsTable] = useState(false);
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   
-  // State for managing inline editing
   const [editingLeadId, setEditingLeadId] = useState<number | null>(null);
   const [notInterestedReason, setNotInterestedReason] = useState('');
   const [showReasonInput, setShowReasonInput] = useState(false);
@@ -108,16 +101,12 @@ const TeamsPage = () => {
   };
 
   return (
-    // 1. Full-screen container with the gradient background
-    <main className="min-h-screen bg-gradient-to-r from-pink-50 p-10  to-sea-green-100/30">
+    <main className="min-h-screen bg-gray-700/80 p-10">
       
-      {/* 2. Centered content area for all components */}
       <div className="w-full max-w-2xl mx-auto space-y-8">
         
-        {/* Container for the top two cards, arranged side-by-side on larger screens */}
         <div className="flex flex-col gap-8">
           
-          {/* Card 1: User Dashboard */}
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl text-center font-bold">User Dashboard</CardTitle>
@@ -147,7 +136,6 @@ const TeamsPage = () => {
           </Card>
         </div>
 
-        {/* Card 3: Leads Table (conditionally rendered) */}
         {showLeadsTable && (
           <Card>
             <CardContent className="p-0">

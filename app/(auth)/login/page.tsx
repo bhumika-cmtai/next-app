@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,14 +20,53 @@ import Cookies from 'js-cookie';
 import { motion } from "framer-motion";
 import Image from 'next/image';
 import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch } from '@/lib/store';
+import { login, selectIsLoading } from '@/lib/redux/authSlice';
+import { selectError, setError } from '@/lib/redux/userSlice';
 
 const LoginForm = () => {
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+
+  const isLoading = useSelector(selectIsLoading);
+  const error = useSelector(selectError);
+
+   useEffect(() => {
+    if (error) {
+      toast.error(error);
+      dispatch(setError(null));
+    }
+  }, [error, dispatch]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    console.log("handle submit log")
+    const result = await dispatch(login({ email, password }));
+
+    if (result && result.user && result.token) {
+      Cookies.set('auth-token', result.token, {
+        expires: rememberMe ? 30 : 1, 
+        sameSite: 'lax'
+      });
+
+      toast.success("Successfully logged in!");
+
+      console.log(result.user)
+      if (result.user.role === 'admin') {
+        router.push('/dashboard/admin/users');
+      } else {
+        router.push('/dashboard/user');
+      }
+    }
+  };
+
+
 
   const handleAdminLogin = async () => {
     try {
@@ -74,18 +113,18 @@ const LoginForm = () => {
     }
   };
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setIsLoading(true);
 
-    if (email.toLowerCase() === "admin@gmail.com") {
-      await handleAdminLogin();
-    } else {
-      await handleUserLogin();
-    }
+  //   if (email.toLowerCase() === "admin@gmail.com") {
+  //     await handleAdminLogin();
+  //   } else {
+  //     await handleUserLogin();
+  //   }
     
-    setIsLoading(false);
-  };
+  //   setIsLoading(false);
+  // };
 
   return (
     <Card className="w-full max-w-sm bg-gradient-to-br from-[#F0FAF7]/80 to-[#EFF8FF]/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-none">

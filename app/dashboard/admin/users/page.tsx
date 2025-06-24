@@ -117,11 +117,10 @@ export default function Users() {
         const updatedUserPayload: User = { ...editUser, ...form };
         response = await dispatch(updateUser(editUser._id, updatedUserPayload));
       } else {
-        // For adding, create a new user object with required fields
         const newUserPayload: User = {
           ...form,
-          role: "user", // Default role
-          password: "defaultPassword123", // Backend requires password on creation
+          role: "user", 
+          password: "123", 
         };
         response = await dispatch(addUser(newUserPayload));
       }
@@ -129,10 +128,8 @@ export default function Users() {
       if (response) {
         setModalOpen(false);
         setEditUser(null);
-        // Refresh the user list to show the new/updated user
         dispatch(fetchUsers({ search: debouncedSearch, status, page: currentPage }));
       }
-      // If response is null, the slice has already dispatched an error.
     } catch (error) {
       console.error("An unexpected error occurred during form submission:", error);
     } finally {
@@ -140,7 +137,6 @@ export default function Users() {
     }
   };
 
- // *change here* - Implemented user deletion logic
   const handleDelete = async () => {
     if (!deleteUser || !deleteUser._id) return;
 
@@ -148,12 +144,10 @@ export default function Users() {
     try {
       const response = await dispatch(deleteUserAction(deleteUser._id));
       if (response) {
-        setDeleteUser(null); // Close the confirmation dialog
+        setDeleteUser(null); 
         
-        // If the last item on a page is deleted, fetch the previous page
         const newPage = users.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
         
-        // Refresh the user list
         dispatch(fetchUsers({ search: debouncedSearch, status, page: newPage }));
       }
     } catch (error) {
@@ -164,7 +158,6 @@ export default function Users() {
   };
 
   const handleImportSuccess = () => {
-    // Refresh the users list after successful import
     dispatch(fetchUsers());
   };
 

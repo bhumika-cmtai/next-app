@@ -5,12 +5,10 @@ import axios from "axios";
 import { RootState } from "../store";
 
 export interface User {
-  uid: string;
+  _id: string;
   email: string;
-  name?: string;
-  username: string;
-  address: string;
-  phone: string;
+  name: string;
+  phoneNumber: string;
   status: string;
   role: string; // Ensure role is part of the User interface
   createdOn: string;
@@ -39,7 +37,7 @@ const authSlice = createSlice({
   reducers: {
     setUser: (state, action) => {
       state.user = action.payload;
-      state.isAuthenticated = !!action.payload; // Set based on payload existence
+      state.isAuthenticated = !!action.payload;
       state.isLoading = false;
       state.error = null;
     },
@@ -58,26 +56,25 @@ const authSlice = createSlice({
     logoutUser: (state) => {
       state.user = null;
       state.isAuthenticated = false;
-    }
+      state.error = null;
+    },
   },
 });
+
 
 export const { setUser, setUsers, setIsLoading, setError, logoutUser } = authSlice.actions;
 
 export const login = ({ email, password }: { email: string; password: string }) => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
-  dispatch(setError(null)); // Clear previous errors
+  dispatch(setError(null));
 
   try {
-    const response = await axios.post(`/auth/user/login`, { email, password });
-
-    // Expect API to return { data: { user, token } }
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/user/login`, { email, password });
+    console.log(response)
     if (response.status === 200 && response.data?.data?.user && response.data?.data?.token) {
       const { user, token } = response.data.data;
-      
+    
       dispatch(setUser(user));
-      
-      // Return the full data object for the component to use
       return { user, token };
     } else {
       const errorMessage = response.data?.errorMessage || "Login failed: Invalid response from server.";
@@ -92,13 +89,12 @@ export const login = ({ email, password }: { email: string; password: string }) 
     } else if (error instanceof Error) {
       message = error.message;
     }
-
+    
     dispatch(setError(message));
     return null;
-  } finally {
-    dispatch(setIsLoading(false));
-  }
+  } 
 };
+
 
 
 export const logout = () => async (dispatch: Dispatch) => {

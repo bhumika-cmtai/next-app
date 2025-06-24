@@ -52,7 +52,7 @@ const WhoCanJoin: React.FC = () => {
           </p>        
         <div className='mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-10 justify-items-center'>
             {usersData.map((user)=> (
-                <div key={user.title} className='bg-gradient-to-br from-purple-400/40 to-gold-200/70 w-full max-w-[240px] h-[300px] border border-purple-400 rounded-3xl p-6 flex flex-col items-center justify-around shadow-md hover:shadow-xl transition-shadow duration-300'>
+                <div key={user.title} className='bg-gradient-to-br from-purple-400/40 to-gold-200/70 w-full max-w-[240px] h-[300px] border border-purple-400 rounded-3xl p-6 flex flex-col items-center justify-around shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-[4px] '>
                     <Image 
                         alt={user.title}
                         src={user.icon}
