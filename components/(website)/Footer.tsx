@@ -1,3 +1,4 @@
+"use client"
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -12,15 +13,15 @@ const Footer: React.FC = () => {
   ];
 
   const usefulLinks = [
-    { name: "Home", href: "#" },
-    { name: "About Us", href: "#aboutus" },
-    { name: "What We Do", href: "#whatwedo" },
-    { name: "Who Can Join", href: "#join" },
-    { name: "Why Choose Us?", href: "#whychooseus" },
+    { name: "Home", href: "" },
+    { name: "About Us", href: "aboutus" },
+    { name: "What We Do", href: "whatwedo" },
+    { name: "Who Can Join", href: "join" },
+    { name: "Why Choose Us?", href: "whychooseus" },
   ];
   
   const supportLinks = [
-      { name: "Contact", href: "#contact" },
+      { name: "Contact", href: "contactus" },
   ];
 
   return (
@@ -95,9 +96,13 @@ const Footer: React.FC = () => {
             <ul className="space-y-2">
               {usefulLinks.map((link) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="text-gray-600 text-base hover:text-black transition-colors">
+                  <button onClick={() => {
+                  document.getElementById(`${link.href}`)?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="text-gray-600 hover:text-black transition-colors"
+                >
                     {link.name}
-                  </Link>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -108,9 +113,13 @@ const Footer: React.FC = () => {
              <ul className="space-y-3 mb-8">
               {supportLinks.map((link) => (
                 <li key={link.name}>
-                  <Link href={link.href} className="text-gray-600 hover:text-black transition-colors">
+                  <button onClick={() => {
+                  document.getElementById(`${link.href}`)?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="text-gray-600 hover:text-black transition-colors"
+                >
                     {link.name}
-                  </Link>
+                  </button>
                 </li>
               ))}
             </ul>
