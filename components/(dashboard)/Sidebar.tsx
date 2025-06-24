@@ -63,7 +63,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
           <nav className="grid items-start gap-4 px-6 text-base font-medium">
             {navigation.map((item) => {
               const isActive =
-                item.href === "/dashboard"
+                item.href === "/dashboard/admin"
                   ? pathname === item.href
                   : pathname.startsWith(item.href);
 

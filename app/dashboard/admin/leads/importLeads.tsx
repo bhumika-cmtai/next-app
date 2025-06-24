@@ -40,7 +40,15 @@ interface ParsedUser {
   name: string;
   email: string;
   phone: string;
+  qualification: string;
+  city: string;
+  date_of_birth: string;
+  gender: string;
+  message: string;
   status: string;
+  bio?: string;
+  password?: string;
+  role?: string;
 }
 
 export default function ImportUser({ open, onOpenChange, onImportSuccess }: ImportUserProps) {
@@ -51,7 +59,15 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     name: "",
     email: "",
     phone: "",
+    qualification: "",
+    city: "",
+    date_of_birth: "",
+    gender: "",
+    message: "",
     status: "",
+    bio: "",
+    password: "",
+    role: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -129,7 +145,15 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
               name: row[fieldMapping.name],
               email: row[fieldMapping.email],
               phone: row[fieldMapping.phone],
+              qualification: row[fieldMapping.qualification],
+              city: row[fieldMapping.city],
+              date_of_birth: row[fieldMapping.date_of_birth],
+              gender: row[fieldMapping.gender],
+              message: row[fieldMapping.message],
               status: row[fieldMapping.status],
+              bio: fieldMapping.bio ? row[fieldMapping.bio] : undefined,
+              password: fieldMapping.password ? row[fieldMapping.password] : undefined,
+              role: fieldMapping.role ? row[fieldMapping.role] : undefined,
             };
             return mappedUser;
           });
@@ -160,7 +184,15 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       name: "",
       email: "",
       phone: "",
+      qualification: "",
+      city: "",
+      date_of_birth: "",
+      gender: "",
+      message: "",
       status: "",
+      bio: "",
+      password: "",
+      role: "",
     });
   };
 
@@ -240,10 +272,10 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                   <div className="space-y-6">
                     <div className="border rounded-lg p-6 bg-muted/50">
                       <h3 className="text-lg font-semibold mb-6">Preview & Field Mapping</h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                      <div className="flex gap-6 overflow-x-auto pb-4">
                         {Object.keys(fieldMapping).map((field) => (
-                          <div key={field}>
-                            <label className="text-sm font-medium capitalize block mb-2">{field}</label>
+                          <div key={field} className="min-w-[200px]">
+                            <label className="text-sm font-medium capitalize block mb-2">{field.replace('_', ' ')}</label>
                             <Select
                               value={fieldMapping[field]}
                               onValueChange={(value) => handleFieldMapping(field, value)}
