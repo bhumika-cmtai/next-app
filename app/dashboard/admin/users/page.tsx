@@ -37,15 +37,15 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Upload, Edit, Trash2 } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchUsers, selectUsers, selectLoading, selectError, User, selectPagination, selectCurrentPage,addUser,updateUser,deleteUser as deleteUserAction, } from "@/lib/redux/userSlice";
+import { fetchUsers, selectUsers, selectLoading, User, selectPagination, selectCurrentPage,addUser,updateUser,deleteUser as deleteUserAction, } from "@/lib/redux/userSlice";
 import { AppDispatch } from "@/lib/store";
 import ImportUser from "./importUser";
+import { generatePassword } from "./passwordGenerator";
 
 export default function Users() {
   const dispatch = useDispatch<AppDispatch>();
   const users: User[] = useSelector(selectUsers);
   const loading: boolean = useSelector(selectLoading);
-  // const error = useSelector(selectError);
   const pagination = useSelector(selectPagination);
   const currentPage = useSelector(selectCurrentPage);
 
@@ -117,10 +117,15 @@ export default function Users() {
         const updatedUserPayload: User = { ...editUser, ...form };
         response = await dispatch(updateUser(editUser._id, updatedUserPayload));
       } else {
+        // Generate password for new user
+        const generatedPassword = generatePassword(form.name, form.phoneNumber);
+        
         const newUserPayload: User = {
           ...form,
           role: "user", 
-          password: "123", 
+          password: generatedPassword,
+          whatsappNumber: form.phoneNumber, // Default whatsapp to phone
+          city: "",
         };
         response = await dispatch(addUser(newUserPayload));
       }
@@ -209,7 +214,7 @@ export default function Users() {
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>TLCode</TableHead>
+                  <TableHead>LeaderCode</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -246,7 +251,7 @@ export default function Users() {
                           {user.status || 'N/A'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{user.tlcode || '-'}</TableCell>
+                      <TableCell>{user.leaderCode || '-'}</TableCell>
                       <TableCell>
                       {user.createdOn ? new Date(parseInt(user.createdOn, 10)).toLocaleDateString() : '-'}
                       </TableCell>

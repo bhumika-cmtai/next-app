@@ -7,10 +7,14 @@ export interface User {
   name: string;
   email: string;
   phoneNumber: string;
+  whatsappNumber: string;
+  city: string;
   role: string;
   password?: string;
   status?: string;
-  tlcode?:string;
+  leaderCode?:string;
+  abhi_aap_kya_karte_hai?:string;
+  work_experience?:string;
   createdOn?: string;
   updatedOn?: string;
 }
@@ -133,12 +137,10 @@ export const addUser = (user: User) => async (dispatch: Dispatch) => {
 };
 
 export const addManyUsers = (users: User[]) => async (dispatch: Dispatch) => {
-  dispatch(setLoading(true));
   try {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/addManyUser`, users);
     if (response.status === 201) {
       return response.data;
-      dispatch(setLoading(false));
     } else {
       dispatch(setError(response.data.message));
     }
@@ -179,10 +181,10 @@ export const deleteUser = (id: string) => async (dispatch: Dispatch) => {
     dispatch(setError(message || "Unknown error"));
   }
 };
-export const fetchTlCode = (tlcode: string) => async (dispatch: Dispatch) => {
+export const fetchLeaderCode = (leaderCode: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getTlCode/${tlcode}`);
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getLeaderCode/${leaderCode}`);
         const data: User = response.data;
     if (response.status === 200) { 
       dispatch(setLoading(false)); 

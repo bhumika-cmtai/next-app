@@ -8,6 +8,10 @@ export interface Lead {
   name: string;
   email: string;
   phoneNumber: string;
+  qualification: string;
+  city: string;
+  date_of_birth: string;
+  gender: string;
   message: string;
   source: string;
   status: string;
@@ -145,6 +149,25 @@ export const addLead = (lead: Lead) => async (dispatch: Dispatch) => {
     return null;
   }
 };
+
+export const addManyLeads = (leads: Lead[]) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/addManyLeads`, leads);
+    dispatch(setLoading(false));  
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      dispatch(setError(response.data.message));
+      return null;
+    }
+  } catch (error: unknown) {  
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+    return null;
+  }
+};
+
 
 // Updated to handle loading state and return value
 export const updateLead = (id: string, lead: Lead) => async (dispatch: Dispatch) => {

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Upload, Edit, Trash2, Mail, Phone } from "lucide-react";
+import { Plus, Upload, Edit, Trash2, Mail, Phone, Download } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { fetchLeads, selectLeads, selectLoading, selectPagination, selectCurrentPage, Lead, addLead, updateLead, deleteLead as deleteLeadAction } from "@/lib/redux/leadSlice";
 import { AppDispatch } from "@/lib/store";
@@ -32,14 +32,20 @@ export default function Leads() {
   const [deleteLead, setDeleteLead] = useState<Lead | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportStatus, setExportStatus] = useState("all");
 
   const [form, setForm] = useState<Omit<Lead, "_id" | "createdOn" | "updatedOn">>({
     name: "",
     email: "",
     phoneNumber: "",
-    source: "Website",
-    status: "New",
+    qualification: "",
+    city: "",
+    date_of_birth: "",
+    gender: "",
     message: "",
+    status: "New",
+    source: "",
   });
 
   // Debounce search input
@@ -73,7 +79,7 @@ export default function Leads() {
 
   const openAddModal = () => {
     setEditLead(null);
-    setForm({ name: "", email: "", phoneNumber: "", source: "Website", status: "New", message: "" });
+    setForm({ name: "", email: "", phoneNumber: "", qualification: "", city: "", date_of_birth: "", gender: "", message: "", status: "New", source: "" });
     setModalOpen(true);
   };
 
@@ -83,9 +89,13 @@ export default function Leads() {
       name: lead.name,
       email: lead.email,
       phoneNumber: lead.phoneNumber,
-      source: lead.source,
-      status: lead.status,
+      qualification: lead.qualification,
+      city: lead.city,
+      date_of_birth: lead.date_of_birth,
+      gender: lead.gender,
       message: lead.message,
+      status: lead.status,
+      source: lead.source,
     });
     setModalOpen(true);
   };
@@ -137,6 +147,40 @@ export default function Leads() {
     dispatch(fetchLeads({ page: 1 }));
   };
 
+  const handleExport = () => {
+    // Filter leads by selected status
+    const filteredLeads = exportStatus === "all" 
+      ? leads 
+      : leads.filter(lead => lead.status === exportStatus);
+    
+    // Convert to CSV format
+    const headers = ["Name", "Email", "Phone", "Status", "Source", "Message", "Created"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredLeads.map(lead => [
+        lead.name,
+        lead.email,
+        lead.phoneNumber,
+        lead.status,
+        lead.source,
+        lead.message?.replace(/,/g, " ") || "",
+        lead.createdOn ? new Date(parseInt(lead.createdOn)).toLocaleDateString() : ""
+      ].join(","))
+    ].join("\n");
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `leads-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setExportModalOpen(false);
+  };
+
   return (
     <div className="w-full mx-auto mt-2">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
@@ -166,6 +210,9 @@ export default function Leads() {
           </Button>
           <Button variant="outline" size="sm" className="gap-1" onClick={() => setImportModalOpen(true)}>
             <Upload className="w-4 h-4" /> Import
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1" onClick={() => setExportModalOpen(true)}>
+            <Download className="w-4 h-4" /> Export
           </Button>
         </div>
       </div>
@@ -253,6 +300,37 @@ export default function Leads() {
 
       {/* Import Leads Dialog */}
       <ImportLeads open={importModalOpen} onOpenChange={setImportModalOpen} onImportSuccess={handleImportSuccess} />
+
+      {/* Export Leads Dialog */}
+      <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Export Leads</DialogTitle>
+            <DialogDescription>
+              Choose a status to filter leads for export
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Select value={exportStatus} onValueChange={setExportStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="New">New</SelectItem>
+                <SelectItem value="Contacted">Contacted</SelectItem>
+                <SelectItem value="Interested">Interested</SelectItem>
+                <SelectItem value="Not Interested">Not Interested</SelectItem>
+                <SelectItem value="Converted">Converted</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleExport}>Export CSV</Button>
+            <Button variant="outline" onClick={() => setExportModalOpen(false)}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
