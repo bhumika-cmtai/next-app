@@ -3,7 +3,6 @@
 import { MoveRight, Menu, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { SmoothScrollLink } from "../ui/smoothScrollLink";
 import React, { useState, useEffect } from 'react';
 
 const Header = () => {
@@ -28,10 +27,10 @@ const Header = () => {
   }, [isMenuOpen]);
 
   const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "#aboutus", label: "About Us" },
-    { href: "#join", label: "Who Can Join?" },
-    { href: "#contactus", label: "Contact Us" },
+    { href: "", label: "Home" },
+    { href: "aboutus", label: "About Us" },
+    { href: "join", label: "Who Can Join?" },
+    { href: "contactus", label: "Contact Us" },
   ];
 
   return (
@@ -55,23 +54,13 @@ const Header = () => {
         <ul className='hidden lg:flex gap-8 text-gray-800 font-semibold text-lg'>
           {navLinks.map((link) => (
             <li key={link.label}>
-              {link.href.startsWith("#") ? (
-                // Use SmoothScrollLink for anchor links
-                <SmoothScrollLink
-                  href={link.href}
-                  className="text-gray-600 hover:text-purple-600 transition-colors"
-                >
-                  {link.label}
-                </SmoothScrollLink>
-              ) : (
-                // Use standard Next.js Link for page navigation
-                <Link
-                  href={link.href}
-                  className="text-gray-600 hover:text-purple-600 transition-colors"
-                >
-                  {link.label}
-                </Link>
-              )}
+              <button onClick={() => {
+                document.getElementById(`${link.href}`)?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="text-gray-600 hover:text-purple-600 transition-colors hover:cursor-pointer  "
+              >
+                {link.label}
+              </button>
             </li>
           ))}
         </ul>
