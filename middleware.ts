@@ -24,11 +24,14 @@ export default function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
 
   // Public paths that don't require authentication
-  if (pathname === '/' ) {
-    // If it's the homepage, always allow access, regardless of login status.
+   const alwaysPublicPaths = ['/', '/get-started'];
+  
+  // If the path is always public, allow access
+  if (alwaysPublicPaths.includes(pathname)) {
     return NextResponse.next();
   }
-  const publicPaths = ['/login', '/register', '/forgot-password', '/members/login','/get-started'];
+
+  const publicPaths = ['/login', '/register', '/forgot-password'];
   
   // Check if the path is public
   const isPublicPath = publicPaths.includes(pathname);
