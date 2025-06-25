@@ -6,6 +6,7 @@ export interface Lead {
   _id?: string;
   name: string;
   email: string;
+  portal_Name: string;
   phoneNumber: string;
   qualification: string;
   city: string;
@@ -172,7 +173,7 @@ export const addLead = (lead: Lead) => async (dispatch: Dispatch) => {
 export const addManyLeads = (leads: Lead[]) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/addManyLeads`, leads);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/addManyLead`, leads);
     dispatch(setLoading(false));  
     if (response.status === 201) {
       return response.data;
