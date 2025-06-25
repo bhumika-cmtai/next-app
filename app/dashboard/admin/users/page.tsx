@@ -211,11 +211,12 @@ export default function Users() {
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
                   <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
+                  {/* <TableHead>Email</TableHead> */}
                   <TableHead>Phone</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>LeaderCode</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead>Total Registeration</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -244,7 +245,7 @@ export default function Users() {
                           <span className="font-medium">{user.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{user.email}</TableCell>
+                      {/* <TableCell>{user.email}</TableCell> */}
                       <TableCell>{user.phoneNumber || '-'}</TableCell>
                       <TableCell>
                         <Badge variant={user.status === "Active" ? "default" : "secondary"}>
@@ -255,6 +256,7 @@ export default function Users() {
                       <TableCell>
                       {user.createdOn ? new Date(parseInt(user.createdOn, 10)).toLocaleDateString() : '-'}
                       </TableCell>
+                      <TableCell>78</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Dialog open={modalOpen && editUser?._id === user._id} onOpenChange={(open) => {

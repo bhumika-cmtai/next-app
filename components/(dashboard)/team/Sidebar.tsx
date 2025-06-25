@@ -16,6 +16,7 @@ import {
 const navigation = [
   { name: "Dashboard", href: "/dashboard/team", icon: LayoutGrid },
   { name: "Leads", href: "/dashboard/team/leads", icon: Users },
+  { name: "Clients", href: "/dashboard/team/clients", icon: User },
   { name: "Setting", href: "/dashboard/team/setting", icon:Settings},
   { name: "Logout", href: "/logout", icon: LogOut },
 ];

@@ -9,6 +9,7 @@ import {
   Contact,
   LogOut,
   User,
+  Settings,
   X,
 } from "lucide-react";
 
@@ -18,6 +19,7 @@ const navigation = [
   { name: "Leads", href: "/dashboard/admin/leads", icon: FileText },
   { name: "Contacts", href: "/dashboard/admin/contacts", icon: Contact },
   { name: "Clients", href: "/dashboard/admin/clients", icon: User },
+  { name: "Setting", href: "/dashboard/admin/settings", icon: Settings },
   { name: "Logout", href: "/logout", icon: LogOut },
 ];
 

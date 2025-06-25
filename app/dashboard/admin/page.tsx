@@ -1,38 +1,63 @@
-import React from "react";
+"use client"
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation"; // 1. Import useRouter
 import { Users, FileText, Contact, TrendingUp } from "lucide-react";
-
-const stats = [
-    {
-        name: "Total Users",
-        value: "2,543",
-        change: "+12.5%",
-        icon: Users,
-        trend: "up",
-    },
-    {
-        name: "Active Leads",
-        value: "1,234",
-        change: "+8.2%",
-        icon: FileText,
-        trend: "up",
-    },
-    {
-        name: "New Contacts",
-        value: "456",
-        change: "-2.4%",
-        icon: Contact,
-        trend: "down",
-    },
-    {
-        name: "Conversion Rate",
-        value: "24.8%",
-        change: "+4.1%",
-        icon: TrendingUp,
-        trend: "up",
-    },
-];
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUsersCount, selectTotalUsersCount } from "@/lib/redux/userSlice";
+import { fetchLeadsCount, selectTotalLeadsCount } from "@/lib/redux/leadSlice";
+import { AppDispatch } from "@/lib/store";
 
 export default function Dashboard() {
+    const dispatch = useDispatch<AppDispatch>();
+    const router = useRouter(); // 2. Initialize the router
+    const totalUsers = useSelector(selectTotalUsersCount);
+    const totalLeads = useSelector(selectTotalLeadsCount);
+
+    useEffect(() => {
+        dispatch(fetchUsersCount());
+        dispatch(fetchLeadsCount());
+    }, [dispatch]);
+
+    // 3. Create a handler for the button clicks
+    // const handleQuickAction = (action: string) => {
+    //     if (action === "Add New User") {
+    //         router.push('/dashboard/admin/users');
+    //     } else if (action === "Create Lead") {
+    //         router.push('/dashboard/admin/leads');
+    //     }
+    // };
+    
+    const stats = [
+        {
+            name: "Total Leaders",
+            value: (totalUsers ?? 0).toLocaleString(),
+            change: "+12.5%",
+            icon: Users,
+            trend: "up",
+        },
+        {
+            name: "Total Leads",
+            value: (totalLeads ?? 0).toLocaleString(),
+            change: "+8.2%",
+            icon: FileText,
+            trend: "up",
+        },
+        {
+            name: "Employee Income",
+            value: "456",
+            change: "-2.4%",
+            icon: Contact,
+            trend: "down",
+        },
+        {
+            name: "Conversion Rate",
+            value: "24.8%",
+            change: "+4.1%",
+            icon: TrendingUp,
+            trend: "up",
+        },
+    ];
+
     return (
         <div className="space-y-6">
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -74,29 +99,7 @@ export default function Dashboard() {
                 ))}
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-lg border bg-white p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold text-slate-900">
-                        Recent Activity
-                    </h2>
-                    <div className="mt-4 space-y-4">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex items-center gap-4">
-                                <div className="h-10 w-10 rounded-full bg-purple-100" />
-                                <div>
-                                    <p className="text-sm font-medium text-slate-900">
-                                        User Activity {i}
-                                    </p>
-                                    <p className="text-sm text-slate-600">
-                                        Description of activity {i}
-                                    </p>
-                                </div>
-                                <div className="ml-auto text-sm text-slate-600">2h ago</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
+            {/* <div className="grid gap-6 lg:grid-cols-2">
                 <div className="rounded-lg border bg-white p-6 shadow-sm">
                     <h2 className="text-lg font-semibold text-slate-900">
                         Quick Actions
@@ -105,11 +108,11 @@ export default function Dashboard() {
                         {[
                             "Add New User",
                             "Create Lead",
-                            "Import Contacts",
-                            "Generate Report",
                         ].map((action) => (
                             <button
                                 key={action}
+                                // 4. Add the onClick handler
+                                onClick={() => handleQuickAction(action)}
                                 className="rounded-lg border bg-white px-4 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
                             >
                                 {action}
@@ -117,7 +120,7 @@ export default function Dashboard() {
                         ))}
                     </div>
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 }

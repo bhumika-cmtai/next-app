@@ -39,31 +39,7 @@ const Page = () => {
                   </div>
                 </Link>
               </div>
-              {/* STEP - 2 JOIN ZOOM MEET --> JOIN MEETING LINK*/}
-              <div className="w-full rounded-2xl p-[1.5px] bg-[linear-gradient(90deg,_#c6ffdd_0%,_#fbd786_50%,_#f7797d_100%)] bg-[length:200%_auto] transition-all duration-500 hover:bg-[position:100%_0] shadow-md hover:shadow-lg">
-                <Link href="https://zoom.us/j/97041030433?pwd=Jw0YZ3D44r8CEJfZzyLuzjbZihclIK.1#success" className="flex w-full items-center rounded-[14px] bg-white p-4">
-                  <div className="flex-shrink-0">
-                    <Image
-                      src="/zoom.png"
-                      width={48}
-                      height={48}
-                      alt="zoom icon"
-                      className="object-contain"
-                    />
-                  </div>
-                  <div className="text-center flex-grow">
-                    <h2
-                      className={`text-lg font-bold bg-gradient-to-r from-gray-700 to-blue-400 bg-clip-text text-transparent`}
-                    >
-                      Step- 2
-                    </h2>
-                    <h3 className="text-xl text-center font-semibold text-gray-800">
-                      Join Us On Zoom
-                    </h3>
-                  </div>
-                </Link>
-              </div>
-              {/* STEP - 3 QUICK SKILL UNLOCK (TEST) --> GIVE TEST ?  */}
+              {/* STEP - 2 TEST LINK  */}
               <div className="w-full rounded-2xl p-[1.5px] bg-[linear-gradient(90deg,_#c6ffdd_0%,_#fbd786_50%,_#f7797d_100%)] bg-[length:200%_auto] transition-all duration-500 hover:bg-[position:100%_0] shadow-md hover:shadow-lg">
                 <div className="flex w-full items-center rounded-[14px] bg-white p-4">
                   <div className="flex-shrink-0">
@@ -83,12 +59,12 @@ const Page = () => {
                       Step- 3
                     </h2>
                     <h3 className="text-xl text-center font-semibold text-gray-800">
-                      Quick Skill Unlock
+                      Test Link
                     </h3>
                   </div>
                 </div>
               </div>
-              {/* STEP - 4 ACCESS JOB PORTALS --> TELEGRAM LINK   */}
+              {/* STEP - 3 Access Franchise Link Channel   */}
               <div className="w-full rounded-2xl p-[1.5px] bg-[linear-gradient(90deg,_#c6ffdd_0%,_#fbd786_50%,_#f7797d_100%)] bg-[length:200%_auto] transition-all duration-500 hover:bg-[position:100%_0] shadow-md hover:shadow-lg">
                 <div className="flex w-full items-center rounded-[14px] bg-white p-4">
                   <div className="flex-shrink-0">
@@ -108,7 +84,7 @@ const Page = () => {
                       Step- 4
                     </h2>
                     <h3 className="text-xl text-center font-semibold text-gray-800">
-                      Access Job Portals Via Telegram
+                      Access Franchise Link Channel
                     </h3>
                   </div>
                 </div>
@@ -158,6 +134,7 @@ const Page = () => {
             <div className="text-lg font-semibold text-black">Legal Documents:</div>
           </div>
         <div className="border-t-[1px] border-t-black w-full flex justify-center pt-4">
+            
           <div className="flex flex-col gap-2 items-start">
             <p className="text-left">PAN Card</p>
             <p className="text-left">Udyam Registration Certificate</p>

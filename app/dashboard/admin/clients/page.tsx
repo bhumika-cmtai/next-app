@@ -1,4 +1,3 @@
-// change start
 "use client";
 
 import React, { useState, ChangeEvent, useEffect, FormEvent } from "react";
@@ -9,9 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Upload, Edit, Trash2, Mail, Phone } from "lucide-react";
+import { Plus, Edit, Trash2, Mail, Phone } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
-import { fetchClients, selectClients, selectLoading, selectPagination, selectCurrentPage, Client, addClient, updateClient, deleteClient as deleteClientAction } from "@/lib/redux/clientSlice";
+import { 
+  fetchClients, 
+  selectClients, 
+  selectLoading, 
+  selectPagination, 
+  selectCurrentPage, 
+  Client, 
+  addClient, 
+  updateClient, 
+  deleteClient as deleteClientAction,
+  setCurrentPage
+} from "@/lib/redux/clientSlice";
 import { AppDispatch } from "@/lib/store";
 import { useSelector, useDispatch } from "react-redux";
 
@@ -22,55 +32,70 @@ export default function Clients() {
   const pagination = useSelector(selectPagination);
   const currentPage = useSelector(selectCurrentPage);
 
+  // --- MODIFIED: State simplified for generic search ---
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  
   const [statusFilter, setStatusFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
-//   const [importModalOpen, setImportModalOpen] = useState(false);
   const [editClient, setEditClient] = useState<Client | null>(null);
   const [deleteClient, setDeleteClient] = useState<Client | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const [form, setForm] = useState<Omit<Client, "_id" | "createdOn" | "updatedOn">>({
+  // The form state should still match the full Client interface for adding/editing
+  const [form, setForm] = useState<Omit<Client, "_id" | "createdOn" | "updatedOn" | "leaderCode">>({
     name: "",
     email: "",
     phoneNumber: "",
     status: "New",
+    ownerName: [],
+    city: "",
+    age: 0,
+    portalName: "",
+    reason: ""
   });
-
+  
   // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 500);
+    }, 500); // 500ms delay
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Fetch clients when filters or page change
+  // Fetch clients when debounced search, filters, or page change
   useEffect(() => {
+    // --- MODIFIED: API call uses the generic 'search' parameter ---
+    // The backend will treat this as a name/email search
     dispatch(fetchClients({ search: debouncedSearch, status: statusFilter === 'all' ? undefined : statusFilter, page: currentPage }));
   }, [dispatch, debouncedSearch, statusFilter, currentPage]);
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
+    if (currentPage !== 1) {
+        dispatch(setCurrentPage(1));
+    }
   };
 
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
-    // When filter changes, go back to page 1
-    dispatch(fetchClients({ search: debouncedSearch, status: value === 'all' ? undefined : value, page: 1 }));
+    if (currentPage !== 1) {
+        dispatch(setCurrentPage(1));
+    }
   };
 
   const handlePageChange = (page: number) => {
-    if (page > 0 && page <= pagination.totalPages) {
-      dispatch(fetchClients({ search: debouncedSearch, status: statusFilter === 'all' ? undefined : statusFilter, page }));
+    if (page > 0 && page <= pagination.totalPages && page !== currentPage) {
+      dispatch(setCurrentPage(page));
     }
   };
 
   const openAddModal = () => {
     setEditClient(null);
-    setForm({ name: "", email: "", phoneNumber: "", status: "New" });
+    setForm({
+        name: "", email: "", phoneNumber: "", status: "New", ownerName: [], city: "", age: 0, portalName: "", reason: ""
+    });
     setModalOpen(true);
   };
 
@@ -81,6 +106,11 @@ export default function Clients() {
       email: client.email,
       phoneNumber: client.phoneNumber,
       status: client.status,
+      ownerName: client.ownerName,
+      city: client.city,
+      age: client.age,
+      portalName: client.portalName,
+      reason: client.reason || ""
     });
     setModalOpen(true);
   };
@@ -92,13 +122,15 @@ export default function Clients() {
     if (editClient && editClient._id) {
       response = await dispatch(updateClient(editClient._id, { ...editClient, ...form }));
     } else {
+      // The form now includes all necessary fields for adding a client
       response = await dispatch(addClient(form as Client));
     }
     setFormLoading(false);
 
     if (response) {
       setModalOpen(false);
-      dispatch(fetchClients({ search: debouncedSearch, status: statusFilter === 'all' ? undefined : statusFilter, page: currentPage }));
+      // Refetch to see the changes
+      dispatch(fetchClients({ search: debouncedSearch, status: statusFilter, page: currentPage }));
     }
   };
 
@@ -109,10 +141,9 @@ export default function Clients() {
     setDeleteLoading(false);
 
     if (response) {
-      setDeleteClient(null); // Close confirmation dialog
-      // If the last item on a page is deleted, fetch the previous page
+      setDeleteClient(null); 
       const newPage = clients.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
-      dispatch(fetchClients({ search: debouncedSearch, status: statusFilter === 'all' ? undefined : statusFilter, page: newPage }));
+      dispatch(fetchClients({ search: debouncedSearch, status: statusFilter, page: newPage }));
     }
   };
 
@@ -127,18 +158,14 @@ export default function Clients() {
     }
   };
 
-//   const handleImportSuccess = () => {
-//     setImportModalOpen(false);
-//     dispatch(fetchClients({ page: 1 }));
-//   };
-
   return (
     <div className="w-full mx-auto mt-2">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <h1 className="text-3xl font-bold">Clients List</h1>
+        {/* --- MODIFIED: UI reverted to a single search input --- */}
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Input
-            placeholder="Search clients..."
+            placeholder="Search by client name..."
             value={search}
             onChange={handleSearchChange}
             className="w-full sm:w-48"
@@ -159,9 +186,6 @@ export default function Clients() {
           <Button variant="default" size="sm" className="gap-1" onClick={openAddModal}>
             <Plus className="w-4 h-4" /> Add Client
           </Button>
-          {/* <Button variant="outline" size="sm" className="gap-1" onClick={() => setImportModalOpen(true)}>
-            <Upload className="w-4 h-4" /> Import
-          </Button> */}
         </div>
       </div>
 
@@ -171,24 +195,26 @@ export default function Clients() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {/* Added # column back */}
                   <TableHead className="w-12">#</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>TLCode</TableHead>
+                  <TableHead>LeaderCode</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && clients.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center py-8">Loading...</TableCell></TableRow>
+                {loading ? (
+                  <TableRow><TableCell colSpan={7} className="text-center py-8">Loading...</TableCell></TableRow>
                 ) : clients.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center py-8">No clients found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8">No clients found.</TableCell></TableRow>
                 ) : (
                   clients.map((client, idx) => (
                     <TableRow key={client._id}>
-                      <TableCell>{(currentPage - 1) * 20 + idx + 1}</TableCell>
+                      {/* Using pagination to calculate the index */}
+                      <TableCell>{(pagination.currentPage - 1) * 8 + idx + 1}</TableCell>
                       <TableCell><div className="font-medium">{client.name}</div></TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
@@ -197,7 +223,7 @@ export default function Clients() {
                         </div>
                       </TableCell>
                       <TableCell><Badge className={`${getStatusColor(client.status)} text-white`}>{client.status}</Badge></TableCell>
-                      <TableCell>{client.tlCode}</TableCell>
+                      <TableCell>{client.leaderCode}</TableCell>
                       <TableCell>{client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : '-'}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -216,16 +242,35 @@ export default function Clients() {
 
       {/* Add/Edit Client Dialog */}
       <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) { setModalOpen(false); setEditClient(null); }}}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader><DialogTitle>{editClient ? 'Edit Client' : 'Add Client'}</DialogTitle></DialogHeader>
-          <form onSubmit={handleFormSubmit} className="space-y-4 mt-2">
-            <Input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            <Input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-            <Input placeholder="phoneNumber" value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} required />
-            <Select value={form.status} onValueChange={(value: string) => setForm({ ...form, status: value })}><SelectTrigger><SelectValue placeholder="Select Status" /></SelectTrigger><SelectContent><SelectItem value="New">New</SelectItem><SelectItem value="Contacted">Contacted</SelectItem><SelectItem value="Interested">Interested</SelectItem><SelectItem value="Not Interested">Not Interested</SelectItem><SelectItem value="Converted">Converted</SelectItem></SelectContent></Select>
-            <DialogFooter>
-              <Button type="submit" disabled={formLoading}>{formLoading ? 'Saving...' : (editClient ? 'Update Client' : 'Add Client')}</Button>
+          {/* Using a grid for better layout in the modal */}
+          <form onSubmit={handleFormSubmit} className="grid grid-cols-2 gap-4 py-4">
+            <Input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="col-span-2 sm:col-span-1" />
+            <Input type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className="col-span-2 sm:col-span-1" />
+            <Input placeholder="Phone Number" value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} required className="col-span-2 sm:col-span-1" />
+            <Input placeholder="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="col-span-2 sm:col-span-1" />
+            {/* <Input placeholder="Owner Name" value={form.ownerName} onChange={(e) => setForm({ ...form, ownerName: e.target.value })} className="col-span-2 sm:col-span-1" /> */}
+            <Input placeholder="Portal Name" value={form.portalName} onChange={(e) => setForm({ ...form, portalName: e.target.value })} className="col-span-2 sm:col-span-1" />
+            <Input type="number" placeholder="Age" value={form.age} onChange={(e) => setForm({ ...form, age: Number(e.target.value) || 0 })} className="col-span-2" />
+            <Select value={form.status} onValueChange={(value: string) => setForm({ ...form, status: value })} >
+                <SelectTrigger className="col-span-2">
+                    <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="New">New</SelectItem>
+                    <SelectItem value="Contacted">Contacted</SelectItem>
+                    <SelectItem value="Interested">Interested</SelectItem>
+                    <SelectItem value="Not Interested">Not Interested</SelectItem>
+                    <SelectItem value="Converted">Converted</SelectItem>
+                </SelectContent>
+            </Select>
+            {form.status === "Not Interested" && (
+                 <Input placeholder="Reason" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} className="col-span-2" />
+            )}
+            <DialogFooter className="col-span-2">
               <DialogClose asChild><Button type="button" variant="outline" disabled={formLoading}>Cancel</Button></DialogClose>
+              <Button type="submit" disabled={formLoading}>{formLoading ? 'Saving...' : (editClient ? 'Update Client' : 'Add Client')}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -248,15 +293,15 @@ export default function Clients() {
         <div className="mt-4">
           <Pagination>
             <PaginationContent>
-              <PaginationItem><PaginationPrevious href="#" onClick={() => handlePageChange(currentPage - 1)} /></PaginationItem>
+              <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }} /></PaginationItem>
               {Array.from({ length: pagination.totalPages }, (_, i) => (
                 <PaginationItem key={i + 1}>
-                  <PaginationLink href="#" isActive={currentPage === i + 1} onClick={() => handlePageChange(i + 1)}>
+                  <PaginationLink href="#" isActive={currentPage === i + 1} onClick={(e) => { e.preventDefault(); handlePageChange(i + 1); }}>
                     {i + 1}
                   </PaginationLink>
                 </PaginationItem>
               ))}
-              <PaginationItem><PaginationNext href="#" onClick={() => handlePageChange(currentPage + 1)} /></PaginationItem>
+              <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }} /></PaginationItem>
             </PaginationContent>
           </Pagination>
         </div>
@@ -264,4 +309,3 @@ export default function Clients() {
     </div>
   );
 }
-// change end

@@ -31,6 +31,7 @@ export interface UserState {
   error: string | null;
   selectedUser: User | null;
   pagination: Pagination;
+  totalUsersCount: number; // For dashboard count
 }
 
 const initialState: UserState = {
@@ -43,6 +44,7 @@ const initialState: UserState = {
     totalPages: 1,
     totalUsers: 0,
   },
+  totalUsersCount: 0, // Initial value for dashboard count
 };  
 
 const userSlice = createSlice({
@@ -76,10 +78,27 @@ const userSlice = createSlice({
     clearSelectedUser: (state) => {
       state.selectedUser = null;
     },
+    setTotalUsersCount: (state, action) => {
+      state.totalUsersCount = action.payload;
+    },
   },
 }); 
 
-export const { setUsers, setLoading, setError, setSelectedUser, clearSelectedUser, setCurrentPage } = userSlice.actions;
+export const { setUsers, setLoading, setError, setSelectedUser, clearSelectedUser, setCurrentPage, setTotalUsersCount } = userSlice.actions;
+
+export const fetchUsersCount = () => async (dispatch: Dispatch) => {
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getUsersCount`);
+    if (response.data) {
+      dispatch(setTotalUsersCount(response.data.data.count));
+    } else {
+      console.error("Failed to fetch user count:", response.data.message);
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    console.error("Error fetching user count:", message);
+  }
+};
 
 export const fetchUsers = (params?: { search?: string; status?: string; page?: number }) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
@@ -205,5 +224,6 @@ export const selectPagination = (state: RootState) => state.users.pagination;
 export const selectCurrentPage = (state: RootState) => state.users.pagination.currentPage;
 export const selectTotalPages = (state: RootState) => state.users.pagination.totalPages;
 export const selectTotalUsers = (state: RootState) => state.users.pagination.totalUsers;
+export const selectTotalUsersCount = (state: RootState) => state.users.totalUsersCount;
 
 export default userSlice.reducer;

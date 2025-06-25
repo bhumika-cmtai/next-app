@@ -7,11 +7,18 @@ export interface Client {
   name: string;
   email: string;
   phoneNumber: string;
+  ownerName?: string[]; 
+  ownerNumber?: string[];
+  city: string;
+  age: number;
   status: string;
-  tlCode?: string;
+  portalName: string;
+  reason?: string;
+  leaderCode?: string;
   createdOn?: string;
   updatedOn?: string;
 }
+
 
 export interface Pagination {
   currentPage: number;
@@ -75,29 +82,41 @@ const clientSlice = createSlice({
 
 export const { setClients, setLoading, setError, setSelectedClient, clearSelectedClient, setPagination, setCurrentPage } = clientSlice.actions;
 
-export const fetchClients = (params?: { search?: string; status?: string; page?: number }) => async (dispatch: Dispatch) => {
+export const fetchClients = (params: {search?:string ,phoneNumber?: string; portalName?: string; status?: string; page?: number }) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const query = [];
-    if (params?.search) query.push(`searchQuery=${encodeURIComponent(params.search)}`);
-    if (params?.status && params.status !== 'all') {
-      query.push(`status=${encodeURIComponent(params.status)}`);
-    }
-    if (params?.page) query.push(`page=${params.page}`);
-    const queryString = query.length ? `?${query.join("&")}` : "";
-
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/getAllClient${queryString}`);
+    const queryParams = new URLSearchParams();
     
-    if (response.status === 200) {
+     if (params.page) {
+      queryParams.append('page', String(params.page));
+    }
+    if (params.status && params.status !== 'all') {
+      queryParams.append('status', params.status);
+    }
+    if (params.search) {
+      // For generic search (name/email)
+      queryParams.append('searchQuery', params.search);
+    } else if (params.phoneNumber && params.portalName) {
+      // For specific search (phone/portal)
+      queryParams.append('phoneNumber', params.phoneNumber);
+      queryParams.append('portalName', params.portalName);
+    }
+    
+    // Use NEXT_PUBLIC_API_BASE_URL which should point to http://localhost:8000/v1
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/getAllClient?${queryParams.toString()}`);
+    console.log(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/getAllClient?${queryParams.toString()}`)
+
+    if (response.data) {
       dispatch(setClients(response.data.data));
     } else {
-      dispatch(setError(response.data.message));
+      dispatch(setError(response.data.message || "Failed to fetch clients"));
     }
-  } catch (error: unknown) {
-    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    dispatch(setError(message || "Unknown error"));
+  } catch (error: any) {
+    const message = error.response?.data?.message || error.message || "Unknown error occurred";
+    dispatch(setError(message));
   }
 };
+
 
 export const fetchClientById = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
