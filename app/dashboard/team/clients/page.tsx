@@ -259,7 +259,7 @@ export default function Clients() {
                         ) : 'N/A'}
                       </div>
                     </TableCell>
-                    <TableCell><Badge className={`${getStatusColor(singleClientResult.status)} text-white`}>{singleClientResult.status}</Badge></TableCell>
+                    <TableCell><Badge className={`${getStatusColor(singleClientResult.status || "")} text-white`}>{singleClientResult.status}</Badge></TableCell>
                     <TableCell>{singleClientResult.portalName}</TableCell>
                     <TableCell>
                       <Button size="icon" variant="ghost" onClick={() => openEditModal(singleClientResult)}><Edit className="w-4 h-4" /></Button>
@@ -350,7 +350,7 @@ export default function Clients() {
                               <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-500" /><span className="text-sm">{client.phoneNumber}</span></div>
                             </div>
                           </TableCell>
-                          <TableCell><Badge className={`${getStatusColor(client.status)} text-white`}>{client.status}</Badge></TableCell>
+                          <TableCell><Badge className={`${getStatusColor(client.status || "")} text-white`}>{client.status}</Badge></TableCell>
                           <TableCell>{client.leaderCode}</TableCell>
                           <TableCell>{client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : '-'}</TableCell>
                           {/* <TableCell>

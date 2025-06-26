@@ -1,13 +1,26 @@
 // app/dashboard/settings/page.tsx
 "use client";
-
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch } from '@/lib/store';
+import { 
+  fetchCurrentUser, 
+  selectUser, 
+  selectIsLoading, 
+  updateUserProfile, 
+  updateBankDetails, 
+  selectError,
+  setError,
+  updateSessionDetails,
+  fetchSession, // Correctly named thunk
+  GlobalSession      // Type for session data
+} from '@/lib/redux/authSlice';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, User, Landmark, Edit } from 'lucide-react';
+import { Loader2, User, Landmark, Edit, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Helper component to display details neatly
@@ -18,34 +31,70 @@ const DetailItem = ({ label, value }: { label: string; value?: string | number |
   </div>
 );
 
-// Define a static user object to replace backend data
-const staticUser = {
-  name: 'John Doe',
-  email: 'john.doe@example.com',
-  phoneNumber: '+1 (555) 123-4567',
-  whatsappNumber: '+1 (555) 987-6543',
-  city: 'Noida',
-  bio: 'admin of growup.',
-  account_number: '123456789012',
-  Ifsc: 'ABCD0123456',
-  upi_id: 'john.doe@upi',
-};
-
 const SettingsPage = () => {
-  // Use local state instead of Redux
-  const [user, setUser] = useState(staticUser);
-  const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'bank'>('profile');
-  
-  // Local state for the update forms
-  const [profileData, setProfileData] = useState({ name: '', whatsappNumber: '', city: '', bio: '' });
-  const [bankData, setBankData] = useState({ account_number: '', Ifsc: '', upi_id: '' });
+  const dispatch = useDispatch<AppDispatch>();
+  const user = useSelector(selectUser);
+  const isLoading = useSelector(selectIsLoading);
+  const error = useSelector(selectError);
 
-  // State to control dialog visibility
+  const [activeTab, setActiveTab] = useState<'profile' | 'bank' | 'session'>('profile');
+  
+  // State for forms
+  const [profileData, setProfileData] = useState({
+     name: '', 
+    whatsappNumber: '', 
+    city: '', 
+    bio: '', 
+    newPassword: '',      // Changed from 'password'
+    confirmPassword: ''  // Added for validation
+    });
+  const [bankData, setBankData] = useState({ account_number: '', Ifsc: '', upi_id: '' });
+  
+  // ** 1. State for session data is now managed locally **
+  const [sessionData, setSessionData] = useState<Partial<GlobalSession>>({});
+  const [isSessionLoading, setIsSessionLoading] = useState(false);
+
+  // State for dialog visibility
   const [isProfileModalOpen, setProfileModalOpen] = useState(false);
   const [isBankModalOpen, setBankModalOpen] = useState(false);
 
-  // When user data loads or updates, populate the local form states
+  // Fetch user details on component mount
+  useEffect(() => {
+    if (!user) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [dispatch, user]);
+
+  // ** 2. Fetch global session data only when the session tab is active **
+   const loadSession = async () => {
+        setIsSessionLoading(true);
+        const data: GlobalSession | null = await dispatch(fetchSession());
+        if (data) {
+            // Format dates for input fields (YYYY-MM-DD)
+            setSessionData({
+                ...data,
+                sessionStartDate: data.sessionStartDate ? new Date(data.sessionStartDate).toISOString().split('T')[0] : '',
+                sessionEndDate: data.sessionEndDate ? new Date(data.sessionEndDate).toISOString().split('T')[0] : '',
+            });
+        }
+        setIsSessionLoading(false);
+    };
+  useEffect(() => {
+    if (activeTab === 'session' && user?.role === 'admin') {
+      loadSession();
+    }
+  }, [dispatch, activeTab, user]);
+
+
+  // Handle and clear global errors
+  useEffect(() => {
+    if (error) {
+        toast.error(error);
+        dispatch(setError(null));
+    }
+  }, [error, dispatch]);
+
+  // Populate user-related forms when user data is available
   useEffect(() => {
     if (user) {
       setProfileData({
@@ -53,6 +102,8 @@ const SettingsPage = () => {
         whatsappNumber: user.whatsappNumber || '',
         city: user.city || '',
         bio: user.bio || '',
+        newPassword: '',      // Always reset password fields on load
+        confirmPassword: ''   // Always reset password fields on load
       });
       setBankData({
         account_number: user.account_number || '',
@@ -62,33 +113,70 @@ const SettingsPage = () => {
     }
   }, [user]);
 
-  // Simulate profile update
   const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+      e.preventDefault();
+    
+      // Create a base object with only the data we always want to update
+      const dataToUpdate: { [key: string]: any } = {
+        name: profileData.name,
+        whatsappNumber: profileData.whatsappNumber,
+        city: profileData.city,
+        bio: profileData.bio,
+      };
+    
+      // Conditionally add the password ONLY if the user wants to change it
+      if (profileData.newPassword!="") {
+        // Validation check 1: Passwords must match
+        if (profileData.newPassword !== profileData.confirmPassword) {
+          toast.error("New passwords do not match.");
+          return; // Stop the function
+        }
+        // Validation check 2: Minimum length (example)
+        
+        // If validation passes, add the password to the object to be sent
+        dataToUpdate.password = profileData.newPassword;
+      }
+    
+      // Dispatch the clean, safe object to the backend
+      const result = await dispatch(updateUserProfile(dataToUpdate));
+      
+      if (result) {
+        toast.success("Profile updated successfully!");
+        setProfileModalOpen(false);
+      }
+    };
 
-    // Simulate API call delay
-    setTimeout(() => {
-      setUser(prevUser => ({ ...prevUser, ...profileData }));
-      toast.success("Profile updated successfully!");
-      setIsLoading(false);
-      setProfileModalOpen(false); // Close the modal on success
-    }, 1000); // 1-second delay
-  };
-
-  // Simulate bank details update
   const handleBankUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate API call delay
-    setTimeout(() => {
-      setUser(prevUser => ({ ...prevUser, ...bankData }));
+    const result = await dispatch(updateBankDetails(bankData));
+    if (result) {
       toast.success("Bank details updated successfully!");
-      setIsLoading(false);
-      setBankModalOpen(false); // Close the modal on success
-    }, 1000); // 1-second delay
+      setBankModalOpen(false);
+    }
   };
+
+  // ** 3. Updated handler for session update **
+  const handleSessionUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const result: GlobalSession | null = await dispatch(updateSessionDetails(sessionData));
+    if (result) {
+      toast.success("Session details updated successfully!");
+      // Refresh local state with the newly saved data
+      setSessionData({
+          ...result,
+          sessionStartDate: result.sessionStartDate ? new Date(result.sessionStartDate).toISOString().split('T')[0] : '',
+          sessionEndDate: result.sessionEndDate ? new Date(result.sessionEndDate).toISOString().split('T')[0] : '',
+      });
+      await loadSession()
+    }
+  };
+
+  if (isLoading && !user) {
+    return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+  if (!user) {
+    return <div className="flex items-center justify-center h-screen"><p>Could not load user data. Please try logging in again.</p></div>;
+  }
 
   return (
     <div className="container mx-auto p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -96,73 +184,120 @@ const SettingsPage = () => {
         <CardHeader className="text-center md:text-left">
           <CardTitle className="text-3xl font-bold">Account Settings</CardTitle>
           <CardDescription>View and manage your personal and financial details.</CardDescription>
-          <div className="pt-4 border-t mt-4">
-            <h3 className="text-xl font-semibold">{user.name}</h3>
-            <p className="text-sm text-gray-500">{user.email}</p>
-            <p className="text-sm text-gray-500">Phone: {user.phoneNumber || '-'}</p>
-          </div>
         </CardHeader>
         <CardContent>
           <div className="flex border-b mb-6">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === 'profile' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}
-            >
-              <User size={16} /> Profile Details
-            </button>
-            <button
-              onClick={() => setActiveTab('bank')}
-              className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === 'bank' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}
-            >
-              <Landmark size={16} /> Bank Details
-            </button>
+            <button onClick={() => setActiveTab('profile')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === 'profile' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><User size={16} /> Profile Details</button>
+            <button onClick={() => setActiveTab('bank')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === 'bank' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><Landmark size={16} /> Bank Details</button>
+            
+            {/* ** 4. Session tab is only visible to admins ** */}
+            {user.role === 'admin' && (
+              <button onClick={() => setActiveTab('session')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === 'session' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><Clock size={16} /> Update Session</button>
+            )}
           </div>
 
           {activeTab === 'profile' && (
-            <div>
+             // ... Profile content unchanged
+             <div>
               <DetailItem label="Full Name" value={user.name} />
               <DetailItem label="WhatsApp Number" value={user.whatsappNumber} />
               <DetailItem label="City" value={user.city} />
               <DetailItem label="Bio" value={user.bio} />
-              
-              <Dialog open={isProfileModalOpen} onOpenChange={setProfileModalOpen}>
-                <DialogTrigger asChild>
-                  <Button className="mt-6 w-full md:w-auto"><Edit className="mr-2 h-4 w-4" /> Update Profile</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Update Profile Details</DialogTitle></DialogHeader>
-                  <form onSubmit={handleProfileUpdate} className="space-y-4 pt-4">
-                    <div className="space-y-2"><Label htmlFor="name">Full Name</Label><Input id="name" value={profileData.name} onChange={(e) => setProfileData({...profileData, name: e.target.value})} /></div>
-                    <div className="space-y-2"><Label htmlFor="whatsapp">WhatsApp Number</Label><Input id="whatsapp" value={profileData.whatsappNumber} onChange={(e) => setProfileData({...profileData, whatsappNumber: e.target.value})} /></div>
-                    <div className="space-y-2"><Label htmlFor="city">City</Label><Input id="city" value={profileData.city} onChange={(e) => setProfileData({...profileData, city: e.target.value})} /></div>
-                    <div className="space-y-2"><Label htmlFor="bio">Bio</Label><Input id="bio" value={profileData.bio} onChange={(e) => setProfileData({...profileData, bio: e.target.value})} /></div>
-                    <DialogFooter><Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Changes"}</Button></DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              <DetailItem label="Password" value={"••••••••"} />
+              <Dialog open={isProfileModalOpen} onOpenChange={setProfileModalOpen}><DialogTrigger asChild><Button className="mt-6 w-full md:w-auto"><Edit className="mr-2 h-4 w-4" /> Update Profile</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Update Profile Details</DialogTitle></DialogHeader>
+              <form onSubmit={handleProfileUpdate} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input id="name" value={profileData.name} onChange={(e) => setProfileData({...profileData, name: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="whatsapp">WhatsApp Number</Label>
+                  <Input id="whatsapp" value={profileData.whatsappNumber} onChange={(e) => setProfileData({...profileData, whatsappNumber: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input id="city" value={profileData.city} onChange={(e) => setProfileData({...profileData, city: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Input id="bio" value={profileData.bio} onChange={(e) => setProfileData({...profileData, bio: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                                        <Label htmlFor="oldPassword">Old Password</Label>
+                                        <Input id="oldPassword" type="password" placeholder="Leave blank to keep current" value={user.password} disabled />
+                                    </div>
+                
+                                    <div className="space-y-2">
+                                        <Label htmlFor="newPassword">New Password</Label>
+                                        <Input id="newPassword" type="password" placeholder="Leave blank to keep current" value={profileData.newPassword} onChange={(e) => setProfileData({...profileData, newPassword: e.target.value})} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                                        <Input id="confirmPassword" type="password" placeholder="Confirm new password" value={profileData.confirmPassword} onChange={(e) => setProfileData({...profileData, confirmPassword: e.target.value})} />
+                                    </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Changes"}</Button>
+                </DialogFooter>
+              </form>
+              </DialogContent></Dialog>
             </div>
           )}
 
           {activeTab === 'bank' && (
+             // ... Bank content unchanged
+            <div><DetailItem label="Account Number" value={user.account_number} /><DetailItem label="IFSC Code" value={user.Ifsc} /><DetailItem label="UPI ID" value={user.upi_id} /><Dialog open={isBankModalOpen} onOpenChange={setBankModalOpen}><DialogTrigger asChild><Button className="mt-6 w-full md:w-auto"><Edit className="mr-2 h-4 w-4" /> Update Bank Details</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Update Bank Details</DialogTitle></DialogHeader><form onSubmit={handleBankUpdate} className="space-y-4 pt-4"><div className="space-y-2"><Label htmlFor="account_number">Account Number</Label><Input id="account_number" value={bankData.account_number} onChange={(e) => setBankData({...bankData, account_number: e.target.value})} /></div><div className="space-y-2"><Label htmlFor="ifsc">IFSC Code</Label><Input id="ifsc" value={bankData.Ifsc} onChange={(e) => setBankData({...bankData, Ifsc: e.target.value})} /></div><div className="space-y-2"><Label htmlFor="upi">UPI ID</Label><Input id="upi" value={bankData.upi_id} onChange={(e) => setBankData({...bankData, upi_id: e.target.value})} /></div><DialogFooter><Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Changes"}</Button></DialogFooter></form></DialogContent></Dialog></div>
+          )}
+          
+          {/* ** 5. Render the session tab content ** */}
+          {activeTab === 'session' && user.role === 'admin' && (
             <div>
-              <DetailItem label="Account Number" value={user.account_number} />
-              <DetailItem label="IFSC Code" value={user.Ifsc} />
-              <DetailItem label="UPI ID" value={user.upi_id} />
-              
-              <Dialog open={isBankModalOpen} onOpenChange={setBankModalOpen}>
-                <DialogTrigger asChild>
-                   <Button className="mt-6 w-full md:w-auto"><Edit className="mr-2 h-4 w-4" /> Update Bank Details</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Update Bank Details</DialogTitle></DialogHeader>
-                  <form onSubmit={handleBankUpdate} className="space-y-4 pt-4">
-                     <div className="space-y-2"><Label htmlFor="account_number">Account Number</Label><Input id="account_number" value={bankData.account_number} onChange={(e) => setBankData({...bankData, account_number: e.target.value})} /></div>
-                     <div className="space-y-2"><Label htmlFor="ifsc">IFSC Code</Label><Input id="ifsc" value={bankData.Ifsc} onChange={(e) => setBankData({...bankData, Ifsc: e.target.value})} /></div>
-                     <div className="space-y-2"><Label htmlFor="upi">UPI ID</Label><Input id="upi" value={bankData.upi_id} onChange={(e) => setBankData({...bankData, upi_id: e.target.value})} /></div>
-                    <DialogFooter><Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Changes"}</Button></DialogFooter>
+              {isSessionLoading ? (
+                 <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              ) : (
+                <>
+                  {/* Display Current Session Details */}
+                  <div className="mb-8 p-4 bg-slate-50 rounded-lg border">
+                    <h3 className="text-lg font-semibold mb-2">Current Session Schedule</h3>
+                    {sessionData && sessionData.sessionStartDate ? (
+                       <div className="space-y-2 text-sm">
+                          <p><strong>Starts:</strong> {new Date(sessionData.sessionStartDate).toLocaleDateString()} at {sessionData.sessionStartTime}</p>
+                          <p><strong>Ends:</strong> {new Date(sessionData.sessionEndDate!).toLocaleDateString()} at {sessionData.sessionEndTime}</p>
+                       </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">No global session has been set yet.</p>
+                    )}
+                  </div>
+                
+                  {/* Form to Update Session */}
+                  <form onSubmit={handleSessionUpdate} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="start-date">Start Date</Label>
+                            <Input id="start-date" type="date" value={sessionData?.sessionStartDate || ''} onChange={(e) => setSessionData({...sessionData, sessionStartDate: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="start-time">Start Time</Label>
+                            <Input id="start-time" type="time" value={sessionData?.sessionStartTime || ''} onChange={(e) => setSessionData({...sessionData, sessionStartTime: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="end-date">End Date</Label>
+                            <Input id="end-date" type="date" value={sessionData?.sessionEndDate || ''} onChange={(e) => setSessionData({...sessionData, sessionEndDate: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="end-time">End Time</Label>
+                            <Input id="end-time" type="time" value={sessionData?.sessionEndTime || ''} onChange={(e) => setSessionData({...sessionData, sessionEndTime: e.target.value})} />
+                        </div>
+                    </div>
+                    <div className="flex justify-end">
+                        <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Clock className="mr-2 h-4 w-4" />}
+                            Update Session
+                        </Button>
+                    </div>
                   </form>
-                </DialogContent>
-              </Dialog>
+                </>
+              )}
             </div>
           )}
         </CardContent>

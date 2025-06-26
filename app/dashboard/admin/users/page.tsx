@@ -170,10 +170,10 @@ export default function Users() {
     <div className="w-full mx-auto mt-2">
       
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold">User List</h1>
+        <h1 className="text-3xl font-bold">Leader List</h1>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Input
-            placeholder="Search users..."
+            placeholder="Search leaders..."
             value={search}
             onChange={handleSearchChange}
             className="w-full sm:w-48"
@@ -190,7 +190,7 @@ export default function Users() {
             </SelectContent>
           </Select>
           <Button variant="default" size="sm" className="gap-1" onClick={openAddModal}>
-            <Plus className="w-4 h-4" /> Add User
+            <Plus className="w-4 h-4" /> Add Leader
           </Button>
           <Button 
             variant="outline" 
@@ -209,10 +209,10 @@ export default function Users() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">#</TableHead>
-                  <TableHead>User</TableHead>
+                  <TableHead className="w-12">s no.</TableHead>
+                  <TableHead>Leader Name</TableHead>
                   {/* <TableHead>Email</TableHead> */}
-                  <TableHead>Phone</TableHead>
+                  <TableHead>Leader Number</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>LeaderCode</TableHead>
                   <TableHead>Joined</TableHead>
@@ -230,7 +230,7 @@ export default function Users() {
                 ) : users.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8">
-                      No users found.
+                      No Leaders found.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -275,7 +275,7 @@ export default function Users() {
                             </DialogTrigger>
                             <DialogContent>
                               <DialogHeader>
-                                <DialogTitle>Edit User</DialogTitle>
+                                <DialogTitle>Edit Leader</DialogTitle>
                               </DialogHeader>
                               <form onSubmit={handleFormSubmit} className="space-y-4 mt-2">
                                 <Input
@@ -335,7 +335,7 @@ export default function Users() {
                             </DialogTrigger>
                             <DialogContent>
                               <DialogHeader>
-                                <DialogTitle>Delete User</DialogTitle>
+                                <DialogTitle>Delete Leader</DialogTitle>
                                 <DialogDescription>
                                   Are you sure you want to delete <b>{user.name}</b>?
                                 </DialogDescription>

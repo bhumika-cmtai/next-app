@@ -1,4 +1,4 @@
-// lib/redux/authSlice.ts (Fully Updated)
+// lib/redux/authSlice.ts (Updated)
 
 import { createSlice, Dispatch } from "@reduxjs/toolkit";
 import axios from "axios";
@@ -26,6 +26,7 @@ export interface User {
   account_number?: string;
   Ifsc?: string;
   upi_id?: string;
+  //session
 }
 
 interface AuthState {
@@ -33,6 +34,18 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+}
+
+export interface GlobalSession {
+    _id: string;
+    name: string;
+    sessionStartDate?: string;
+    sessionStartTime?: string;
+    sessionEndDate?: string;
+    sessionEndTime?: string;
+    isActive?: boolean;
+    createdAt: string;
+    updatedAt: string;
 }
 
 const initialState: AuthState = {
@@ -70,16 +83,25 @@ const authSlice = createSlice({
 
 export const { setUser, setIsLoading, setError, logoutUser } = authSlice.actions;
 
-// Your existing login thunk (no changes needed)
-export const login = ({ email, password }: { email: string; password: string }) => async (dispatch: Dispatch) => {
+// --- MODIFICATION START ---
+// Updated login thunk to accept `rememberMe` and set the cookie directly.
+export const login = ({ email, password, rememberMe }: { email: string; password: string; rememberMe: boolean }) => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
   dispatch(setError(null));
   try {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/user/login`, { email, password });
     if (response.status === 200 && response.data?.data?.user && response.data?.data?.token) {
       const { user, token } = response.data.data;
+
+      // Set the cookie here inside the thunk for reliability
+      Cookies.set('auth-token', token, {
+        expires: rememberMe ? 30 : 1, // Use rememberMe to set expiration
+        sameSite: 'lax',
+        // secure: process.env.NODE_ENV !== 'development' // Optional: uncomment for production
+      });
+      
       dispatch(setUser(user));
-      return { user, token };
+      return user; // Return the user object on success
     } else {
       const errorMessage = response.data?.errorMessage || "Login failed.";
       dispatch(setError(errorMessage));
@@ -91,19 +113,27 @@ export const login = ({ email, password }: { email: string; password: string }) 
     return null;
   } 
 };
+// --- MODIFICATION END ---
 
-// 2. NEW THUNK: Fetch current user's full details
+
+// 2. NEW THUNK: Fetch current user's full details (No changes needed here)
 export const fetchCurrentUser = () => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
   const token = Cookies.get('auth-token');
+  console.log(token)
   if (!token) {
-    dispatch(setError("Authentication token not found."));
+    dispatch(setError("Authentication token not found. Please log in."));
+    // We set isLoading to false via the setError reducer
     return;
   }
   try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/user/me`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/me`, {
+  headers: {
+    'Authorization': `Bearer ${token}`,
+  },
+  withCredentials: true,
+});
+
     dispatch(setUser(response.data.data));
   } catch (error: any) {
     const message = error.response?.data?.message || "Could not fetch user details.";
@@ -114,13 +144,14 @@ export const fetchCurrentUser = () => async (dispatch: Dispatch) => {
   }
 };
 
-// 3. NEW THUNK: Update user's profile details
+// 3. NEW THUNK: Update user's profile details (No changes needed here)
 export const updateUserProfile = (profileData: Partial<User>) => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
   const token = Cookies.get('auth-token');
   try {
     const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/update-profile`, profileData, {
-       headers: { 'Authorization': `Bearer ${token}` }
+       headers: { 'Authorization': `Bearer ${token}` },
+       withCredentials: true
     });
     dispatch(setUser(response.data.data)); // Update user state with fresh data from backend
     return response.data;
@@ -131,14 +162,15 @@ export const updateUserProfile = (profileData: Partial<User>) => async (dispatch
   }
 };
 
-// 4. NEW THUNK: Update user's bank details
+// 4. NEW THUNK: Update user's bank details (No changes needed here)
 export const updateBankDetails = (bankData: Partial<User>) => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
   const token = Cookies.get('auth-token');
   try {
     const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/update-bank`, bankData, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { 'Authorization': `Bearer ${token}` },withCredentials:true
     });
+
     dispatch(setUser(response.data.data)); // Update user state with fresh data
     return response.data;
   } catch (error: any) {
@@ -148,7 +180,64 @@ export const updateBankDetails = (bankData: Partial<User>) => async (dispatch: D
   }
 };
 
-// Selectors
+// 5. Update user's session details
+// NOTE: This assumes you have a backend endpoint at PUT /users/update-session
+export const updateSessionDetails = (sessionData: Partial<GlobalSession>) => async (dispatch: Dispatch) => {
+  dispatch(setIsLoading(true));
+  const token = Cookies.get('auth-token');
+  try {
+    // The endpoint is now `/global-session`
+    const response = await axios.put(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/session`, 
+      sessionData, 
+      {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }
+    );
+    console.log(response.data)
+
+    // IMPORTANT: We NO LONGER dispatch `setUser`. The session is not part of the user object.
+    // Instead, we just stop the loading indicator and return the data.
+    dispatch(setIsLoading(false));
+
+    // Return the updated session data so the component can use it.
+    return response.data.data;
+
+  } catch (error: any) {
+    // The error handling remains the same. setError will set isLoading to false.
+    const message = error.response?.data?.message || "Failed to update session details.";
+    dispatch(setError(message));
+    return null;
+  }
+};
+
+// FETCH SESSION
+export const fetchSession = () => async (dispatch: Dispatch) => {
+    dispatch(setIsLoading(true));
+    const token = Cookies.get('auth-token');
+    try {
+        const response = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/session`, 
+            {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }
+        );
+        
+        // Stop loading and return the fetched data.
+        dispatch(setIsLoading(false));
+        console.log(response.data)
+        return response.data.data; // This will be the session object or null
+
+    } catch (error: any) {
+        const message = error.response?.data?.message || "Could not fetch session details.";
+        dispatch(setError(message));
+        return null;
+    }
+};
+
+
+
+// Selectors (No changes needed)
 export const selectUser = (state: RootState) => state.auth.user;
 export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 export const selectIsLoading = (state: RootState) => state.auth.isLoading;

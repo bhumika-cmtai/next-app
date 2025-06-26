@@ -9,10 +9,10 @@ export interface Client {
   phoneNumber: string;
   ownerName?: string[]; 
   ownerNumber?: string[];
-  city: string;
-  age: number;
+  city?: string;
+  age?: number;
   status: string;
-  portalName: string;
+  portalName?: string;
   reason?: string;
   leaderCode?: string;
   createdOn?: string;

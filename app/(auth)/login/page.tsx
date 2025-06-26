@@ -1,3 +1,4 @@
+// login.tsx (Updated)
 "use client";
 
 import React, { useState, Suspense, useEffect } from 'react';
@@ -16,14 +17,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import Cookies from 'js-cookie';
 import { motion } from "framer-motion";
 import Image from 'next/image';
-import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '@/lib/store';
-import { login, selectIsLoading } from '@/lib/redux/authSlice';
-import { selectError, setError } from '@/lib/redux/userSlice';
+// --- MODIFICATION START ---
+// 1. Import everything needed from the correct authSlice
+import { login, selectIsLoading, selectError, setError } from '@/lib/redux/authSlice';
+// --- MODIFICATION END ---
 
 const LoginForm = () => {
   const router = useRouter();
@@ -33,99 +34,39 @@ const LoginForm = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
+  // 2. Selectors are now correctly pointing to authSlice
   const isLoading = useSelector(selectIsLoading);
   const error = useSelector(selectError);
 
+   // 3. This effect will now correctly catch and display login errors
    useEffect(() => {
     if (error) {
       toast.error(error);
-      dispatch(setError(null));
+      dispatch(setError(null)); // Clear error after showing
     }
   }, [error, dispatch]);
 
+  // 4. Simplified handleSubmit to use the updated login thunk
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("handle submit log")
-    const result = await dispatch(login({ email, password }));
+    // The thunk now returns the user object on success or null on failure
+    const user = await dispatch(login({ email, password, rememberMe }));
 
-    if (result && result.user && result.token) {
-      Cookies.set('auth-token', result.token, {
-        expires: rememberMe ? 30 : 1, 
-        sameSite: 'lax'
-      });
-
+    if (user) {
       toast.success("Successfully logged in!");
-
-      console.log(result.user)
-      if (result.user.role === 'admin') {
+      // The cookie is already set inside the thunk, so we just redirect
+      if (user.role === 'admin') {
         router.push('/dashboard/admin');
       } else {
         router.push('/dashboard/team');
       }
     }
+    // If login fails, the useEffect above will handle showing the error toast.
   };
 
-
-
-  const handleAdminLogin = async () => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      if (password === "admin123") {
-        Cookies.set('auth-token', 'dummy-admin-token', {
-          expires: rememberMe ? 30 : 1, 
-          secure: process.env.NODE_ENV !== 'development',
-          sameSite: 'lax'
-        });
-
-        toast.success("Admin successfully logged in!");
-        router.push("/dashboard");
-      } else {
-        toast.error("Invalid admin password");
-      }
-    } catch (error) {
-      toast.error("An error occurred during admin login");
-      console.error("Admin Login error:", error);
-    }
-  };
-
-  const handleUserLogin = async () => {
-    try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/user/login`, { email, password });
-      
-      const data = response.data;
-      const token = data.data.token;
-
-      Cookies.set('user-token', token, {
-        expires: rememberMe ? 30 : undefined, 
-        secure: process.env.NODE_ENV !== 'development',
-        sameSite: 'lax'
-      });
-
-      toast.success("Successfully logged in!");
-      router.push("/team"); 
-
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.errorMessage || error.message || "An error occurred while logging in";
-      toast.error(errorMessage);
-      console.error("User Login error:", error);
-    }
-  };
+  // You can now safely remove the old handleAdminLogin and handleUserLogin methods.
   
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setIsLoading(true);
-
-  //   if (email.toLowerCase() === "admin@gmail.com") {
-  //     await handleAdminLogin();
-  //   } else {
-  //     await handleUserLogin();
-  //   }
-    
-  //   setIsLoading(false);
-  // };
-
   return (
     <Card className="w-full max-w-sm bg-gradient-to-br from-[#F0FAF7]/80 to-[#EFF8FF]/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-none">
       <CardHeader className="text-center p-0 mb-6">
@@ -204,6 +145,7 @@ const LoginForm = () => {
 };
 
 const LoginPage = () => {
+  // ... (No changes needed in this part of the component)
   return (
     <section
       className="w-full min-h-screen relative flex items-center justify-center px-4 py-8 bg-[#F8FAFF] overflow-hidden"

@@ -15,6 +15,7 @@ import { fetchLeads, selectLeads, selectLoading, selectPagination, selectCurrent
 import { AppDispatch } from "@/lib/store";
 import { useSelector, useDispatch } from "react-redux";
 import ImportLeads from "./importLeads";
+import AgeCell from "@/components/ui/AgeCell";
 
 export default function Leads() {
   const dispatch = useDispatch<AppDispatch>();
@@ -136,10 +137,11 @@ export default function Leads() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "New": return "bg-blue-500";
-      case "Contacted": return "bg-yellow-500";
-      case "Interested": return "bg-green-500";
-      case "Not Interested": return "bg-red-500";
-      case "Converted": return "bg-purple-500";
+      case "RegistrationDone": return "bg-green-400";
+      case "NotInterested": return "bg-orange-400";
+      case "CallCut": return "bg-red-500";
+      case "CallNotPickUp": return "bg-yellow-500";
+      case "InvalidNumber": return "bg-red-300";
       default: return "bg-gray-500";
     }
   };
@@ -184,7 +186,7 @@ export default function Leads() {
   };
 
   return (
-    <div className="w-full mx-auto mt-2">
+    <div className="w-full mx-auto mt-2 ">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <h1 className="text-3xl font-bold">Leads List</h1>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -201,10 +203,11 @@ export default function Leads() {
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="New">New</SelectItem>
-              <SelectItem value="Contacted">Contacted</SelectItem>
-              <SelectItem value="Interested">Interested</SelectItem>
-              <SelectItem value="Not Interested">Not Interested</SelectItem>
-              <SelectItem value="Converted">Converted</SelectItem>
+              <SelectItem value="RegisterationDone">Registeration Done</SelectItem>
+              <SelectItem value="CallCut">Call Cut</SelectItem>
+              <SelectItem value="CallNotPickUp">Call Not PickUp</SelectItem>
+              <SelectItem value="NotInterested">Not Interested</SelectItem>
+              <SelectItem value="InvalidNumber">Invalid Number</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="default" size="sm" className="gap-1" onClick={openAddModal}>
@@ -225,13 +228,18 @@ export default function Leads() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">#</TableHead>
-                  <TableHead>Lead</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Source</TableHead>
+                  <TableHead className="w-12">s no.</TableHead>
+                  <TableHead>Created Date</TableHead>
+                  <TableHead>Lead Name</TableHead>
+                  <TableHead>Lead Number</TableHead>
+                  <TableHead>Age</TableHead>
+                  <TableHead>City</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>Remark</TableHead>
+
+                  {/* <TableHead>Source</TableHead> */}
+                  {/* <TableHead>Status</TableHead> */}
+                  {/* <TableHead>Notes</TableHead> */}
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -245,16 +253,20 @@ export default function Leads() {
                     <TableRow key={lead._id}>
                       <TableCell>{(currentPage - 1) * 20 + idx + 1}</TableCell>
                       <TableCell><div className="font-medium">{lead.name}</div></TableCell>
+                      <TableCell>{lead.createdOn ? new Date(parseInt(lead.createdOn)).toLocaleDateString() : '-'}</TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-gray-500" /><span className="text-sm">{lead.email}</span></div>
                           <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-500" /><span className="text-sm">{lead.phoneNumber}</span></div>
                         </div>
                       </TableCell>
-                      <TableCell>{lead.source}</TableCell>
+                      {/* <TableCell>{lead.source}</TableCell> */}
+                      {/* <TableCell><div className="font-medium">{lead.date_of_birth}</div></TableCell> */}
+
+                      <TableCell><AgeCell dateOfBirth={lead.date_of_birth} /></TableCell>
+                      <TableCell><div className="font-medium">{lead.city}</div></TableCell>
                       <TableCell><Badge className={`${getStatusColor(lead.status)} text-white`}>{lead.status}</Badge></TableCell>
                       <TableCell><div className="max-w-[200px] truncate text-sm text-gray-600">{lead.message || '-'}</div></TableCell>
-                      <TableCell>{lead.createdOn ? new Date(parseInt(lead.createdOn)).toLocaleDateString() : '-'}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button size="icon" variant="ghost" onClick={() => openEditModal(lead)}><Edit className="w-4 h-4" /></Button>
