@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Mail, Phone, PlusCircle } from "lucide-react";
+import { Edit, Mail, Phone, PlusCircle, Clock, AlertCircle } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { 
   fetchClients, 
@@ -21,13 +21,34 @@ import {
   updateClient,
   setCurrentPage
 } from "@/lib/redux/clientSlice";
+// Import session logic from authSlice
+import { 
+  fetchSession, 
+  GlobalSession 
+} from "@/lib/redux/authSlice";
 import { AppDispatch } from "@/lib/store";
 import { useSelector, useDispatch } from "react-redux";
+
+// Helper function for time comparison
+const isCurrentTimeInSession = (session: GlobalSession | null): boolean => {
+  if (!session || !session.sessionStartDate || !session.sessionStartTime || !session.sessionEndDate || !session.sessionEndTime) {
+    return false; // If any part of the session is not set, it's not active.
+  }
+
+  const now = new Date();
+
+  // Create full Date objects by combining date and time strings
+  const startDateTime = new Date(`${session.sessionStartDate.split('T')[0]}T${session.sessionStartTime}:00`);
+  const endDateTime = new Date(`${session.sessionEndDate.split('T')[0]}T${session.sessionEndTime}:00`);
+  
+  // Check if current time is within the range
+  return now >= startDateTime && now <= endDateTime;
+};
 
 export default function Clients() {
   const dispatch = useDispatch<AppDispatch>();
 
-  // --- State for Client List Search (existing) ---
+  // --- Client List State ---
   const clients = useSelector(selectClients);
   const loading = useSelector(selectLoading);
   const pagination = useSelector(selectPagination);
@@ -39,11 +60,16 @@ export default function Clients() {
   const [searchTriggered, setSearchTriggered] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // --- State for Single Client Search ---
+  // --- Single Client Search State ---
   const [singleSearchNumber, setSingleSearchNumber] = useState("");
   const [singleClientResult, setSingleClientResult] = useState<Client | null>(null);
   const [isSingleClientLoading, setIsSingleClientLoading] = useState(false);
   const [singleClientError, setSingleClientError] = useState<string | null>(null);
+  
+  // --- New State for Global Session ---
+  const [globalSession, setGlobalSession] = useState<GlobalSession | null>(null);
+  const [isSessionActive, setIsSessionActive] = useState(false);
+  const [isSessionCheckLoading, setIsSessionCheckLoading] = useState(true);
 
   // --- State for Edit Modal ---
   const [modalOpen, setModalOpen] = useState(false);
@@ -55,22 +81,36 @@ export default function Clients() {
   const [newOwnerNumber, setNewOwnerNumber] = useState("");
   const [showAddOwnerForm, setShowAddOwnerForm] = useState(false);
 
-
-  // Fetch portal names when the component mounts
+  // --- Fetch Global Session and Portal Names on Mount ---
   useEffect(() => {
-    const fetchPortalNames = async () => {
+    const fetchInitialData = async () => {
+      // Fetch Portals
       setPortalsLoading(true);
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/getPortalNames`);
-        if (response.data) setPortalNames(response.data.data);
+        const portalResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/getPortalNames`);
+        if (portalResponse.data) setPortalNames(portalResponse.data.data);
       } catch (error) {
         console.error("Failed to fetch portal names:", error);
       } finally {
         setPortalsLoading(false);
       }
+
+      // Fetch and Check Global Session
+      setIsSessionCheckLoading(true);
+      try {
+        const session: GlobalSession | null = await dispatch(fetchSession());
+        setGlobalSession(session);
+        setIsSessionActive(isCurrentTimeInSession(session));
+      } catch (error) {
+        console.error("Failed to fetch global session:", error);
+        setIsSessionActive(false);
+      } finally {
+        setIsSessionCheckLoading(false);
+      }
     };
-    fetchPortalNames();
-  }, []);
+
+    fetchInitialData();
+  }, [dispatch]);
 
   // Fetch clients for the list when filters or page change
   useEffect(() => {
@@ -136,7 +176,6 @@ export default function Clients() {
     setEditClient(client);
     setFormStatus(client.status);
     setFormReason(client.reason || "");
-    // Reset new owner fields every time modal opens
     setNewOwnerName("");
     setNewOwnerNumber("");
     setShowAddOwnerForm(false); 
@@ -150,23 +189,13 @@ export default function Clients() {
     
     setFormLoading(true);
     
-    // Prepare payload, starting with status and reason
-    const updatePayload: Partial<Client> = {
-      status: formStatus,
-    };
+    const updatePayload: Partial<Client> = { status: formStatus };
+    if (formStatus === "Not Interested") { updatePayload.reason = formReason; } 
+    else if (editClient.status === "Not Interested" && formStatus !== "Not Interested") { updatePayload.reason = ""; }
 
-    // Logic for reason field
-    if (formStatus === "Not Interested") {
-      updatePayload.reason = formReason;
-    } else if (editClient.status === "Not Interested" && formStatus !== "Not Interested") {
-      updatePayload.reason = "";
-    }
-
-    // Logic to append new owner if added
     if (showAddOwnerForm && newOwnerName.trim() !== "" && newOwnerNumber.trim() !== "") {
         const existingNames = editClient.ownerName || [];
         const existingNumbers = editClient.ownerNumber || [];
-
         updatePayload.ownerName = [...existingNames, newOwnerName];
         updatePayload.ownerNumber = [...existingNumbers, newOwnerNumber];
     }
@@ -174,17 +203,12 @@ export default function Clients() {
     const responseWrapper = await dispatch(updateClient(editClient._id, updatePayload));
     setFormLoading(false);
 
-    // Check for the nested 'data' property in the response from the backend
     if (responseWrapper?.data) {
       setModalOpen(false);
-      // Extract the actual updated client from the nested property
       const updatedClient = responseWrapper.data;
-
-      // Refresh the single client view if it was the one being edited
       if (singleClientResult && singleClientResult._id === editClient._id) {
         setSingleClientResult(updatedClient);
       }
-      // Always refetch the list to ensure it's up to date
       if (searchTriggered) {
         dispatch(fetchClients({ phoneNumber, portalName: selectedPortal, status: statusFilter, page: currentPage }));
       }
@@ -208,6 +232,18 @@ export default function Clients() {
       <Card>
         <CardHeader><CardTitle>Get Client Details</CardTitle></CardHeader>
         <CardContent>
+          {/* UI Feedback for Session Status */}
+          <div className={`p-3 mb-4 rounded-md text-sm flex items-center gap-2
+            ${isSessionCheckLoading ? 'bg-blue-50 text-blue-800' : isSessionActive ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+            {isSessionCheckLoading ? (
+              <><Clock className="w-4 h-4 animate-spin" /> Checking session status...</>
+            ) : isSessionActive ? (
+              <><Clock className="w-4 h-4" /> Session is active. You can search for clients.</>
+            ) : (
+              <><AlertCircle className="w-4 h-4" /> You don't have permission.</>
+            )}
+          </div>
+
           <form onSubmit={handleGetClientSubmit} className="flex flex-col sm:flex-row items-center gap-4">
             <Input
               placeholder="Enter Client Mobile Number"
@@ -215,11 +251,15 @@ export default function Clients() {
               onChange={(e: ChangeEvent<HTMLInputElement>) => setSingleSearchNumber(e.target.value)}
               className="w-full sm:flex-1"
             />
-            <Button type="submit" className="w-full sm:w-auto" disabled={isSingleClientLoading}>
+            {/* Disable search button based on session status */}
+            <Button 
+              type="submit" 
+              className="w-full sm:w-auto" 
+              disabled={!isSessionActive || isSingleClientLoading || isSessionCheckLoading}
+            >
               {isSingleClientLoading ? 'Searching...' : 'Search'}
             </Button>
           </form>
-          {isSingleClientLoading && <p className="text-center mt-4">Loading...</p>}
           {singleClientError && <p className="text-center mt-4 text-red-500">{singleClientError}</p>}
         </CardContent>
       </Card>
@@ -332,7 +372,6 @@ export default function Clients() {
                       <TableHead>Status</TableHead>
                       <TableHead>Leader Code</TableHead>
                       <TableHead>Created</TableHead>
-                      {/* <TableHead>Actions</TableHead> */}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -353,11 +392,6 @@ export default function Clients() {
                           <TableCell><Badge className={`${getStatusColor(client.status || "")} text-white`}>{client.status}</Badge></TableCell>
                           <TableCell>{client.leaderCode}</TableCell>
                           <TableCell>{client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : '-'}</TableCell>
-                          {/* <TableCell>
-                            <div className="flex gap-2">
-                              <Button size="icon" variant="ghost" onClick={() => openEditModal(client)}><Edit className="w-4 h-4" /></Button>
-                            </div>
-                          </TableCell> */}
                         </TableRow>
                       ))
                     )}
@@ -392,8 +426,6 @@ export default function Clients() {
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Client</DialogTitle></DialogHeader>
           <form onSubmit={handleFormSubmit} className="space-y-4 pt-4">
-
-            {/* Display Existing Owners */}
             <div>
                 <label className="text-sm font-medium">Existing Owner(s)</label>
                 <div className="mt-2 p-3 border rounded-md bg-muted text-muted-foreground text-sm space-y-1">
@@ -407,14 +439,12 @@ export default function Clients() {
                 </div>
             </div>
             
-            {/* "Add Owner" Button */}
             {!showAddOwnerForm && (
                 <Button type="button" variant="outline" className="w-full" onClick={() => setShowAddOwnerForm(true)}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Add New Owner
                 </Button>
             )}
 
-            {/* New Owner Input Fields */}
             {showAddOwnerForm && (
                 <div className="space-y-2 border-t pt-4">
                     <label className="text-sm font-medium">New Owner Details</label>
@@ -433,7 +463,6 @@ export default function Clients() {
                 </div>
             )}
             
-            {/* Status Dropdown */}
             <Select value={formStatus} onValueChange={setFormStatus}>
               <SelectTrigger>
                 <SelectValue placeholder="Select Status" />
@@ -447,7 +476,6 @@ export default function Clients() {
               </SelectContent>
             </Select>
 
-            {/* Reason Input */}
             {formStatus === 'Not Interested' && (
               <Input 
                 placeholder="Reason for not being interested" 
