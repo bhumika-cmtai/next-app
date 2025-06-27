@@ -2,14 +2,10 @@
 
 import { LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function Header({ title, onMenuClick }: { title: string; onMenuClick?: () => void }) {
 
-  const handleLogout = () => {
-    // TODO: Add your logout logic here
-    alert("Logged out (placeholder)");
-    // router.push("/login"); // Uncomment if you want to redirect after logout
-  };
 
   return (
     <header className="flex items-center justify-between border-b bg-white px-6 py-4 shadow-sm">
@@ -24,13 +20,13 @@ export default function Header({ title, onMenuClick }: { title: string; onMenuCl
         </Button>
         <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
       </div>
-      <button
-        onClick={handleLogout}
+      <Link
+        href="/logout"
         className="flex items-center gap-2 rounded-lg px-4 py-2 text-slate-600 transition-colors duration-200 hover:bg-red-100 hover:text-red-600"
       >
         <LogOut className="h-5 w-5" />
         <span className="hidden sm:inline">Logout</span>
-      </button>
+      </Link>
     </header>
   );
 }

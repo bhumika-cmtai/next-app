@@ -12,7 +12,6 @@ import {
   updateBankDetails, 
   selectError,
   setError
-  // Removed session imports as they are not used in this simplified file
 } from '@/lib/redux/authSlice';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,29 +37,27 @@ const SettingsPage = () => {
 
   const [activeTab, setActiveTab] = useState<'profile' | 'bank'>('profile');
   
-  // --- 1. MODIFIED State for profile form ---
+  // --- 1. MODIFIED State for a secure password change flow ---
   const [profileData, setProfileData] = useState({ 
     name: '', 
     whatsappNumber: '', 
     city: '', 
     bio: '', 
-    newPassword: '',      // Changed from 'password'
-    confirmPassword: ''  // Added for validation
+    currentPassword: '', // To verify user's identity
+    newPassword: '',     // The new password
+    confirmPassword: ''  // To confirm the new password
   });
   const [bankData, setBankData] = useState({ account_number: '', Ifsc: '', upi_id: '' });
   
-  // State for dialog visibility
   const [isProfileModalOpen, setProfileModalOpen] = useState(false);
   const [isBankModalOpen, setBankModalOpen] = useState(false);
 
-  // Fetch user details on component mount
   useEffect(() => {
     if (!user) {
       dispatch(fetchCurrentUser());
     }
   }, [dispatch, user]);
 
-  // Handle and clear global errors
   useEffect(() => {
     if (error) {
         toast.error(error);
@@ -68,7 +65,7 @@ const SettingsPage = () => {
     }
   }, [error, dispatch]);
 
-  // Populate user-related forms when user data is available
+  // Populate forms and always reset password fields for security
   useEffect(() => {
     if (user) {
       setProfileData({
@@ -76,8 +73,9 @@ const SettingsPage = () => {
         whatsappNumber: user.whatsappNumber || '',
         city: user.city || '',
         bio: user.bio || '',
-        newPassword: '',      // Always reset password fields on load
-        confirmPassword: ''   // Always reset password fields on load
+        currentPassword: '', 
+        newPassword: '',     
+        confirmPassword: ''  
       });
       setBankData({
         account_number: user.account_number || '',
@@ -87,11 +85,11 @@ const SettingsPage = () => {
     }
   }, [user]);
 
-  // --- 2. REWRITTEN handleProfileUpdate for security ---
+  // --- 2. REWRITTEN handleProfileUpdate for Maximum Security ---
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
   
-    // Create a base object with only the data we always want to update
+    // Base object with non-sensitive data
     const dataToUpdate: { [key: string]: any } = {
       name: profileData.name,
       whatsappNumber: profileData.whatsappNumber,
@@ -99,24 +97,36 @@ const SettingsPage = () => {
       bio: profileData.bio,
     };
   
-    // Conditionally add the password ONLY if the user wants to change it
-    if (profileData.newPassword!="") {
-      // Validation check 1: Passwords must match
-      if (profileData.newPassword !== profileData.confirmPassword) {
-        toast.error("New passwords do not match.");
-        return; // Stop the function
-      }
-      // Validation check 2: Minimum length (example)
-      if (profileData.newPassword.length < 6) {
-        toast.error("Password must be at least 6 characters long.");
-        return; // Stop the function
+    // --- Logic for Password Change ---
+    // Only proceed if the 'newPassword' field is not empty
+    if (profileData.newPassword) {
+      // 1. Check if current password is provided
+      if (!profileData.currentPassword) {
+        toast.error("Please enter your current password to set a new one.");
+        return; 
       }
       
-      // If validation passes, add the password to the object to be sent
+      // 2. Check if new passwords match
+      if (profileData.newPassword !== profileData.confirmPassword) {
+        toast.error("New passwords do not match.");
+        return;
+      }
+
+      // 3. Check for minimum length
+      if (profileData.newPassword.length < 6) {
+        toast.error("New password must be at least 6 characters long.");
+        return;
+      }
+      
+      // 4. Add password fields to the payload for the backend
+      // The backend will verify 'currentPassword' before updating to 'password'
+      dataToUpdate.currentPassword = profileData.currentPassword;
       dataToUpdate.password = profileData.newPassword;
     }
+    // If newPassword field is empty, the function proceeds without adding any password fields,
+    // leaving the user's password untouched on the backend.
   
-    // Dispatch the clean, safe object to the backend
+    // Dispatch the clean, safe object
     const result = await dispatch(updateUserProfile(dataToUpdate));
     
     if (result) {
@@ -161,8 +171,7 @@ const SettingsPage = () => {
               <DetailItem label="WhatsApp Number" value={user.whatsappNumber} />
               <DetailItem label="City" value={user.city} />
               <DetailItem label="Bio" value={user.bio} />
-              {/* Never display the actual password. Mask it. */}
-              <DetailItem label="Password" value={"••••••••"} />
+              <DetailItem label="Password" value={user.password} />
               
               <Dialog open={isProfileModalOpen} onOpenChange={setProfileModalOpen}>
                 <DialogTrigger asChild><Button className="mt-6 w-full md:w-auto"><Edit className="mr-2 h-4 w-4" /> Update Profile</Button></DialogTrigger>
@@ -174,12 +183,7 @@ const SettingsPage = () => {
                     <div className="space-y-2"><Label htmlFor="city">City</Label><Input id="city" value={profileData.city} onChange={(e) => setProfileData({...profileData, city: e.target.value})} /></div>
                     <div className="space-y-2"><Label htmlFor="bio">Bio</Label><Input id="bio" value={profileData.bio} onChange={(e) => setProfileData({...profileData, bio: e.target.value})} /></div>
                     
-                    {/* --- 3. MODIFIED Password input fields for better security --- */}
-                    <div className="space-y-2">
-                        <Label htmlFor="oldPassword">Old Password</Label>
-                        <Input id="oldPassword" type="password" placeholder="Leave blank to keep current" value={user.password} disabled />
-                    </div>
-
+                    {/* --- 3. SECURE Password Change Form --- */}
                     <div className="space-y-2">
                         <Label htmlFor="newPassword">New Password</Label>
                         <Input id="newPassword" type="password" placeholder="Leave blank to keep current" value={profileData.newPassword} onChange={(e) => setProfileData({...profileData, newPassword: e.target.value})} />

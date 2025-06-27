@@ -161,7 +161,7 @@ export default function Clients() {
   return (
     <div className="w-full mx-auto mt-2">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold">Clients List</h1>
+        <h1 className="text-3xl font-bold">Registered List</h1>
         {/* --- MODIFIED: UI reverted to a single search input --- */}
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Input
@@ -197,8 +197,8 @@ export default function Clients() {
                 <TableRow>
                   {/* Added # column back */}
                   <TableHead className="w-12">#</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Contact</TableHead>
+                  <TableHead>Registered Client Name</TableHead>
+                  <TableHead>Phone Number</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>LeaderCode</TableHead>
                   <TableHead>Created</TableHead>
@@ -217,10 +217,7 @@ export default function Clients() {
                       <TableCell>{(pagination.currentPage - 1) * 8 + idx + 1}</TableCell>
                       <TableCell><div className="font-medium">{client.name}</div></TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-gray-500" /><span className="text-sm">{client.email}</span></div>
                           <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-500" /><span className="text-sm">{client.phoneNumber}</span></div>
-                        </div>
                       </TableCell>
                       <TableCell><Badge className={`${getStatusColor(client.status)} text-white`}>{client.status}</Badge></TableCell>
                       <TableCell>{client.leaderCode}</TableCell>

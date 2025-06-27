@@ -5,73 +5,73 @@ import React, { useState, useEffect } from 'react';
 const testimonialsData = [
   {
     id: 1,
-    text: "Grow up ek aisa platform hai jaha koi bhi apne sapne pure kar sakta hai maine kiye hai Aaj ke time par koi bhi job ho ya busness bina investment ke kar hi nahi sakte 👍",
-    name: "Deepak",
-    image: "/deepakImg.jpg",
+    text: "Grow up is the best platform online where u can work online and earn money 😊Mein college student hu mere sare kharche yaha ki earning se purre hote hai bs 4-5 hours work karta hu best hai yeh platform aur sir aur ma'am ka support bhi bhut hai ❤, payment bhi time pr milta hai",
+    name: "Aakash Mishra",
+    image: "/akashImg.jpg",
     nameColor: "text-red-500",
     borderColor: "border-red-500",
   },
   {
     id: 2,
-    text: "First of all my name is Vicky and I am the student of college. Grow Up is a trusted company that offers zero investment work opportunities. You can work from home using just a mobile and internet",
-    name: "Vicky",
-    image: "/vickyImg.jpg",
+    text: "Thanks mam ♥ itna achha platform dene ke liye..Mai 2 months se work kar rha hu kaafi achha & genuine platform hai growup thankyou so much mam 🙏",
+    name: "Saurabh Chautala",
+    image: "/saurabhImg.jpg",
     nameColor: "text-purple-500",
     borderColor: "border-purple-500",
   },
   {
     id: 3,
-    text: "🔹 Zero investment work hai, isme 💸 koi paisa nahi lagta.🔹 Main abhi 🎓 12th pass hoon aur mujhe isse bahut madad mili.🔹 Is kamai se 📱 maine naya phone bhi kharida hai.",
-    name: "Kundan",
-    image: "/kundanImg.jpg",
+    text: "Hi mera name aprajita h or mai ak student hu mai yha sturdy k sath work from home kam v karti hu ye ak aisha plate fome h jaha p aapko zero investment p kam diya jata h grow up company aap k life ko grow kr dege🤩🤩 ",
+    name: "Aprajita",
+    image: "/aprajitaImg.jpg",
     nameColor: "text-blue-500",
     borderColor: "border-blue-500",
   },
   {
     id: 4,
-    text: "Best platform I ever found Best thing is that there is no need to invest in fake stuff Genuine work and proper guidance provide by the company and again it's a zero investment platform",
-    name: "Vishal",
-    image: "/vishalImg.jpg",
-    nameColor: "text-green-500",
-    borderColor: "border-green-500",
-  },
-  {
-    id: 5,
-    text: "First of all I am a student of bsc I grats my decision to join grow up ✅ for financial freedom 💰  I work here and according to my experience this is a greatest platform I ever found .",
-    name: "Neha",
+    text: "Thank you so much 🥰 sir & mam is plantform ko btane ke liye 😊Yaha sach me kaam krne ka paisa nahi lagta or GrowUp bahut hi accha plateform hai or work from home kam hai ye 💕 mere paise bahut gaye but ab paise ja nahi rahe balki yaha se kmai karke aa rahe hai😊Thank you GrowUp ❤",
+    name: "Neha Wagde",
     image: "/nehaImg.jpg",
     nameColor: "text-green-500",
     borderColor: "border-green-500",
   },
   {
+    id: 5,
+    text: "First of all I am a student of bsc I grats my decision to join grow up ✅ for financial freedom 💰  I work here and according to my experience this is a greatest platform I ever found and the speciality of this platform there is no need to invest a single rupee 💯And now I am financially free with the help of group up company. Thanks alot Priya verma mam and gaurav sir❤",
+    name: "Vishal Sharma",
+    image: "/vishalImg.jpg",
+    nameColor: "text-green-500",
+    borderColor: "border-green-500",
+  },
+  {
     id: 6,
-    text: "Hii sir Thank you so much 🥰 sir is plant from ko bata ni ke liye 😊 Haa sacha me kucha paisa nahi lagta or bahut ata plant hy or work from home hai 💕 mere paise bahut gaye but ab paise ja nahi rahe aa rahe hy",
-    name: "Aprajita",
-    image: "aprajitaImg.jpg",
+    text: "GrowUp is a wonderful 💯 company. You don't have to spend even a single 💰rupee to start work here. The support system here is very good. Payment is made on time. I'm very lucky 😍to be a part of this wonderful plateform. 😊 Thank you GrowUp ❤ ",
+    name: "Bhawesh pandey",
+    image: "bhaweshImg.jpg",
     nameColor: "text-green-500",
     borderColor: "border-green-500",
   },
   {
     id: 7,
-    text: "Hi mera name aprajita h or mai ak student hu mai yha sturdy k sath work from home kam v karti hu ye ak aisha plate fome h jaha p aapko zero investment p kam diya jata h grow up company aap k life ko grow kr dege🤩",
-    name: "Shubham",
-    image: "shubhamImg.jpg",
+    text: "🔹 Zero investment work hai, isme 💸 koi paisa nahi lagta.🔹 Main abhi 🎓 12th pass hoon aur mujhe isse bahut madad mili.🔹 Is kamai se 📱 maine naya phone bhi kharida hai because of this company ☺🔹 Ye ek 💯 genuine earning aur helpful opportunity hai!",
+    name: "Kundan Kumar",
+    image: "kundanImg.jpg",
     nameColor: "text-green-500",
     borderColor: "border-green-500",
   },
   {
     id: 8,
-    text: "Grow Up best platform hai online earning ke liye 😊 Main college student hoon, 4-5 ghante kaam karke apne saare kharche nikal leta hoon. Sir aur Ma'am ka support bhi bht acha hai ❤ aur payment time pe milta hai!",
-    name: "Aakash",
-    image: "akashImg.jpg",
+    text: "Thanks dear sir & ma'am ♥ itna achha platform dene ke liye..Mai 2 months se work kar rha hu GrowUp kaafi achha & genuine platform hai. Ye sach me bilkul ek genuine plateform hai jaha Bina Paisa lgaye paisa kamaya jata hai... or har month payment bhi timely di jati hai .Everything is perfect here ❤ 😊 you can start work without any investment and without any hesitation 💯✅thankyou so much GrowUp company🙏",
+    name: "Vicky",
+    image: "/vickyImg.jpg",
     nameColor: "text-green-500",
     borderColor: "border-green-500",
   },
   {
     id: 9,
-    text: "Thanks sir ♥ itna achha platform dene ke liye..Mai 2 months se work kar rha hu kaafi achha & genuine platform hai growup thankyou so much sir 🙏",
-    name: "Bhawesh",
-    image: "/bhaweshImg.jpg",
+    text: "GrowUp is really amazing plateform where you can earn money without any investment. Or yaha pe aapko koi product & course selling kaam bhi nhi Krna hota.. 💯 this is very genuine & trusting plateform ❤🌸 payment and yaha ka support or guidance system bhot accha ⭐hai...I'm feeling very proud to be a part of GrowUp company 😊❤🙏 Thank uh so much ❤",
+    name: "Deepak Kumar",
+    image: "/deepakImg.jpg",
     nameColor: "text-green-500",
     borderColor: "border-green-500",
   }
@@ -144,11 +144,11 @@ const Testimonials = () => {
                       className='hidden lg:absolute lg:block lg:-top-[80px]  lg:left-0 h-auto w-[600px] z-0'
                   />
                       {/* Testimonial Card */}
-                      <div className="relative md:-top-2 items-center left-1/2 -translate-x-1/2 md:translate-x-0 md:left-16 bg-white/90  md:w-[460px] w-[360px] md:h-[200px] rounded-2xl shadow-md md:shadow-lg p-6 md:p-4 z-20 hover:shadow-xl transition-shadow duration-300">
+                      <div className="relative flex flex-col justify-center md:-top-2  left-1/2 -translate-x-1/2 md:translate-x-0 md:left-16 bg-white/90  md:w-[460px] w-[360px] md:h-[250px] rounded-2xl shadow-md md:shadow-lg p-6 md:p-4 z-20 hover:shadow-xl transition-shadow duration-300">
                         <p className="text-gray-600 leading-relaxed text-sm md:text-base">
                           {testimonial.text}
                         </p>
-                        <p className={`mt-6 font-bold ${testimonial.nameColor}`}>{testimonial.name}</p>
+                        <p className={`mt-3 font-bold ${testimonial.nameColor}`}>{testimonial.name}</p>
                         <div className="absolute -bottom-8 md:-bottom-12 left-1/2 lg:-bottom-16 md:left-1/2 transform -translate-x-1/2 ">
                         <Image 
                         alt='down arrow'
@@ -182,7 +182,7 @@ const Testimonials = () => {
 
           </div>
           
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex space-x-2">
             {randomizedTestimonials.map((_, index) => (
               <button
                 key={index}

@@ -1,17 +1,51 @@
 "use client";
-import React from "react";
+// Import useState and useEffect for the timer
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
 const Page = () => {
+  const initialTimeInSeconds = 1 * 60;
+  
+  // 1. Set up state for the timer
+  const [timeLeft, setTimeLeft] = useState(initialTimeInSeconds);
+
+  useEffect(() => {
+    // Set up an interval that decrements the time every second
+    const timerId = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        // When the timer is about to reach 0, reset it
+        if (prevTime <= 1) {
+          return initialTimeInSeconds;
+        }
+        // Otherwise, just decrement
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(timerId);
+  }, []); // The empty dependency array [] ensures this effect runs only once
+
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+
   return (
     <section
       className="max-w-7xl w-full relative z-10 px-4 py-4 mx-auto"
       id="get-started"
     >
       <div className="w-full flex justify-center">
-        <div className="relative w-full max-w-3xl">
+        <div className="relative w-full max-w-3xl flex flex-col items-center">
+          
+          {/* 4. Timer Display - Placed right above the card */}
+          <div className="mb-4 text-center">
+            <p className="text-xl font-bold text-red-600 animate-pulse">
+              Time Left: {minutes}:{seconds < 10 ? `0${seconds}` : seconds} mins
+            </p>
+          </div>
+          
           <div className="w-full max-w-md mx-auto rounded-3xl p-[2px] bg-gradient-to-b from-[#A6F4C5] to-[#B6A7FF]">
             <div className="w-full h-full flex flex-col items-center gap-6 rounded-[22px] bg-white/90 backdrop-blur-sm p-6 md:p-10">
               {/* STEP - 1 JOIN WHATSAPP --> REGISTER FORM*/}
@@ -41,7 +75,7 @@ const Page = () => {
               </div>
               {/* STEP - 2 TEST LINK  */}
               <div className="w-full rounded-2xl p-[1.5px] bg-[linear-gradient(90deg,_#c6ffdd_0%,_#fbd786_50%,_#f7797d_100%)] bg-[length:200%_auto] transition-all duration-500 hover:bg-[position:100%_0] shadow-md hover:shadow-lg">
-                <div className="flex w-full items-center rounded-[14px] bg-white p-4">
+                <Link href="/test" className="flex w-full items-center  rounded-[14px] bg-white p-4">
                   <div className="flex-shrink-0">
                     <Image
                       src="/skillImg.png"
@@ -56,17 +90,17 @@ const Page = () => {
                     <h2
                       className={`text-lg font-bold bg-gradient-to-r from-gray-700 to-gray-400 bg-clip-text text-transparent`}
                     >
-                      Step- 3
+                      Step- 2
                     </h2>
                     <h3 className="text-xl text-center font-semibold text-gray-800">
                       Test Link
                     </h3>
                   </div>
-                </div>
+                </Link>
               </div>
               {/* STEP - 3 Access Franchise Link Channel   */}
               <div className="w-full rounded-2xl p-[1.5px] bg-[linear-gradient(90deg,_#c6ffdd_0%,_#fbd786_50%,_#f7797d_100%)] bg-[length:200%_auto] transition-all duration-500 hover:bg-[position:100%_0] shadow-md hover:shadow-lg">
-                <div className="flex w-full items-center rounded-[14px] bg-white p-4">
+                <Link href="/telegram" className="flex w-full items-center  rounded-[14px] bg-white p-4">
                   <div className="flex-shrink-0">
                     <Image
                       src="/telegram.png"
@@ -87,7 +121,7 @@ const Page = () => {
                       Access Franchise Link Channel
                     </h3>
                   </div>
-                </div>
+                </Link>
               </div>
             </div>
           </div>

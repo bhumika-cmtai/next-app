@@ -67,11 +67,11 @@ const Header = () => {
 
         <div className="hidden lg:block  ">
           <Link
-            href="/get-started"
+            href="/login"
             className="flex items-center justify-center gap-1 bg-sea-green-100 rounded-full 
                        px-4 py-2 font-semibold text-gray-800 transition-all text-lg border-2 border-sea-green-100 drop-shadow-gold-200/70 drop-shadow-lg"
           >
-            Sign Up
+            User Dashboard
             <MoveRight size={18} />
           </Link>
         </div>
@@ -107,7 +107,7 @@ const Header = () => {
             className="flex items-center justify-center gap-1 bg-sea-green-100 rounded-full 
                        px-4 py-2 font-semibold text-gray-800 transition-all text-lg border-2 border-sea-green-100 drop-shadow-gold-200/70 drop-shadow-lg bg-[length:200%_auto] hover:bg-[right_center]"
           >
-            Sign up
+            User Dashboard
             <MoveRight size={16} strokeWidth={2.5} />
           </Link>
         </div>

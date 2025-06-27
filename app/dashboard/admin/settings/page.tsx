@@ -12,8 +12,8 @@ import {
   selectError,
   setError,
   updateSessionDetails,
-  fetchSession, // Correctly named thunk
-  GlobalSession      // Type for session data
+  fetchSession, 
+  GlobalSession      
 } from '@/lib/redux/authSlice';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -23,7 +23,6 @@ import { Label } from "@/components/ui/label";
 import { Loader2, User, Landmark, Edit, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Helper component to display details neatly
 const DetailItem = ({ label, value }: { label: string; value?: string | number | null }) => (
   <div className="flex justify-between items-center py-3 border-b last:border-b-0">
     <p className="text-sm font-medium text-gray-500">{label}</p>
@@ -37,40 +36,34 @@ const SettingsPage = () => {
   const isLoading = useSelector(selectIsLoading);
   const error = useSelector(selectError);
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'bank' | 'session'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'session'>('profile');
   
-  // State for forms
   const [profileData, setProfileData] = useState({
      name: '', 
     whatsappNumber: '', 
     city: '', 
     bio: '', 
-    newPassword: '',      // Changed from 'password'
-    confirmPassword: ''  // Added for validation
+    newPassword: '',      
+    confirmPassword: ''  
     });
-  const [bankData, setBankData] = useState({ account_number: '', Ifsc: '', upi_id: '' });
+  // const [bankData, setBankData] = useState({ account_number: '', Ifsc: '', upi_id: '' });
   
-  // ** 1. State for session data is now managed locally **
   const [sessionData, setSessionData] = useState<Partial<GlobalSession>>({});
   const [isSessionLoading, setIsSessionLoading] = useState(false);
 
-  // State for dialog visibility
   const [isProfileModalOpen, setProfileModalOpen] = useState(false);
   const [isBankModalOpen, setBankModalOpen] = useState(false);
 
-  // Fetch user details on component mount
   useEffect(() => {
     if (!user) {
       dispatch(fetchCurrentUser());
     }
   }, [dispatch, user]);
 
-  // ** 2. Fetch global session data only when the session tab is active **
    const loadSession = async () => {
         setIsSessionLoading(true);
         const data: GlobalSession | null = await dispatch(fetchSession());
         if (data) {
-            // Format dates for input fields (YYYY-MM-DD)
             setSessionData({
                 ...data,
                 sessionStartDate: data.sessionStartDate ? new Date(data.sessionStartDate).toISOString().split('T')[0] : '',
@@ -86,7 +79,6 @@ const SettingsPage = () => {
   }, [dispatch, activeTab, user]);
 
 
-  // Handle and clear global errors
   useEffect(() => {
     if (error) {
         toast.error(error);
@@ -94,7 +86,6 @@ const SettingsPage = () => {
     }
   }, [error, dispatch]);
 
-  // Populate user-related forms when user data is available
   useEffect(() => {
     if (user) {
       setProfileData({
@@ -102,13 +93,8 @@ const SettingsPage = () => {
         whatsappNumber: user.whatsappNumber || '',
         city: user.city || '',
         bio: user.bio || '',
-        newPassword: '',      // Always reset password fields on load
-        confirmPassword: ''   // Always reset password fields on load
-      });
-      setBankData({
-        account_number: user.account_number || '',
-        Ifsc: user.Ifsc || '',
-        upi_id: user.upi_id || '',
+        newPassword: '',      
+        confirmPassword: ''   
       });
     }
   }, [user]);
@@ -116,7 +102,6 @@ const SettingsPage = () => {
   const handleProfileUpdate = async (e: React.FormEvent) => {
       e.preventDefault();
     
-      // Create a base object with only the data we always want to update
       const dataToUpdate: { [key: string]: any } = {
         name: profileData.name,
         whatsappNumber: profileData.whatsappNumber,
@@ -124,20 +109,15 @@ const SettingsPage = () => {
         bio: profileData.bio,
       };
     
-      // Conditionally add the password ONLY if the user wants to change it
       if (profileData.newPassword!="") {
-        // Validation check 1: Passwords must match
         if (profileData.newPassword !== profileData.confirmPassword) {
           toast.error("New passwords do not match.");
-          return; // Stop the function
+          return; 
         }
-        // Validation check 2: Minimum length (example)
         
-        // If validation passes, add the password to the object to be sent
         dataToUpdate.password = profileData.newPassword;
       }
     
-      // Dispatch the clean, safe object to the backend
       const result = await dispatch(updateUserProfile(dataToUpdate));
       
       if (result) {
@@ -146,22 +126,20 @@ const SettingsPage = () => {
       }
     };
 
-  const handleBankUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const result = await dispatch(updateBankDetails(bankData));
-    if (result) {
-      toast.success("Bank details updated successfully!");
-      setBankModalOpen(false);
-    }
-  };
+  // const handleBankUpdate = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   const result = await dispatch(updateBankDetails(bankData));
+  //   if (result) {
+  //     toast.success("Bank details updated successfully!");
+  //     setBankModalOpen(false);
+  //   }
+  // };
 
-  // ** 3. Updated handler for session update **
   const handleSessionUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     const result: GlobalSession | null = await dispatch(updateSessionDetails(sessionData));
     if (result) {
       toast.success("Session details updated successfully!");
-      // Refresh local state with the newly saved data
       setSessionData({
           ...result,
           sessionStartDate: result.sessionStartDate ? new Date(result.sessionStartDate).toISOString().split('T')[0] : '',
@@ -174,7 +152,7 @@ const SettingsPage = () => {
   if (isLoading && !user) {
     return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
-  if (!user) {
+  else if (!user) {
     return <div className="flex items-center justify-center h-screen"><p>Could not load user data. Please try logging in again.</p></div>;
   }
 
@@ -188,22 +166,20 @@ const SettingsPage = () => {
         <CardContent>
           <div className="flex border-b mb-6">
             <button onClick={() => setActiveTab('profile')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === 'profile' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><User size={16} /> Profile Details</button>
-            <button onClick={() => setActiveTab('bank')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === 'bank' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><Landmark size={16} /> Bank Details</button>
+            {/* <button onClick={() => setActiveTab('bank')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === 'bank' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><Landmark size={16} /> Bank Details</button> */}
             
-            {/* ** 4. Session tab is only visible to admins ** */}
             {user.role === 'admin' && (
-              <button onClick={() => setActiveTab('session')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === 'session' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><Clock size={16} /> Update Session</button>
+              <button onClick={() => setActiveTab('session')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors ${activeTab === 'session' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><Clock size={16} /> Claim Client</button>
             )}
           </div>
 
           {activeTab === 'profile' && (
-             // ... Profile content unchanged
              <div>
               <DetailItem label="Full Name" value={user.name} />
               <DetailItem label="WhatsApp Number" value={user.whatsappNumber} />
               <DetailItem label="City" value={user.city} />
               <DetailItem label="Bio" value={user.bio} />
-              <DetailItem label="Password" value={"••••••••"} />
+              <DetailItem label="Password" value={user.password} />
               <Dialog open={isProfileModalOpen} onOpenChange={setProfileModalOpen}><DialogTrigger asChild><Button className="mt-6 w-full md:w-auto"><Edit className="mr-2 h-4 w-4" /> Update Profile</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Update Profile Details</DialogTitle></DialogHeader>
               <form onSubmit={handleProfileUpdate} className="space-y-4 pt-4">
                 <div className="space-y-2">
@@ -222,10 +198,6 @@ const SettingsPage = () => {
                   <Label htmlFor="bio">Bio</Label>
                   <Input id="bio" value={profileData.bio} onChange={(e) => setProfileData({...profileData, bio: e.target.value})} />
                 </div>
-                <div className="space-y-2">
-                                        <Label htmlFor="oldPassword">Old Password</Label>
-                                        <Input id="oldPassword" type="password" placeholder="Leave blank to keep current" value={user.password} disabled />
-                                    </div>
                 
                                     <div className="space-y-2">
                                         <Label htmlFor="newPassword">New Password</Label>
@@ -244,32 +216,28 @@ const SettingsPage = () => {
             </div>
           )}
 
-          {activeTab === 'bank' && (
-             // ... Bank content unchanged
+          {/* {activeTab === 'bank' && (
             <div><DetailItem label="Account Number" value={user.account_number} /><DetailItem label="IFSC Code" value={user.Ifsc} /><DetailItem label="UPI ID" value={user.upi_id} /><Dialog open={isBankModalOpen} onOpenChange={setBankModalOpen}><DialogTrigger asChild><Button className="mt-6 w-full md:w-auto"><Edit className="mr-2 h-4 w-4" /> Update Bank Details</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>Update Bank Details</DialogTitle></DialogHeader><form onSubmit={handleBankUpdate} className="space-y-4 pt-4"><div className="space-y-2"><Label htmlFor="account_number">Account Number</Label><Input id="account_number" value={bankData.account_number} onChange={(e) => setBankData({...bankData, account_number: e.target.value})} /></div><div className="space-y-2"><Label htmlFor="ifsc">IFSC Code</Label><Input id="ifsc" value={bankData.Ifsc} onChange={(e) => setBankData({...bankData, Ifsc: e.target.value})} /></div><div className="space-y-2"><Label htmlFor="upi">UPI ID</Label><Input id="upi" value={bankData.upi_id} onChange={(e) => setBankData({...bankData, upi_id: e.target.value})} /></div><DialogFooter><Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Changes"}</Button></DialogFooter></form></DialogContent></Dialog></div>
-          )}
+          )} */}
           
-          {/* ** 5. Render the session tab content ** */}
           {activeTab === 'session' && user.role === 'admin' && (
             <div>
               {isSessionLoading ? (
                  <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
               ) : (
                 <>
-                  {/* Display Current Session Details */}
                   <div className="mb-8 p-4 bg-slate-50 rounded-lg border">
-                    <h3 className="text-lg font-semibold mb-2">Current Session Schedule</h3>
+                    <h3 className="text-lg font-semibold mb-2">Current Claim Session Schedule</h3>
                     {sessionData && sessionData.sessionStartDate ? (
                        <div className="space-y-2 text-sm">
                           <p><strong>Starts:</strong> {new Date(sessionData.sessionStartDate).toLocaleDateString()} at {sessionData.sessionStartTime}</p>
                           <p><strong>Ends:</strong> {new Date(sessionData.sessionEndDate!).toLocaleDateString()} at {sessionData.sessionEndTime}</p>
                        </div>
                     ) : (
-                      <p className="text-sm text-gray-500">No global session has been set yet.</p>
+                      <p className="text-sm text-gray-500">No claim session has been set yet.</p>
                     )}
                   </div>
                 
-                  {/* Form to Update Session */}
                   <form onSubmit={handleSessionUpdate} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
@@ -292,7 +260,7 @@ const SettingsPage = () => {
                     <div className="flex justify-end">
                         <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Clock className="mr-2 h-4 w-4" />}
-                            Update Session
+                            Update Claim Session
                         </Button>
                     </div>
                   </form>
