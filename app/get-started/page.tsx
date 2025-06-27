@@ -115,7 +115,7 @@ const Page = () => {
                     <h2
                       className={`text-lg font-bold bg-gradient-to-r from-gray-700 to-blue-600 bg-clip-text text-transparent`}
                     >
-                      Step- 4
+                      Step- 3
                     </h2>
                     <h3 className="text-xl text-center font-semibold text-gray-800">
                       Access Franchise Link Channel
