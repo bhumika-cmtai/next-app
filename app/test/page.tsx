@@ -116,7 +116,7 @@ const Page = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 1.5, ease: "easeInOut" }}
                   className="absolute block -right-[100px] top-[60px] lg:-top-[40px] lg:-right-[100px] h-[200px] w-[200px] lg:h-[300px] lg:w-[300px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
-                ></motion.div>w
+                ></motion.div>
                 {/* blob for left -  */}
                 <motion.div
                   initial={{ scale: 0, opacity: 0 }}

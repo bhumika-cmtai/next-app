@@ -33,10 +33,12 @@ const Page = () => {
 
   return (
     <section
-      className="max-w-7xl w-full relative z-10 px-4 py-4 mx-auto"
+      // ✅ FIX: Removed `px-4` to allow child elements to be full-width.
+      className="relative w-full z-10 py-4 mx-auto overflow-hidden"
       id="get-started"
     >
-      <div className="w-full flex justify-center">
+      {/* ✅ FIX: Added `px-4` here to ensure the card has padding on small screens. */}
+      <div className="w-full flex justify-center px-4">
         <div className="relative w-full max-w-3xl flex flex-col items-center">
           
           {/* 4. Timer Display - Placed right above the card */}
@@ -144,7 +146,7 @@ const Page = () => {
           whileInView={{ scale: 1, opacity: 0.2 }}
           viewport={{ once: true }}
           transition={{ duration: 1.5, ease: "easeInOut" }}
-          className="absolute block -right-[100px] top-[60px] lg:-top-[40px] lg:-right-[240px] h-[200px] w-[200px] lg:h-[460px] lg:w-[460px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
+          className="absolute block -right-[100px] top-[60px] lg:-top-[40px] lg:-right-[200px] h-[200px] w-[200px] lg:h-[460px] lg:w-[460px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
         ></motion.div>
         {/* blob for left */}
         <motion.div
@@ -152,12 +154,12 @@ const Page = () => {
           whileInView={{ scale: 1, opacity: 0.2 }}
           viewport={{ once: true }}
           transition={{ duration: 1, ease: "easeInOut" }}
-          className="absolute block top-[260px] -left-[150px] lg:top-[240px] lg:-left-[300px] lg:h-[600px] h-[200px] w-[200px] lg:w-[600px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
+          className="absolute block top-[260px] -left-[150px] lg:top-[240px] lg:-left-[240px] lg:h-[600px] h-[200px] w-[200px] lg:w-[600px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
         ></motion.div>
       </div>
 
       {/* Legal Documents Section */}
-      <div className="mt-10 flex flex-col items-center justify-center gap-3">
+      <div className="mt-10 w-full flex flex-col items-center justify-center gap-3">
         <div className="flex items-center gap-2">
             <Image
               src="/legalImg.png" 
@@ -166,10 +168,12 @@ const Page = () => {
               alt="Document icon"
               />
             <div className="text-lg font-semibold text-black">Legal Documents:</div>
-          </div>
-        <div className="border-t-[1px] border-t-black w-full flex justify-center pt-4">
+        </div>
+        {/* ✅ FIX: The border now correctly spans the full viewport width */}
+        <div className="w-full border-t-[1px] border-t-black flex justify-center pt-4">
             
-          <div className="flex flex-col gap-2 items-start">
+          {/* ✅ FIX: Added `px-4` to this container to give the text content padding */}
+          <div className="flex flex-col gap-2 items-start px-4">
             <p className="text-left">PAN Card</p>
             <p className="text-left">Udyam Registration Certificate</p>
             <p className="text-left">GST Certificate</p>

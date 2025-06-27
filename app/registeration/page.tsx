@@ -70,7 +70,7 @@ const Page = () => {
   return (
     <section
       className="w-full relative overflow-hidden" 
-      id="get-started"
+      id="registeration"
     >
       <div className="max-w-7xl w-full relative z-10 px-4 py-4 mx-auto">
         <div className="w-full flex justify-center min-h-screen ">

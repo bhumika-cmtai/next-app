@@ -1,4 +1,5 @@
-import Header from "@/components/(website)/Header";
+// import Header from "@/components/(website)/Header";
+import Header from './Header';
 import { Noto_Sans } from 'next/font/google';
 // import {Noto-Sans} from '@next/font'
 
@@ -16,11 +17,11 @@ export default function Layout({
 }) {
 
   return (
-    <div className={`min-h-screen bg-gradient-to-r from-pink-50  to-sea-green-100/30 font-sans overflow-x-hidden ${notoSans.className}`}>
+    <div className={`min-h-screen bg-gradient-to-r from-pink-50  to-sea-green-100/30 font-sans ${notoSans.className}`}>
         <div className="w-full hidden lg:block"></div>
         <Header />
       <div className="flex flex-col">
-        <main className="w-full py-20 px-4 ">
+        <main className="w-full pt-20 ">
           {children}
         </main>
       </div>
