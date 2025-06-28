@@ -23,13 +23,14 @@ const Hero = () => {
   return (
     <section className="max-w-7xl w-full relative  text-center px-4 " id="home">
        <PopupPoster isOpen={isPopupOpen} onClose={handleClosePopup}>
-        <Link href="/get-started" >
+        <Link href="/#contactus" >
           <Image 
           src="/posterImg.jpg"
           alt='job popup'
           width={300}
           height={300}
           className='h-auto w-[300px]'
+          onClick={handleClosePopup}
           />
         </Link>
       </PopupPoster>
