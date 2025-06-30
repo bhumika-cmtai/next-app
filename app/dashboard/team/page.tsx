@@ -16,13 +16,13 @@ const stats = [
         icon: FileText,
         trend: "up",
     },
-    {
-        name: "Conversion Rate",
-        value: "24.8%",
-        change: "+4.1%",
-        icon: TrendingUp,
-        trend: "up",
-    },
+    // {
+    //     name: "Conversion Rate",
+    //     value: "24.8%",
+    //     change: "+4.1%",
+    //     icon: TrendingUp,
+    //     trend: "up",
+    // },
 ];
 
 export default function Dashboard() {
@@ -90,7 +90,7 @@ export default function Dashboard() {
                     </div>
                 </div> */}
 
-                <div className="rounded-lg border bg-white p-6 shadow-sm">
+                {/* <div className="rounded-lg border bg-white p-6 shadow-sm">
                     <h2 className="text-lg font-semibold text-slate-900">
                         Quick Actions
                     </h2>
@@ -107,7 +107,7 @@ export default function Dashboard() {
                             </button>
                         ))}
                     </div>
-                </div>
+                </div> */}
             </div>
         </div>
     );

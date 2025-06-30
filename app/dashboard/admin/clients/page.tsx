@@ -68,7 +68,7 @@ export default function Clients() {
   useEffect(() => {
     // --- MODIFIED: API call uses the generic 'search' parameter ---
     // The backend will treat this as a name/email search
-    dispatch(fetchClients({ search: debouncedSearch, status: statusFilter === 'all' ? undefined : statusFilter, page: currentPage }));
+    dispatch(fetchClients({ searchQuery: debouncedSearch, status: statusFilter === 'all' ? undefined : statusFilter, page: currentPage }));
   }, [dispatch, debouncedSearch, statusFilter, currentPage]);
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -130,7 +130,7 @@ export default function Clients() {
     if (response) {
       setModalOpen(false);
       // Refetch to see the changes
-      dispatch(fetchClients({ search: debouncedSearch, status: statusFilter, page: currentPage }));
+      dispatch(fetchClients({ searchQuery: debouncedSearch, status: statusFilter, page: currentPage }));
     }
   };
 
@@ -143,7 +143,7 @@ export default function Clients() {
     if (response) {
       setDeleteClient(null); 
       const newPage = clients.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
-      dispatch(fetchClients({ search: debouncedSearch, status: statusFilter, page: newPage }));
+      dispatch(fetchClients({ searchQuery: debouncedSearch, status: statusFilter, page: newPage }));
     }
   };
 

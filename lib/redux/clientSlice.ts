@@ -34,6 +34,7 @@ interface ClientState {
   error: string | null;
   selectedClient: Client | null;
   pagination: Pagination;
+  portalNames: string[];
 }
 
 const initialState: ClientState = {
@@ -46,6 +47,7 @@ const initialState: ClientState = {
     totalPages: 1,
     totalClients: 0,
   },
+  portalNames: [],
   };  
 
 const clientSlice = createSlice({
@@ -79,34 +81,23 @@ const clientSlice = createSlice({
     clearSelectedClient: (state) => {
       state.selectedClient = null;
     },
+    setPortalNames: (state, action) => { // <-- NEW: Reducer to set portal names
+      state.portalNames = action.payload;
+    },
   },
 }); 
 
-export const { setClients, setLoading, setError, setSelectedClient, clearSelectedClient, setPagination, setCurrentPage } = clientSlice.actions;
+export const { setClients, setLoading, setError, setSelectedClient, clearSelectedClient, setPagination, setCurrentPage,setPortalNames } = clientSlice.actions;
 
-export const fetchClients = (params: {search?:string ,phoneNumber?: string; portalName?: string; status?: string; page?: number }) => async (dispatch: Dispatch) => {
+export const fetchClients = (params: { searchQuery?: string; status?: string; page?: number }) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
     const queryParams = new URLSearchParams();
-    
-     if (params.page) {
-      queryParams.append('page', String(params.page));
-    }
-    if (params.status && params.status !== 'all') {
-      queryParams.append('status', params.status);
-    }
-    if (params.search) {
-      // For generic search (name/email)
-      queryParams.append('searchQuery', params.search);
-    } else if (params.phoneNumber && params.portalName) {
-      // For specific search (phone/portal)
-      queryParams.append('phoneNumber', params.phoneNumber);
-      queryParams.append('portalName', params.portalName);
-    }
-    
-    // Use NEXT_PUBLIC_API_BASE_URL which should point to http://localhost:8000/v1
+    if (params.page) queryParams.append('page', String(params.page));
+    if (params.status && params.status !== 'all') queryParams.append('status', params.status);
+    if (params.searchQuery) queryParams.append('searchQuery', params.searchQuery);
+
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/getAllClient?${queryParams.toString()}`);
-    console.log(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/getAllClient?${queryParams.toString()}`)
 
     if (response.data) {
       dispatch(setClients(response.data.data));
@@ -118,6 +109,7 @@ export const fetchClients = (params: {search?:string ,phoneNumber?: string; port
     dispatch(setError(message));
   }
 };
+
 
 
 export const fetchClientById = (id: string) => async (dispatch: Dispatch) => {
@@ -188,6 +180,20 @@ export const deleteClient = (id: string) => async (dispatch: Dispatch) => {
   }
 };
 
+
+export const fetchPortalNames = () => async (dispatch: Dispatch) => {
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/getPortalNames`);
+    if (response.data && response.data.data) {
+      dispatch(setPortalNames(response.data.data));
+    }
+  } catch (error: any) {
+    console.error("Failed to fetch portal names:", error.message);
+    // Optionally dispatch an error action
+  }
+};
+
+
 export const selectClients = (state: RootState) => state.clients.data;
 export const selectClientById = (state: RootState) => state.clients.selectedClient;
 export const selectLoading = (state: RootState) => state.clients.loading;
@@ -196,5 +202,5 @@ export const selectPagination = (state: RootState) => state.clients.pagination;
 export const selectCurrentPage = (state: RootState) => state.clients.pagination.currentPage;
 export const selectTotalPages = (state: RootState) => state.clients.pagination.totalPages;
 export const selectTotalClients = (state: RootState) => state.clients.pagination.totalClients;
-
+export const selectPortalNames = (state: RootState) => state.clients.portalNames
 export default clientSlice.reducer;

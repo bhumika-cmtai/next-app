@@ -200,9 +200,34 @@ const SettingsPage = () => {
           )}
 
           {activeTab === 'session' && user.role === 'admin' && (
-            /* Session Content remains the same */
-            <div>
-                {/* ... existing session form ... */}
+             <div>
+              {isSessionLoading ? (
+                 <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              ) : (
+                <>
+                  <div className="mb-8 p-4 bg-slate-50 rounded-lg border">
+                    <h3 className="text-lg font-semibold mb-2">Current Claim Session Schedule</h3>
+                    {sessionData?.sessionStartDate ? (
+                       <div className="space-y-2 text-sm">
+                          <p><strong>Starts:</strong> {new Date(sessionData.sessionStartDate).toLocaleDateString()} at {sessionData.sessionStartTime}</p>
+                          <p><strong>Ends:</strong> {new Date(sessionData.sessionEndDate!).toLocaleDateString()} at {sessionData.sessionEndTime}</p>
+                       </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">No claim session has been set yet.</p>
+                    )}
+                  </div>
+                
+                  <form onSubmit={handleSessionUpdate} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2"><Label htmlFor="start-date">Start Date</Label><Input id="start-date" type="date" value={sessionData?.sessionStartDate || ''} onChange={(e) => setSessionData({...sessionData, sessionStartDate: e.target.value})}/></div>
+                      <div className="space-y-2"><Label htmlFor="start-time">Start Time</Label><Input id="start-time" type="time" value={sessionData?.sessionStartTime || ''} onChange={(e) => setSessionData({...sessionData, sessionStartTime: e.target.value})}/></div>
+                      <div className="space-y-2"><Label htmlFor="end-date">End Date</Label><Input id="end-date" type="date" value={sessionData?.sessionEndDate || ''} onChange={(e) => setSessionData({...sessionData, sessionEndDate: e.target.value})}/></div>
+                      <div className="space-y-2"><Label htmlFor="end-time">End Time</Label><Input id="end-time" type="time" value={sessionData?.sessionEndTime || ''} onChange={(e) => setSessionData({...sessionData, sessionEndTime: e.target.value})}/></div>
+                    </div>
+                    <div className="flex justify-end"><Button type="submit" disabled={isAuthLoading} className="w-full md:w-auto">{isAuthLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Clock className="mr-2 h-4 w-4"/>}Update Session</Button></div>
+                  </form>
+                </>
+              )}
             </div>
           )}
 
