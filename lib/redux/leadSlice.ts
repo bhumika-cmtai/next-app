@@ -6,12 +6,14 @@ export interface Lead {
   _id?: string;
   name: string;
   email: string;
-  portal_Name: string;
+  portal_name: string;
   phoneNumber: string;
   qualification: string;
   city: string;
   date_of_birth: string;
   gender: string;
+  ekyc_stage?: string;
+  trade_status?: string;
   message: string;
   source: string;
   status: string;
@@ -125,6 +127,7 @@ export const fetchLeads = (params?: { search?: string; status?: string; page?: n
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/getAllLeads${queryString}`);
     
     if (response.status === 200) {
+      console.log(response)
       dispatch(setLeads(response.data.data));
     } else {
       dispatch(setError(response.data.message));

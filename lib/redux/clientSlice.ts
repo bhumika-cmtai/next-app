@@ -5,7 +5,7 @@ import { RootState } from "../store";
 export interface Client {
   _id?: string;
   name: string;
-  email: string;
+  email?: string;
   phoneNumber: string;
   ownerName?: string[]; 
   ownerNumber?: string[];
@@ -13,6 +13,8 @@ export interface Client {
   age?: number;
   status: string;
   portalName?: string;
+  ekyc_stage?: string;
+  trade_status?: string;
   reason?: string;
   leaderCode?: string;
   createdOn?: string;
@@ -139,9 +141,11 @@ export const addClient = (client: Client) => async (dispatch: Dispatch) => {
   try {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/addClient`, client);
     if (response.status === 201) {
+      console.log(response.data)
       return response.data;
     } else {
       dispatch(setError(response.data.message));
+      console.log(response.data)
     }
   } catch (error: unknown) {
     const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);

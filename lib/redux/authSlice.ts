@@ -89,7 +89,7 @@ export const login = ({ email, password, rememberMe }: { email: string; password
   dispatch(setIsLoading(true));
   dispatch(setError(null));
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/user/login`, { email, password });
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login/admin`, { email, password });
     if (response.status === 200 && response.data?.data?.user && response.data?.data?.token) {
       const { user, token } = response.data.data;
 
@@ -233,6 +233,36 @@ export const fetchSession = () => async (dispatch: Dispatch) => {
         dispatch(setError(message));
         return null;
     }
+};
+
+export const loginLeader = ({ password }: { password: string }) => async (dispatch: Dispatch) => {
+  dispatch(setIsLoading(true));
+  dispatch(setError(null)); // Clear any previous errors
+
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login/leader`, { password });
+
+    dispatch(setIsLoading(false)); // Manually set loading to false on success.
+    return true; 
+
+    // Set cookie for session management
+    // Cookies.set('user-token', token, {
+    //   expires: 7, // Set a 7-day expiry for the leader token
+    //   sameSite: 'lax',
+    // });
+    
+    // Set the user in the Redux state
+    // dispatch(setUser(user));
+    
+    // Return the user object on success to signal completion to the component
+    // return user; 
+
+  } catch (error: any) {
+    // Extract the error message from the API response if available
+    const message = error.response?.data?.message || error.message || "An unknown error occurred.";
+    dispatch(setError(message));
+    return null; // Return null on failure
+  } 
 };
 
 

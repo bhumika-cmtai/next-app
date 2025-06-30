@@ -4,14 +4,17 @@ import leadReducer from './redux/leadSlice';
 import contactReducer from './redux/contactSlice';
 import clientReducer from './redux/clientSlice';
 import authReducer from './redux/authSlice';
-
+import linkReducer from './redux/linkSlice'
+import applinkReducer from './redux/appLinkSlice'
 export const store = configureStore({
   reducer: {
     users: userReducer,
     leads: leadReducer,
     contacts: contactReducer,
     auth: authReducer,
-    clients: clientReducer
+    clients: clientReducer,
+    links: linkReducer,
+    applinks: applinkReducer
   },
 });
 

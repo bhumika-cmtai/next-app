@@ -17,6 +17,8 @@ export interface User {
   work_experience?:string;
   createdOn?: string;
   updatedOn?: string;
+  income?: number;
+  registeredClientCount?: number
 }
 
 export interface Pagination {
@@ -110,6 +112,7 @@ export const fetchUsers = (params?: { search?: string; status?: string; page?: n
     const queryString = query.length ? `?${query.join('&')}` : '';
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getallUsers${queryString}`);
     if (response.status === 200) {
+      console.log(response.data.data)
       dispatch(setUsers(response.data.data));
       if (params?.page) dispatch(setCurrentPage(params.page));
     } else {

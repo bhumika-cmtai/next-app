@@ -196,7 +196,7 @@ export default function Clients() {
               <TableHeader>
                 <TableRow>
                   {/* Added # column back */}
-                  <TableHead className="w-12">#</TableHead>
+                  <TableHead className="w-12">S.no.</TableHead>
                   <TableHead>Registered Client Name</TableHead>
                   <TableHead>Phone Number</TableHead>
                   <TableHead>Status</TableHead>

@@ -1,3 +1,5 @@
+// layout.tsx
+
 "use client";
 
 import React, { useState } from "react";
@@ -11,13 +13,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const closeSidebar = () => setIsSidebarOpen(false);
 
   return (
-    <div className="min-h-screen flex">
+    <div className="flex bg-slate-50">
+      {/* Sidebar is now sticky on its own */}
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-      <div className="flex-1 flex flex-col">
+
+      {/* This container for the right side will manage the scrolling */}
+      <div className="flex h-screen flex-1 flex-col overflow-hidden">
+        {/* Header will be sticky within this container */}
         <Header title="Dashboard" onMenuClick={toggleSidebar} />
-        <main className="flex-1 bg-[var(--background)] p-6">{children}</main>
+        
+        {/* Main content area is now the only scrollable element */}
+        <main className="flex-1 overflow-y-auto bg-[var(--background)] p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
 }
-

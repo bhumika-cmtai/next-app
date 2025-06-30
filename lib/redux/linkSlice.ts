@@ -1,0 +1,142 @@
+// src/lib/redux/linkSlice.ts
+
+import { createSlice, Dispatch } from "@reduxjs/toolkit";
+import axios from "axios";
+import { RootState } from "../store";
+
+// Interface for a single portal link object
+export interface PortalLink {
+  _id: string;
+  portalName: string;
+  link: string;
+}
+
+// Interface for the state managed by this slice
+interface LinkState {
+  links: PortalLink[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+const initialState: LinkState = {
+  links: [],
+  isLoading: false,
+  error: null,
+};
+
+const linkSlice = createSlice({
+  name: "links",
+  initialState,
+  reducers: {
+    setIsLoading: (state, action) => {
+      state.isLoading = action.payload;
+    },
+    setError: (state, action) => {
+      state.error = action.payload;
+      state.isLoading = false;
+    },
+    setLinks: (state, action) => {
+      state.links = action.payload;
+      state.isLoading = false;
+      state.error = null;
+    },
+    addLinkSuccess: (state, action) => {
+      state.links.push(action.payload);
+      state.isLoading = false;
+    },
+    updateLinkSuccess: (state, action) => {
+      const index = state.links.findIndex(link => link._id === action.payload._id);
+      if (index !== -1) {
+        state.links[index] = action.payload;
+      }
+      state.isLoading = false;
+    },
+  },
+});
+
+export const {
+  setIsLoading,
+  setError,
+  setLinks,
+  addLinkSuccess,
+  updateLinkSuccess,
+} = linkSlice.actions;
+
+// --- ASYNC THUNKS (API ACTIONS) ---
+
+// Assumes an endpoint exists to get all links, e.g., GET /v1/link/all
+export const fetchAllLinks = () => async (dispatch: Dispatch) => {
+  dispatch(setIsLoading(true));
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/link/all`);
+    dispatch(setLinks(response.data.data));
+  } catch (error: any) {
+    const message = error.response?.data?.message || "Failed to fetch portal links.";
+    dispatch(setError(message));
+  }
+};
+
+// POST - /v1/link/add
+export const createPortalLink = (data: { portalName: string; link: string }) => async (dispatch: Dispatch) => {
+  dispatch(setIsLoading(true));
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/link/add`, data);
+    dispatch(addLinkSuccess(response.data.data));
+    return response.data; // Return for component-level feedback
+  } catch (error: any) {
+    const message = error.response?.data?.message || "Failed to create portal link.";
+    dispatch(setError(message));
+    return null;
+  }
+};
+
+// PATCH - /v1/link/:id
+export const updatePortalLink = (id: string, data: { link: string }) => async (dispatch: Dispatch) => {
+  dispatch(setIsLoading(true));
+  try {
+    const response = await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/link/${id}`, data);
+    console.log(response.data.data)
+    dispatch(updateLinkSuccess(response.data.data));
+    return response.data;
+  } catch (error: any) {
+    const message = error.response?.data?.message || "Failed to update portal link.";
+    dispatch(setError(message));
+    // console.log(error)
+    return null;
+  }
+};
+
+export const fetchLinkBySlug = (slug: string) => 
+  async (dispatch: Dispatch): Promise<PortalLink | null> => {
+    
+    dispatch(setIsLoading(true));
+    dispatch(setError(null));
+
+    try {
+        const response = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/link/portal/${slug}`
+        );
+        
+        if (response.data && response.data.data) {
+            return response.data.data;
+        } else {
+            throw new Error("Link data not found in API response.");
+        }
+
+    } catch (error: any) {
+        const message = error.response?.data?.message || `Failed to fetch link for ${slug}.`;
+        dispatch(setError(message));
+        
+        return null;
+    } finally {
+        dispatch(setIsLoading(false));
+    }
+};
+
+
+// --- SELECTORS ---
+export const selectAllLinks = (state: RootState) => state.links.links;
+export const selectLinksLoading = (state: RootState) => state.links.isLoading;
+export const selectLinksError = (state: RootState) => state.links.error;
+
+export default linkSlice.reducer;

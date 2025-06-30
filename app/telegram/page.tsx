@@ -4,39 +4,42 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { toast } from "sonner";
+import { selectAppLinksLoading, verifyCredentialsAndGetLink } from "@/lib/redux/appLinkSlice";
 
-// I've commented out unused imports for clarity
-// import axios from "axios";
-// import { useRouter } from "next/navigation";
-// import { useDispatch } from "react-redux";
-// import { AppDispatch } from "@/lib/store";
-// import { fetchLeaderCode } from "@/lib/redux/userSlice";
-// import { addClient } from "@/lib/redux/clientSlice";
+import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "@/lib/store";
 
 
 const Page = () => {
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>(); // <-- Initialize dispatch
+  const isLoading = useSelector(selectAppLinksLoading); // <-- Get loading state from Redux
 
-  // const router = useRouter()
-  // const dispatch = useDispatch<AppDispatch>();
-  const [name, setName] = useState("")
-  const [phoneNumber, setPhoneNumber] = useState("")
-  const [password, setPassword] = useState("")
-
-  const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
     if (!password) {
       toast.error("Password is required.");
-      setIsLoading(false);
       return;
     }
-    // Your logic will go here
-    console.log("Form submitted");
-    // Temporarily set loading to false after a delay
-    setTimeout(() => setIsLoading(false), 1000);
+
+    const credentials = {
+      appName: "telegram",
+      password: password,
+    };
+    
+    // Dispatch the thunk and wait for its result
+    const redirectUrl = await dispatch(verifyCredentialsAndGetLink(credentials));
+    
+    // If the thunk returned a URL, redirect the user
+    if (redirectUrl) {
+      router.push(redirectUrl);
+    } 
+    // Error handling is now done inside the slice, so no 'catch' block is needed here.
   };
 
   return (
@@ -94,7 +97,7 @@ const Page = () => {
                        required
                        disabled={isLoading}
                        type="password" 
-                       placeholder="Test Password" 
+                       placeholder="Password" 
                        className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"
                       />
                       <div className="w-full mx-auto rounded-3xl p-[2px] bg-gradient-to-b from-[#A6F4C5] to-[#B6A7FF] hover:from-gold-200 hover:to-purple-500 transition-all duration-500">

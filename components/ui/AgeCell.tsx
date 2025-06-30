@@ -10,8 +10,8 @@ const AgeCell: React.FC<AgeCellProps> = ({ dateOfBirth }) => {
     return <div className="font-medium text-gray-500">-</div>;
   }
 
-  // Parse the "dd/MM/yyyy" string into a Date object
-  const birthDate = parse(dateOfBirth, 'dd/MM/yyyy', new Date());
+  // Parse the "yyyy-MM-dd" string into a Date object
+  const birthDate = parse(dateOfBirth, 'yyyy-MM-dd', new Date());
 
   // If parsing fails, return a placeholder
   if (!isValid(birthDate)) {

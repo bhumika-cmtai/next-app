@@ -11,6 +11,7 @@ import {
   User,
   Settings,
   X,
+  Link2,
 } from "lucide-react";
 
 const navigation = [
@@ -19,6 +20,7 @@ const navigation = [
   { name: "Leads", href: "/dashboard/admin/leads", icon: FileText },
   { name: "Contacts", href: "/dashboard/admin/contacts", icon: Contact },
   { name: "Clients", href: "/dashboard/admin/clients", icon: User },
+  {name: "Links", href: "/dashboard/admin/links", icon: Link2},
   { name: "Setting", href: "/dashboard/admin/settings", icon: Settings },
   { name: "Logout", href: "/logout", icon: LogOut },
 ];
@@ -38,10 +40,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 flex-col border-r bg-white 
-        transform transition-all duration-300 ease-in-out lg:relative lg:translate-x-0
+        transform transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}
-        lg:flex lg:shadow-none
+        
+        lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:flex lg:shadow-none
       `}>
+
         {/* Close button for mobile */}
         <button
           onClick={onClose}
