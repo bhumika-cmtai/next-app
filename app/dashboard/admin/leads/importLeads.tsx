@@ -40,17 +40,22 @@ interface ImportUserProps {
 }
 
 interface ParsedUser {
+   _id?: string;
   name: string;
   email: string;
+  portal_name: string;
   phoneNumber: string;
   qualification: string;
   city: string;
   date_of_birth: string;
   gender: string;
+  ekyc_stage?: string;
+  trade_status?: string;
   message: string;
-  status: string;
   source: string;
-  portal_Name: string;
+  status: string;
+  createdOn?: string;
+  updatedOn?: string;
   password?: string;
 }
 
@@ -184,7 +189,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                 message: row[fieldMapping.message],
                 status: row[fieldMapping.status],
                 source: row[fieldMapping.source] || "",
-                portal_Name: row[fieldMapping.portal_Name] || "",
+                portal_name: row[fieldMapping.portal_name] || "",
                 password: fieldMapping.password ? row[fieldMapping.password] : undefined,
               };
               return mappedUser;
