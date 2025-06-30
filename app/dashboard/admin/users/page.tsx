@@ -45,17 +45,17 @@ import axios from "axios";
 import { Label } from "@/components/ui/label";
 
 // Define the initial state for our expanded form
-const initialFormState: Omit<User, 'role' | '_id' | 'password'> = {
+const initialFormState: Omit<User, 'role' | '_id' | 'password' | 'createdOn' | 'updatedOn' | 'registeredClientCount' > = {
   name: "",
   email: "",
   phoneNumber: "",
   whatsappNumber: "",
   city: "",
   status: "New",
-  income: 0,
   leaderCode: "",
   abhi_aap_kya_karte_hai: "",
   work_experience: "",
+  income: 0
 };
 
 export default function Users() {
@@ -69,20 +69,16 @@ export default function Users() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("all");
   
-  // State for the combined Add/Edit modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [form, setForm] = useState(initialFormState);
   const [formLoading, setFormLoading] = useState(false);
   
-  // State for Delete confirmation
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // State for Import modal
   const [importModalOpen, setImportModalOpen] = useState(false);
   
-  // State for Date Range search
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [dateRangeCount, setDateRangeCount] = useState<number | null>(null);
@@ -101,6 +97,8 @@ export default function Users() {
   }, [dispatch, debouncedSearch, status, currentPage]);
 
   const handlePageChange = (page: number) => {
+    // Prevent fetching if the page is out of bounds
+    if (page < 1 || page > pagination.totalPages) return;
     dispatch(fetchUsers({ search: debouncedSearch, status, page }));
   };
 
@@ -117,7 +115,6 @@ export default function Users() {
 
   const openEditModal = (user: User) => {
     setEditUser(user);
-    // Populate form with existing user data, providing empty strings as fallbacks
     setForm({
       name: user.name ?? '',
       email: user.email ?? '',
@@ -125,7 +122,6 @@ export default function Users() {
       whatsappNumber: user.whatsappNumber ?? '',
       city: user.city ?? '',
       status: user.status ?? 'New',
-      income: user.income ?? 0,
       leaderCode: user.leaderCode ?? '',
       abhi_aap_kya_karte_hai: user.abhi_aap_kya_karte_hai ?? '',
       work_experience: user.work_experience ?? ''
@@ -134,7 +130,8 @@ export default function Users() {
   };
 
   const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm(prevForm => ({...prevForm, [name]: name === 'income' ? (value === '' ? '' : Number(value)) : value}));
   };
   
   const handleFormSelectChange = (fieldName: string, value: string) => {
@@ -147,14 +144,13 @@ export default function Users() {
     try {
       let response;
       if (editUser && editUser._id) {
-        // Update existing user
-        const updatedUserPayload = { ...editUser, ...form };
+        const updatedUserPayload = { ...editUser, ...form, income: Number(form.income) || 0 };
         response = await dispatch(updateUser(editUser._id, updatedUserPayload));
       } else {
-        // Create new user
         const generatedPassword = generatePassword(form.name, form.phoneNumber);
         const newUserPayload: User = {
           ...form,
+          income: Number(form.income) || 0,
           role: "user",
           password: generatedPassword,
         };
@@ -183,7 +179,6 @@ export default function Users() {
     }
   };
   
-  // Date range search logic remains the same
   const handleDateRangeSearch = async () => {
     if (!startDate || !endDate) return;
     setIsCountLoading(true);
@@ -201,7 +196,6 @@ export default function Users() {
 
   return (
     <div className="w-full mx-auto mt-2">
-      {/* Header and Filters */}
       <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
         <h1 className="text-4xl font-bold shrink-0">Leader List</h1>
         <div className="w-full flex flex-col gap-4">
@@ -219,48 +213,33 @@ export default function Users() {
             <Button size="sm" className="gap-1" onClick={openAddModal}><Plus className="w-4 h-4"/> Add Leader</Button>
             <Button variant="outline" size="sm" className="gap-1" onClick={() => setImportModalOpen(true)}><Upload className="w-4 h-4"/> Import</Button>
           </div>
-          <div className="flex flex-wrap justify-center items-end gap-2">
-            {/* Date filter components remain unchanged */}
-          </div>
         </div>
       </div>
       
-      {/* Bottom Row for Date Filters */}
-          <div className="flex flex-wrap justify-center items-end gap-2">
-            <div className="space-y-1">
-              <Label htmlFor="start-date" className="text-sm font-medium">Start Date</Label>
-              <Input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="end-date" className="text-sm font-medium">End Date</Label>
-              <Input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-            </div>
-            <Button onClick={handleDateRangeSearch} disabled={isCountLoading} className="gap-1">
-              <Search className="w-4 h-4" />
-              {isCountLoading ? 'Searching...' : 'Search Dates'}
-            </Button>
-          </div>
+      <div className="flex flex-wrap justify-center items-end gap-2 p-4 border rounded-lg bg-slate-50 mb-4">
+        <div className="space-y-1"><Label htmlFor="start-date" className="text-sm font-medium">Start Date</Label><Input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}/></div>
+        <div className="space-y-1"><Label htmlFor="end-date" className="text-sm font-medium">End Date</Label><Input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}/></div>
+        <Button onClick={handleDateRangeSearch} disabled={isCountLoading} className="gap-1"><Search className="w-4 h-4"/>{isCountLoading ? 'Searching...':'Search Dates'}</Button>
+      </div>
+
       <div className="mb-4 h-6">
         {countError && <p className="text-red-500 font-medium">{countError}</p>}
-        
-          <p className="text-lg font-semibold text-primary">Total Clients Found: {dateRangeCount}</p>
-        
+        {dateRangeCount !== null && (<p className="text-lg font-semibold text-primary">Total Clients Found: {dateRangeCount}</p>)}
       </div>
 
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
-              {/* TableHeader remains the same */}
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">s no.</TableHead>
+                  <TableHead className="w-12">S. No.</TableHead>
                   <TableHead>Leader Name</TableHead>
                   <TableHead>Leader Number</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>LeaderCode</TableHead>
+                  <TableHead>Leader Code</TableHead>
                   <TableHead>Joined</TableHead>
-                  <TableHead>Total Registeration</TableHead>
+                  <TableHead>Total Registration</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -272,30 +251,25 @@ export default function Users() {
                 ) : (
                   users.map((user: User, idx: number) => (
                     <TableRow key={user._id}>
-                      <TableCell>{(currentPage - 1) * (pagination.totalUsers / pagination.totalPages) + idx + 1}</TableCell>
+                      <TableCell>{(currentPage - 1) * 8 + idx + 1}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar><AvatarFallback>{user.name?.[0].toUpperCase()}</AvatarFallback></Avatar>
+                          <Avatar><AvatarFallback>{user.name?.[0]?.toUpperCase()}</AvatarFallback></Avatar>
                           <span className="font-medium">{user.name}</span>
                         </div>
                       </TableCell>
                       <TableCell>{user.phoneNumber || '-'}</TableCell>
                       <TableCell><Badge variant={user.status === "Active" ? "default" : "secondary"}>{user.status || 'N/A'}</Badge></TableCell>
                       <TableCell>{user.leaderCode || '-'}</TableCell>
-                      <TableCell>{user.createdOn ? new Date(parseInt(user.createdOn, 10)).toLocaleDateString() : '-'}</TableCell>
+                      <TableCell>{user.createdOn ? new Date(user.createdOn).toLocaleDateString() : '-'}</TableCell>
                       <TableCell>{user.registeredClientCount}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button size="icon" variant="ghost" onClick={() => openEditModal(user)} title="Edit"><Edit className="w-4 h-4" /></Button>
                           <Dialog open={deleteUser?._id === user._id} onOpenChange={(open) => !open && setDeleteUser(null)}>
-                            <DialogTrigger asChild>
-                              <Button size="icon" variant="ghost" onClick={() => setDeleteUser(user)} title="Delete"><Trash2 className="w-4 h-4 text-red-500" /></Button>
-                            </DialogTrigger>
+                            <DialogTrigger asChild><Button size="icon" variant="ghost" onClick={() => setDeleteUser(user)} title="Delete"><Trash2 className="w-4 h-4 text-red-500" /></Button></DialogTrigger>
                             <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Delete Leader</DialogTitle>
-                                <DialogDescription>Are you sure you want to delete <b>{user.name}</b>?</DialogDescription>
-                              </DialogHeader>
+                              <DialogHeader><DialogTitle>Delete Leader</DialogTitle><DialogDescription>Are you sure you want to delete <b>{user.name}</b>?</DialogDescription></DialogHeader>
                               <DialogFooter>
                                 <Button variant="destructive" onClick={handleDelete} disabled={deleteLoading}>{deleteLoading ? "Deleting..." : "Delete"}</Button>
                                 <DialogClose asChild><Button type="button" variant="outline" disabled={deleteLoading}>Cancel</Button></DialogClose>
@@ -313,9 +287,32 @@ export default function Users() {
         </CardContent>
       </Card>
 
-      {/* Pagination remains the same */}
+      {/* --- FUNCTIONAL PAGINATION --- */}
+      {pagination.totalPages > 1 && (
+        <div className="mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}>
+                <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }} />
+              </PaginationItem>
+              
+              {Array.from({ length: pagination.totalPages }, (_, i) => (
+                <PaginationItem key={i + 1}>
+                  <PaginationLink href="#" isActive={currentPage === i + 1} onClick={(e) => { e.preventDefault(); handlePageChange(i + 1); }}>
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
 
-      {/* --- REFACTORED ADD/EDIT DIALOG --- */}
+              <PaginationItem className={currentPage === pagination.totalPages ? "pointer-events-none opacity-50" : ""}>
+                <PaginationNext href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }} />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+
+      {/* Add/Edit Dialog remains the same */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -326,67 +323,25 @@ export default function Users() {
           </DialogHeader>
           <form onSubmit={handleFormSubmit} className="space-y-4 mt-2 max-h-[70vh] overflow-y-auto pr-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name*</Label>
-                <Input id="name" name="name" value={form.name} onChange={handleFormChange} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" value={form.email} onChange={handleFormChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number*</Label>
-                <Input id="phoneNumber" name="phoneNumber" value={form.phoneNumber} onChange={handleFormChange} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="whatsappNumber">WhatsApp Number</Label>
-                <Input id="whatsappNumber" name="whatsappNumber" value={form.whatsappNumber} onChange={handleFormChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input id="city" name="city" value={form.city} onChange={handleFormChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="income">Income</Label>
-                <Input id="income" name="income" type="number" value={form.income} onChange={handleFormChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="leaderCode">Leader Code</Label>
-                <Input id="leaderCode" name="leaderCode" value={form.leaderCode} onChange={handleFormChange} />
-              </div>
-               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={form.status} onValueChange={(value) => handleFormSelectChange('status', value)}>
-                  <SelectTrigger><SelectValue/></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="New">New</SelectItem>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="work_experience">Work Experience</Label>
-                  <Input id="work_experience" name="work_experience" value={form.work_experience} onChange={handleFormChange} />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="abhi_aap_kya_karte_hai">Current Occupation</Label>
-                  <Input id="abhi_aap_kya_karte_hai" name="abhi_aap_kya_karte_hai" value={form.abhi_aap_kya_karte_hai} onChange={handleFormChange} />
-              </div>
+              <div className="space-y-2"><Label htmlFor="name">Name*</Label><Input id="name" name="name" value={form.name} onChange={handleFormChange} required /></div>
+              <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" value={form.email} onChange={handleFormChange}/></div>
+              <div className="space-y-2"><Label htmlFor="phoneNumber">Phone Number*</Label><Input id="phoneNumber" name="phoneNumber" value={form.phoneNumber} onChange={handleFormChange} required /></div>
+              <div className="space-y-2"><Label htmlFor="whatsappNumber">WhatsApp Number</Label><Input id="whatsappNumber" name="whatsappNumber" value={form.whatsappNumber} onChange={handleFormChange}/></div>
+              <div className="space-y-2"><Label htmlFor="city">City</Label><Input id="city" name="city" value={form.city} onChange={handleFormChange}/></div>
+              <div className="space-y-2"><Label htmlFor="income">Income</Label><Input id="income" name="income" type="number" value={form.income || ''} onChange={handleFormChange}/></div>
+              <div className="space-y-2"><Label htmlFor="leaderCode">Leader Code</Label><Input id="leaderCode" name="leaderCode" value={form.leaderCode} onChange={handleFormChange}/></div>
+              <div className="space-y-2"><Label htmlFor="status">Status</Label><Select value={form.status} onValueChange={(value) => handleFormSelectChange('status', value)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="New">New</SelectItem><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem></SelectContent></Select></div>
+              <div className="space-y-2 md:col-span-2"><Label htmlFor="work_experience">Work Experience</Label><Input id="work_experience" name="work_experience" value={form.work_experience} onChange={handleFormChange}/></div>
+              <div className="space-y-2 md:col-span-2"><Label htmlFor="abhi_aap_kya_karte_hai">Current Occupation</Label><Input id="abhi_aap_kya_karte_hai" name="abhi_aap_kya_karte_hai" value={form.abhi_aap_kya_karte_hai} onChange={handleFormChange}/></div>
             </div>
-            
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="outline" disabled={formLoading}>Cancel</Button></DialogClose>
-              <Button type="submit" disabled={formLoading}>
-                {formLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                {formLoading ? 'Saving...' : (editUser ? 'Update Leader' : 'Add Leader')}
-              </Button>
+              <Button type="submit" disabled={formLoading}>{formLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}{formLoading ? 'Saving...' : (editUser ? 'Update Leader' : 'Add Leader')}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-
-      {/* Import Dialog remains the same */}
+      
       <ImportUser open={importModalOpen} onOpenChange={setImportModalOpen} onImportSuccess={() => dispatch(fetchUsers())} />
     </div>
   );
