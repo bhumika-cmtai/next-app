@@ -193,6 +193,7 @@ const Page = () => {
               alt="Document icon"
               />
             <div className="text-lg font-semibold text-black">Legal Documents:</div>
+           
         </div>
         {/* ✅ FIX: The border now correctly spans the full viewport width */}
         <div className="w-full border-t-[1px] border-t-black flex justify-center pt-4">
@@ -202,7 +203,8 @@ const Page = () => {
             <p className="text-left">PAN Card</p>
             <p className="text-left">Udyam Registration Certificate</p>
             <p className="text-left">GST Certificate</p>
-            <p className="text-left"> <Link className="underline" href="/privacy-policy">Privacy-Policy</Link> | <Link className="underline" href="/terms-and-conditions">Terms and Conditions</Link></p>
+            <p className="text-left"> <Link className="underline" href="/privacy-policy">Privacy-Policy</Link> | <Link className="underline" href="/terms-and-conditions">Terms and Conditions</Link> | 
+            <Link href="https://www.instagram.com/growup_india_?igsh=MTIxeDZ5aDRqbjI5aA==" className="inline-flex items-center gap-1.5 underline ">Follow Us On Insta <Image src="/instagram.png" alt="instagram" width={16} height={16} className="w-4"/></Link></p>
           </div>
         </div>
       </div>
