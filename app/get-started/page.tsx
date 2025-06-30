@@ -125,6 +125,31 @@ const Page = () => {
                   </div>
                 </Link>
               </div>
+              {/* STEP - 4 Zoom Link   */}
+              <div className="w-full rounded-2xl p-[1.5px] bg-[linear-gradient(90deg,_#c6ffdd_0%,_#fbd786_50%,_#f7797d_100%)] bg-[length:200%_auto] transition-all duration-500 hover:bg-[position:100%_0] shadow-md hover:shadow-lg">
+                <Link href="/telegram" className="flex w-full items-center  rounded-[14px] bg-white p-4">
+                  <div className="flex-shrink-0">
+                    <Image
+                      src="/zoom.png"
+                      width={48}
+                      height={48}
+                      alt="zoom icon"
+                      className="object-contain"
+                    />
+                  </div>
+                   
+                  <div className="text-center flex-grow">
+                    <h2
+                      className={`text-lg font-bold bg-gradient-to-r from-gray-700 to-blue-600 bg-clip-text text-transparent`}
+                    >
+                      Step- 4
+                    </h2>
+                    <h3 className="text-xl text-center font-semibold text-gray-800">
+                      Zoom Link
+                    </h3>
+                  </div>
+                </Link>
+              </div>
             </div>
           </div>
 

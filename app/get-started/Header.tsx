@@ -44,7 +44,13 @@ const Header = () => {
   }, [isMenuOpen]);
 
   // --- CORRECTION 1: Use valid anchor hrefs for on-page scrolling ---
-  const navLinks = [
+  const navLinksLaptop = [
+    { href: "/#home", label: "Home" },
+    { href: "/#aboutus", label: "About Us" },
+    { href: "/#join", label: "Who Can Join" },
+    { href: "/#contactus", label: "Contact Us" },
+  ];
+  const navLinksMobile = [
     { href: "/#home", label: "Home" },
     { href: "/#aboutus", label: "About Us" },
     { href: "/#join", label: "Who Can Join" },
@@ -74,7 +80,7 @@ const Header = () => {
         
         {/* --- CORRECTION 2: Use <Link> for desktop navigation, not <button> --- */}
         <ul className='hidden lg:flex gap-8 text-gray-800 font-semibold text-lg'>
-          {navLinks.map((link) => (
+          {navLinksLaptop.map((link) => (
             <li key={link.label}>
               <Link
                 href={link.href}
@@ -106,7 +112,7 @@ const Header = () => {
       >
         {/* --- CORRECTION 3: Fix invalid HTML (<li> must wrap <a>) --- */}
         <ul className='flex flex-col items-center gap-6 p-8 text-lg'>
-          {navLinks.map((link) => (
+          {navLinksMobile.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}

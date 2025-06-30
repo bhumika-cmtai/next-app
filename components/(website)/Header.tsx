@@ -26,11 +26,17 @@ const Header = () => {
     };
   }, [isMenuOpen]);
 
-  const navLinks = [
-    { href: "", label: "Home" },
+  const navLinksLaptop = [
+    { href: "home", label: "Home" },
     { href: "aboutus", label: "About Us" },
     { href: "join", label: "Who Can Join?" },
     { href: "contactus", label: "Contact Us" },
+  ];
+  const navLinksMobile = [
+    { href: "#home", label: "Home" },
+    { href: "#aboutus", label: "About Us" },
+    { href: "#join", label: "Who Can Join?" },
+    { href: "#contactus", label: "Contact Us" },
   ];
 
   return (
@@ -42,17 +48,19 @@ const Header = () => {
     >
       <nav className='max-w-7xl container flex items-center justify-between p-1 mx-auto px-4'>
         <div className="text-xl font-bold ">
-          <Image
-            src="/growupIcon.png"
-            width={100}
-            height={100}
-            alt='grow up logo'
-            className='w-[60px] md:w-[80px] h-auto '
-          />
+          <Link href="/">
+            <Image
+              src="/growupIcon.png"
+              width={100}
+              height={100}
+              alt='grow up logo'
+              className='w-[60px] md:w-[80px] h-auto '
+              />
+            </Link>
         </div>
 
         <ul className='hidden lg:flex gap-8 text-gray-800 font-semibold text-lg'>
-          {navLinks.map((link) => (
+          {navLinksLaptop.map((link) => (
             <li key={link.label}>
               <button onClick={() => {
                 document.getElementById(`${link.href}`)?.scrollIntoView({ behavior: 'smooth' });
@@ -94,7 +102,7 @@ const Header = () => {
         `}
       >
         <ul className='flex flex-col items-center gap-6 p-8 text-lg'>
-          {navLinks.map((link) => (
+          {navLinksMobile.map((link) => (
             <Link key={link.href} href={link.href} onClick={() => setIsMenuOpen(false)}>
               <li className='cursor-pointer hover:text-purple-600 transition-colors'>{link.label}</li>
             </Link>
@@ -102,7 +110,7 @@ const Header = () => {
         </ul>
         <div className="p-4 border-t border-gray-200 flex justify-center">
           <Link
-            href="/get-started"
+            href="/login"
             onClick={() => setIsMenuOpen(false)}
             className="flex items-center justify-center gap-1 bg-sea-green-100 rounded-full 
                        px-4 py-2 font-semibold text-gray-800 transition-all text-lg border-2 border-sea-green-100 drop-shadow-gold-200/70 drop-shadow-lg bg-[length:200%_auto] hover:bg-[right_center]"
