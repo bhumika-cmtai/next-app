@@ -89,7 +89,7 @@ export const login = ({ email, password, rememberMe }: { email: string; password
   dispatch(setIsLoading(true));
   dispatch(setError(null));
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login/admin`, { email, password });
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, { email, password });
     if (response.status === 200 && response.data?.data?.user && response.data?.data?.token) {
       const { user, token } = response.data.data;
 
