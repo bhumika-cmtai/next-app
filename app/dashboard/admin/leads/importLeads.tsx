@@ -79,7 +79,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     message: "",
     status: "",
     source: "",
-    portal_Name: "",
+    portal_name: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
