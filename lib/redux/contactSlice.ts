@@ -6,7 +6,7 @@ export interface Contact {
   _id?: string;
   name: string;
   email: string;
-  phone: string;
+  phoneNumber: string;
   message: string;
   status?: string;
   createdOn?: string;
@@ -74,19 +74,33 @@ const contactSlice = createSlice({
 }); 
 
 export const { setContacts, setLoading, setError, setSelectedContact, clearSelectedContact, setPagination, setCurrentPage } = contactSlice.actions;
+export const fetchContacts = ({ page = 1, limit = 8, searchQuery = '' }: { page?: number; limit?: number; searchQuery?: string }) => 
+  async (dispatch: Dispatch) => {
+    dispatch(setLoading(true));
+    dispatch(setError(null));
+    try {
+      // Build the URL with query parameters
+      const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/getAllContact`);
+      url.searchParams.append('page', String(page));
+      url.searchParams.append('limit', String(limit));
+      if (searchQuery) {
+        url.searchParams.append('searchQuery', searchQuery);
+      }
 
-export const fetchContacts = () => async (dispatch: Dispatch) => {
-  try {
-    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/getAllContact`);
-    if (response.status === 200) {
-      dispatch(setContacts(response.data.data));
-    } else {
-      dispatch(setError(response.data.message));
+      const response = await axios.get(url.toString());
+      
+      if (response.status === 200) {
+        // The payload from response.data.data matches what setContacts expects
+        dispatch(setContacts(response.data.data));
+      } else {
+        dispatch(setError(response.data.message || 'Failed to fetch contacts.'));
+      }
+    } catch (error: any) {
+      const message = error.response?.data?.message || error.message || "Unknown error";
+      dispatch(setError(message));
+    } finally {
+      dispatch(setLoading(false));
     }
-  } catch (error: unknown) {
-    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    dispatch(setError(message || "Unknown error"));
-  }
 };
 
 export const fetchContactById = (id: string) => async (dispatch: Dispatch) => {
@@ -110,9 +124,13 @@ export const addContact = (contact: Contact) => async (dispatch: Dispatch) => {
   try {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/addContact`, contact);
     if (response.status === 201) {
+      // console.log(response.data)
+      dispatch(setLoading(false));
       return response.data;
     } else {
-      dispatch(setError(response.data.message));
+      dispatch(setError(response.data.message || 'An unknown error occurred.'));
+      dispatch(setLoading(false));
+      return null;
     }
   } catch (error: unknown) {
     const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);

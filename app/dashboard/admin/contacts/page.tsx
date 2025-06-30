@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -31,61 +31,80 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, Loader2 } from "lucide-react";
+import { Phone, Mail, Loader2, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchContacts, selectContacts, Contact, updateContact } from "@/lib/redux/contactSlice";
+import {
+  fetchContacts,
+  updateContact, // Make sure to import updateContact
+  selectContacts,
+  selectLoading,
+  selectPagination,
+  Contact,
+} from "@/lib/redux/contactSlice";
 import { AppDispatch, RootState } from "@/lib/store";
+
+// Debounce hook for search functionality
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 export default function Contacts() {
   const dispatch = useDispatch<AppDispatch>();
+  
+  // Selectors for Redux state
   const contacts = useSelector(selectContacts);
-  const { loading: isListLoading, error } = useSelector((state: RootState) => state.contacts);
+  const { currentPage, totalPages, totalContacts } = useSelector(selectPagination);
+  const isListLoading = useSelector(selectLoading);
 
+  // Local state for UI interactions
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500); // Debounce search input
+  const [page, setPage] = useState(1);
   const [editContact, setEditContact] = useState<Contact | null>(null);
   
-  // State for the modal and its selected status
+  // State for the modal
   const [modalOpen, setModalOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // The limit of items per page. Should match your backend default or be passed.
+  const ITEMS_PER_PAGE = 8;
+
+  // Main effect to fetch data when page or search query changes
   useEffect(() => {
-    dispatch(fetchContacts());
-  }, [dispatch]);
+    dispatch(fetchContacts({ page, searchQuery: debouncedSearch, limit: ITEMS_PER_PAGE }));
+  }, [dispatch, page, debouncedSearch]);
 
-  // Filter contacts based on search input
-  const filteredContacts = useMemo(() => {
-    if (!search) return contacts;
-    const lowercasedSearch = search.toLowerCase();
-    return contacts.filter((contact) =>
-      contact.name.toLowerCase().includes(lowercasedSearch) ||
-      contact.email.toLowerCase().includes(lowercasedSearch) ||
-      (contact.phone && contact.phone.includes(lowercasedSearch))
-    );
-  }, [contacts, search]);
+  // Effect to reset to page 1 when a new search is performed
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
-  // Function to open the dialog and set the initial status
+
+  // ---- Modal and Update Logic ----
   const openUpdateModal = (contact: Contact) => {
     setEditContact(contact);
-    setNewStatus(contact.status || "New"); // Set current status or default to 'New'
+    setNewStatus(contact.status || "New");
     setModalOpen(true);
   };
 
-  // Dispatches the update action to the Redux store
   const handleStatusUpdate = async () => {
     if (!editContact || !editContact._id || !newStatus) return;
-
     setIsUpdating(true);
     try {
-      // Dispatch the update action with only the status field
-      const result = await dispatch(updateContact(editContact._id, { status: newStatus }));
-
-      if (result) {
-        // If the update was successful, close the modal and refetch contacts
-        setModalOpen(false);
-        dispatch(fetchContacts());
-      }
-      // Error handling is managed by the slice, but you could add UI feedback here
+      await dispatch(updateContact(editContact._id, { status: newStatus }));
+      // Refetch the current page to show updated data
+      dispatch(fetchContacts({ page, searchQuery: debouncedSearch, limit: ITEMS_PER_PAGE }));
+      setModalOpen(false);
     } finally {
       setIsUpdating(false);
     }
@@ -105,7 +124,7 @@ export default function Contacts() {
   return (
     <div className="w-full mx-auto mt-2">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold">Contacts</h1>
+        <h1 className="text-3xl font-bold">Contacts ({totalContacts})</h1>
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
           <Input
             placeholder="Search contacts..."
@@ -139,16 +158,16 @@ export default function Contacts() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : filteredContacts.length === 0 ? (
+                ) : contacts.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8">
-                      No contacts found.
+                      No contacts found for this query.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredContacts.map((contact, idx) => (
+                  contacts.map((contact, idx) => (
                     <TableRow key={contact._id}>
-                      <TableCell>{idx + 1}</TableCell>
+                      <TableCell>{(page - 1) * ITEMS_PER_PAGE + idx + 1}</TableCell>
                       <TableCell>
                         <div className="font-medium">{contact.name}</div>
                       </TableCell>
@@ -158,16 +177,16 @@ export default function Contacts() {
                             <Mail className="w-4 h-4 text-gray-500" />
                             <span className="text-sm">{contact.email}</span>
                           </div>
-                          {contact.phone && (
+                          {contact.phoneNumber && (
                             <div className="flex items-center gap-2">
                               <Phone className="w-4 h-4 text-gray-500" />
-                              <span className="text-sm">{contact.phone}</span>
+                              <span className="text-sm">{contact.phoneNumber}</span>
                             </div>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={`${getStatusColor(contact.status as string)} text-white`}>
+                        <Badge className={`${getStatusColor(contact.status as string)} text-white hover:bg-opacity-80`}>
                           {contact.status}
                         </Badge>
                       </TableCell>
@@ -188,6 +207,33 @@ export default function Contacts() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center space-x-2 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(page - 1)}
+            disabled={page <= 1 || isListLoading}
+          >
+            <ChevronsLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+          <span className="text-sm font-medium">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(page + 1)}
+            disabled={page >= totalPages || isListLoading}
+          >
+            Next
+            <ChevronsRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
 
       {/* Update Status Dialog */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
@@ -198,7 +244,7 @@ export default function Contacts() {
           <div className="py-4">
             <Select
               value={newStatus}
-              onValueChange={(value: string) => setNewStatus(value)}
+              onValueChange={setNewStatus}
               disabled={isUpdating}
             >
               <SelectTrigger className="w-full">
@@ -225,13 +271,8 @@ export default function Contacts() {
               disabled={isUpdating || newStatus === editContact?.status}
             >
               {isUpdating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</>
+              ) : ('Save Changes')}
             </Button>
           </DialogFooter>
         </DialogContent>
