@@ -240,7 +240,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       message: "",
       status: "",
       source: "",
-      portal_Name: "",
+      portal_name: "",
       password: "",
     });
   };

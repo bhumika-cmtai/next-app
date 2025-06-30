@@ -39,7 +39,7 @@ export default function Leads() {
     name: "",
     email: "",
     phoneNumber: "",
-    portal_Name: "",
+    portal_name: "",
     qualification: "",
     city: "",
     date_of_birth: "",
@@ -81,7 +81,7 @@ export default function Leads() {
 
   const openAddModal = () => {
     setEditLead(null);
-    setForm({ name: "", email: "", phoneNumber: "", portal_Name: "", qualification: "", city: "", date_of_birth: "", gender: "", message: "", status: "New", source: "" });
+    setForm({ name: "", email: "", phoneNumber: "", portal_name: "", qualification: "", city: "", date_of_birth: "", gender: "", message: "", status: "New", source: "" });
     setModalOpen(true);
   };
 
@@ -91,7 +91,7 @@ export default function Leads() {
       name: lead.name,
       email: lead.email,
       phoneNumber: lead.phoneNumber,
-      portal_Name: lead.portal_Name,
+      portal_name: lead.portal_name,
       qualification: lead.qualification,
       city: lead.city,
       date_of_birth: lead.date_of_birth,
