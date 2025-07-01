@@ -128,7 +128,7 @@ const ContactUs = () => {
             
             {/* Social Icons */}
             <div className="flex items-center gap-4 mt-10">
-              <a href="https://www.instagram.com/growup_india_?igsh=MTIxeDZ5aDRqbjI5aA==" className=" rounded-lg">
+              <a href="https://www.instagram.com/indiagrowup__?igsh=Ymttb3FoZGh1Zm1u" className=" rounded-lg">
                 <Image src="/instagram.png" alt="Instagram" width={24} height={24} />
               </a>
               <a href="https://youtube.com/@growup_india_01?feature=shared" className=" rounded-lg ">

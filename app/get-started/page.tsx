@@ -204,7 +204,7 @@ const Page = () => {
             <p className="text-left">Udyam Registration Certificate</p>
             <p className="text-left">GST Certificate</p>
             <p className="text-left"> <Link className="underline" href="/privacy-policy">Privacy-Policy</Link> | <Link className="underline" href="/terms-and-conditions">Terms and Conditions</Link> | 
-            <Link href="https://www.instagram.com/growup_india_?igsh=MTIxeDZ5aDRqbjI5aA==" className="inline-flex items-center gap-1.5 underline ">Follow Us On Insta <Image src="/instagram.png" alt="instagram" width={16} height={16} className="w-4"/></Link></p>
+            <Link href="https://www.instagram.com/indiagrowup__?igsh=Ymttb3FoZGh1Zm1u" className="inline-flex items-center gap-1.5 underline ">Follow Us On Insta <Image src="/instagram.png" alt="instagram" width={16} height={16} className="w-4"/></Link></p>
           </div>
         </div>
       </div>

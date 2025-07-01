@@ -43,7 +43,7 @@ const Footer: React.FC = () => {
               At GrowUp, your growth is our mission. Join our team today and start earning while learning—right from your home!
             </p>
             <div className="flex space-x-4 mt-6">
-              <a href="https://www.instagram.com/growup_india_?igsh=MTIxeDZ5aDRqbjI5aA==" aria-label="Instagram" className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform hover:scale-110">
+              <a href="https://www.instagram.com/indiagrowup__?igsh=Ymttb3FoZGh1Zm1u" aria-label="Instagram" className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform hover:scale-110">
                 <Image
                   alt="Instagram icon"
                   src="/instagram.png"
