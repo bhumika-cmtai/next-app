@@ -104,11 +104,11 @@ export const fetchLeadsCount = () => async (dispatch: Dispatch) => {
     if (response.data) {
       dispatch(setTotalLeadsCount(response.data.data.count));
     } else {
-      console.error("Failed to fetch leads count:", response.data.message);
+      console.log("Failed to fetch leads count:", response.data.message);
     }
   } catch (error: unknown) {
     const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    console.error("Error fetching leads count:", message);
+    console.log("Error fetching leads count:", message);
   }
 };
 

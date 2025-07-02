@@ -2,13 +2,14 @@
 
 import React, { useState, ChangeEvent, useEffect, FormEvent } from "react";
 import axios from "axios";
+import { toast } from "sonner";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Phone, Clock, AlertCircle, Loader2, UserPlus, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Edit, Phone, Clock, AlertCircle, Loader2, UserPlus, ShieldCheck, ShieldAlert, Info } from "lucide-react";
 import { 
   updateClient,
   Client, 
@@ -18,9 +19,8 @@ import {
 import { fetchSession, GlobalSession } from "@/lib/redux/authSlice";
 import { AppDispatch } from "@/lib/store";
 import { useSelector, useDispatch } from "react-redux";
-import { toast } from "sonner";
 
-// Helper function for time comparison (remains the same)
+// Helper function for time comparison
 const isCurrentTimeInSession = (session: GlobalSession | null): boolean => {
   if (!session?.sessionStartDate || !session.sessionStartTime || !session.sessionEndDate || !session.sessionEndTime) {
     return false;
@@ -109,27 +109,37 @@ export default function Clients() {
   // --- Handler for adding a new owner directly on the card ---
   const handleAddOwnerSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (singleClientResult?.ekyc_stage !== 'complete' && singleClientResult?.trade_status !== 'matched') {
+    if (!singleClientResult) return;
+
+    if (singleClientResult.ekyc_stage !== 'complete' && singleClientResult.trade_status !== 'matched') return;
+    if (singleClientResult.ownerNumber?.includes(newOwnerNumber.trim())) {
+        toast.warning("This phone number has already claimed this client.");
         return;
     }
-    if (!singleClientResult?._id || !newOwnerName.trim() || !newOwnerNumber.trim()) return;
+    if (!newOwnerName.trim() || !newOwnerNumber.trim()) return;
     
     setIsAddOwnerLoading(true);
     const updatePayload = {
         ownerName: [...(singleClientResult.ownerName || []), newOwnerName],
         ownerNumber: [...(singleClientResult.ownerNumber || []), newOwnerNumber],
     };
+    if (!singleClientResult._id) {
+        toast.error("Client ID is missing. Cannot update owner data.");
+        setIsAddOwnerLoading(false);
+        return;
+    }
     const responseWrapper = await dispatch(updateClient(singleClientResult._id, updatePayload));
+    
     if (responseWrapper?.data) {
-      toast.success("Owner data has been saved successfully!"); // Show the toast
-        setSingleClientResult(null); // Close the result card
-        setSingleSearchNumber(""); // Reset the search number input
-        setNewOwnerName(""); // Reset the owner form
-        setNewOwnerNumber(""); // Reset the owner form
-        
+        toast.success("Owner data has been saved successfully!");
+        setSingleClientResult(null);
+        setSingleSearchNumber("");
         setNewOwnerName("");
         setNewOwnerNumber("");
+    } else {
+        toast.error("Failed to save owner data. Please try again.");
     }
+
     setIsAddOwnerLoading(false);
   };
   
@@ -155,6 +165,7 @@ export default function Clients() {
     setFormLoading(false);
 
     if (responseWrapper?.data) {
+      toast.success("Client status updated successfully!");
       setModalOpen(false);
       if (singleClientResult?._id === editClient._id) {
         setSingleClientResult(responseWrapper.data);
@@ -162,7 +173,6 @@ export default function Clients() {
     }
   };
   
-  // **** MODIFIED: Updated color mapping for new statuses ****
   const getStatusColor = (status: string) => {
     const statusColors: { [key: string]: string } = {
         'New': 'bg-blue-500',
@@ -177,7 +187,6 @@ export default function Clients() {
 
   return (
     <div className="w-full mx-auto mt-2 space-y-8">
-      {/* Search Card remains the same */}
       <Card>
         <CardHeader><CardTitle>Get Client Details</CardTitle></CardHeader>
         <CardContent>
@@ -201,7 +210,6 @@ export default function Clients() {
         </CardContent>
       </Card>
 
-      {/* Client Result Card remains the same */}
       {singleClientResult && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -219,14 +227,25 @@ export default function Clients() {
             </div>
             {(() => {
                 const canClaim = singleClientResult.ekyc_stage === 'complete' || singleClientResult.trade_status === 'matched';
+                const isAlreadyOwner = newOwnerNumber.trim() ? singleClientResult.ownerNumber?.includes(newOwnerNumber.trim()) : false;
+
                 return (
                     <div className="border-t pt-6">
                         <h3 className="font-semibold text-lg flex items-center gap-2 mb-4"><UserPlus className="w-5 h-5" />Claim This Client</h3>
+                        
                         {!canClaim && (<div className="p-3 mb-4 rounded-md text-sm flex items-center gap-2 bg-yellow-50 text-yellow-800 border border-yellow-200"><AlertCircle className="w-4 h-4" /><span>Client must have a 'Complete' KYC or 'Matched' Trade status to be claimed.</span></div>)}
+                        
+                        {isAlreadyOwner && (
+                            <div className="p-3 mb-4 rounded-md text-sm flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-200">
+                                <Info className="w-4 h-4" />
+                                <span>This phone number has already claimed this client.</span>
+                            </div>
+                        )}
+
                         <form onSubmit={handleAddOwnerSubmit} className="space-y-3">
-                            <Input placeholder="Your Name" value={newOwnerName} onChange={e => setNewOwnerName(e.target.value)} required disabled={!canClaim || isAddOwnerLoading} />
-                            <Input placeholder="Your Phone Number" value={newOwnerNumber} onChange={e => setNewOwnerNumber(e.target.value)} required disabled={!canClaim || isAddOwnerLoading}/>
-                            <Button type="submit" className="w-full" disabled={!canClaim || isAddOwnerLoading || !newOwnerName || !newOwnerNumber}>
+                            <Input placeholder="Your Name" value={newOwnerName} onChange={e => setNewOwnerName(e.target.value)} required disabled={!canClaim || isAlreadyOwner || isAddOwnerLoading} />
+                            <Input placeholder="Your Phone Number" value={newOwnerNumber} onChange={e => setNewOwnerNumber(e.target.value)} required disabled={!canClaim || isAlreadyOwner || isAddOwnerLoading}/>
+                            <Button type="submit" className="w-full" disabled={!canClaim || isAlreadyOwner || isAddOwnerLoading || !newOwnerName || !newOwnerNumber}>
                                 {isAddOwnerLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                                 Add Me as Owner
                             </Button>
@@ -238,13 +257,10 @@ export default function Clients() {
         </Card>
       )}
 
-      {/* --- MODAL FOR EDITING STATUS ONLY --- */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Client Status</DialogTitle></DialogHeader>
           <form onSubmit={handleStatusFormSubmit} className="space-y-4 pt-4">
-            
-            {/* **** MODIFIED: Replaced old statuses with the new list **** */}
             <Select value={formStatus} onValueChange={setFormStatus}>
               <SelectTrigger><SelectValue placeholder="Select Status" /></SelectTrigger>
               <SelectContent>
@@ -256,12 +272,9 @@ export default function Clients() {
                 <SelectItem value="InvalidNumber">Invalid Number</SelectItem>
               </SelectContent>
             </Select>
-
-            {/* This conditional logic for the reason input remains correct */}
             {formStatus === 'NotInterested' && (
               <Input placeholder="Reason for not being interested" value={formReason} onChange={(e) => setFormReason(e.target.value)}/>
             )}
-            
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setModalOpen(false)} disabled={formLoading}>Cancel</Button>
               <Button type="submit" disabled={formLoading}>

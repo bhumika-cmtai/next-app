@@ -109,7 +109,7 @@ const ContactUs = () => {
               >
                 226010, Gomti Nagar Lucknow, Uttar Pradesh, India
               </ContactInfoItem>
-              <ContactInfoItem
+              {/* <ContactInfoItem
                 title="Phone Number"
                 icon="/phoneImg.png"
               >
@@ -117,7 +117,7 @@ const ContactUs = () => {
                   <div><span className='font-medium text-gray-600 '>Gaurav prajapati</span>:  +91 7318368107</div>
                   <div><span className='font-medium text-gray-600 '>Priya Verma</span>:  +91 8708718542</div>
                 </React.Fragment>
-              </ContactInfoItem>
+              </ContactInfoItem> */}
                <ContactInfoItem
                 title="Email Address"
                 icon="/mailImg.png"
