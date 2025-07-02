@@ -38,7 +38,7 @@ const testimonialsData = [
   {
     id: 5,
     text: "First of all I am a student of bsc I grats my decision to join grow up ✅ for financial freedom 💰  I work here and according to my experience this is a greatest platform I ever found and the speciality of this platform there is no need to invest a single rupee 💯And now I am financially free with the help of group up company. Thanks alot Priya verma mam and gaurav sir❤",
-    name: "Vishal Sharma",
+    name: "Rohit Kumar",
     image: "/vishalImg.jpg",
     nameColor: "text-green-500",
     borderColor: "border-green-500",
@@ -54,8 +54,8 @@ const testimonialsData = [
   {
     id: 7,
     text: "🔹 Zero investment work hai, isme 💸 koi paisa nahi lagta.🔹 Main abhi 🎓 12th pass hoon aur mujhe isse bahut madad mili.🔹 Is kamai se 📱 maine naya phone bhi kharida hai because of this company ☺🔹 Ye ek 💯 genuine earning aur helpful opportunity hai!",
-    name: "Kundan Kumar",
-    image: "kundanImg.jpg",
+    name: "Rahul",
+    image: "rahulImg.jpg",
     nameColor: "text-green-500",
     borderColor: "border-green-500",
   },
