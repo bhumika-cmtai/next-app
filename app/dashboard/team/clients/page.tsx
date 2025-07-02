@@ -3,22 +3,22 @@
 import React, { useState, ChangeEvent, useEffect, FormEvent } from "react";
 import axios from "axios";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Mail, Phone, PlusCircle, Clock, AlertCircle, Loader2 } from "lucide-react";
+import { Edit, Phone, Clock, AlertCircle, Loader2, UserPlus, ShieldCheck, ShieldAlert } from "lucide-react";
 import { 
   updateClient,
   Client, 
-  fetchPortalNames, // Import the new thunk
-  selectPortalNames // Import the new selector
+  fetchPortalNames,
+  selectPortalNames
 } from "@/lib/redux/clientSlice";
 import { fetchSession, GlobalSession } from "@/lib/redux/authSlice";
 import { AppDispatch } from "@/lib/store";
 import { useSelector, useDispatch } from "react-redux";
+import { toast } from "sonner";
 
 // Helper function for time comparison (remains the same)
 const isCurrentTimeInSession = (session: GlobalSession | null): boolean => {
@@ -55,16 +55,15 @@ export default function Clients() {
   const [formLoading, setFormLoading] = useState(false);
   const [formStatus, setFormStatus] = useState("New");
   const [formReason, setFormReason] = useState("");
+  
+  // --- Add Owner State ---
   const [newOwnerName, setNewOwnerName] = useState("");
   const [newOwnerNumber, setNewOwnerNumber] = useState("");
-  const [showAddOwnerForm, setShowAddOwnerForm] = useState(false);
+  const [isAddOwnerLoading, setIsAddOwnerLoading] = useState(false);
 
   // --- Fetch Initial Data (Portals & Session) on Mount ---
   useEffect(() => {
-    // Fetch Portals via Redux
     dispatch(fetchPortalNames());
-
-    // Fetch and Check Global Session
     const checkSession = async () => {
       setIsSessionCheckLoading(true);
       try {
@@ -107,29 +106,50 @@ export default function Clients() {
     }
   };
 
+  // --- Handler for adding a new owner directly on the card ---
+  const handleAddOwnerSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (singleClientResult?.ekyc_stage !== 'complete' && singleClientResult?.trade_status !== 'matched') {
+        return;
+    }
+    if (!singleClientResult?._id || !newOwnerName.trim() || !newOwnerNumber.trim()) return;
+    
+    setIsAddOwnerLoading(true);
+    const updatePayload = {
+        ownerName: [...(singleClientResult.ownerName || []), newOwnerName],
+        ownerNumber: [...(singleClientResult.ownerNumber || []), newOwnerNumber],
+    };
+    const responseWrapper = await dispatch(updateClient(singleClientResult._id, updatePayload));
+    if (responseWrapper?.data) {
+      toast.success("Owner data has been saved successfully!"); // Show the toast
+        setSingleClientResult(null); // Close the result card
+        setSingleSearchNumber(""); // Reset the search number input
+        setNewOwnerName(""); // Reset the owner form
+        setNewOwnerNumber(""); // Reset the owner form
+        
+        setNewOwnerName("");
+        setNewOwnerNumber("");
+    }
+    setIsAddOwnerLoading(false);
+  };
+  
+  // --- Opens the modal for editing status ---
   const openEditModal = (client: Client) => {
     setEditClient(client);
     setFormStatus(client.status);
     setFormReason(client.reason || "");
-    setNewOwnerName("");
-    setNewOwnerNumber("");
-    setShowAddOwnerForm(false); 
     setModalOpen(true);
   };
 
-  const handleFormSubmit = async (e: FormEvent) => {
+  // --- Handles the submission from the status edit modal ---
+  const handleStatusFormSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!editClient?._id) return;
     setFormLoading(true);
     
     const updatePayload: Partial<Client> = { status: formStatus };
-    if (formStatus === "Not Interested") { updatePayload.reason = formReason; }
-    else if (editClient.status === "Not Interested") { updatePayload.reason = ""; }
-
-    if (showAddOwnerForm && newOwnerName.trim() && newOwnerNumber.trim()) {
-      updatePayload.ownerName = [...(editClient.ownerName || []), newOwnerName];
-      updatePayload.ownerNumber = [...(editClient.ownerNumber || []), newOwnerNumber];
-    }
+    if (formStatus === "NotInterested") { updatePayload.reason = formReason; }
+    else if (editClient.status === "NotInterested") { updatePayload.reason = ""; }
     
     const responseWrapper = await dispatch(updateClient(editClient._id, updatePayload));
     setFormLoading(false);
@@ -142,48 +162,38 @@ export default function Clients() {
     }
   };
   
+  // **** MODIFIED: Updated color mapping for new statuses ****
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "New": return "bg-blue-500";
-      case "Contacted": return "bg-yellow-500";
-      case "Interested": return "bg-green-500";
-      case "Not Interested": return "bg-red-500";
-      case "Converted": return "bg-purple-500";
-      default: return "bg-gray-500";
-    }
+    const statusColors: { [key: string]: string } = {
+        'New': 'bg-blue-500',
+        'RegisterationDone': 'bg-teal-500',
+        'CallCut': 'bg-yellow-500',
+        'CallNotPickUp': 'bg-orange-500',
+        'NotInterested': 'bg-red-500',
+        'InvalidNumber': 'bg-gray-600',
+    };
+    return statusColors[status] || 'bg-gray-400';
   };
 
   return (
     <div className="w-full mx-auto mt-2 space-y-8">
+      {/* Search Card remains the same */}
       <Card>
         <CardHeader><CardTitle>Get Client Details</CardTitle></CardHeader>
         <CardContent>
           <div className={`p-3 mb-4 rounded-md text-sm flex items-center gap-2 ${isSessionCheckLoading ? 'bg-blue-50 text-blue-800' : isSessionActive ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
             {isSessionCheckLoading ? (<><Clock className="w-4 h-4 animate-spin"/> Checking session...</>) : isSessionActive ? (<><Clock className="w-4 h-4"/> Session is active. You can claim clients.</>) : (<><AlertCircle className="w-4 h-4"/> Session is not active. Client claiming is disabled.</>)}
           </div>
-          
           <form onSubmit={handleGetClientSubmit} className="flex flex-col sm:flex-row items-center gap-4">
             <Select onValueChange={setSingleSearchPortal} value={singleSearchPortal}>
-              <SelectTrigger className="w-full sm:flex-1" disabled={!isSessionActive}>
-                <SelectValue placeholder="Select Portal" />
-              </SelectTrigger>
+              <SelectTrigger className="w-full sm:flex-1" disabled={!isSessionActive}><SelectValue placeholder="Select Portal" /></SelectTrigger>
               <SelectContent>
                 {portalNames.length === 0 && <div className="p-2 text-sm text-muted-foreground">Loading portals...</div>}
                 {portalNames.map(name => (<SelectItem key={name} value={name}>{name}</SelectItem>))}
               </SelectContent>
             </Select>
-            <Input
-              placeholder="Enter Client Mobile Number"
-              value={singleSearchNumber}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setSingleSearchNumber(e.target.value)}
-              className="w-full sm:flex-1"
-              disabled={!isSessionActive}
-            />
-            <Button 
-              type="submit" 
-              className="w-full sm:w-auto" 
-              disabled={!isSessionActive || isSingleClientLoading || isSessionCheckLoading || !singleSearchPortal || !singleSearchNumber}
-            >
+            <Input placeholder="Enter Client Mobile Number" value={singleSearchNumber} onChange={(e: ChangeEvent<HTMLInputElement>) => setSingleSearchNumber(e.target.value)} className="w-full sm:flex-1" disabled={!isSessionActive}/>
+            <Button type="submit" className="w-full sm:w-auto" disabled={!isSessionActive || isSingleClientLoading || isSessionCheckLoading || !singleSearchPortal || !singleSearchNumber}>
               {isSingleClientLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : 'Search'}
             </Button>
           </form>
@@ -191,92 +201,64 @@ export default function Clients() {
         </CardContent>
       </Card>
 
+      {/* Client Result Card remains the same */}
       {singleClientResult && (
         <Card>
-          <CardHeader><CardTitle>Client Result</CardTitle></CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Owner(s)</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Portal</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow key={singleClientResult._id}>
-                    <TableCell><div className="font-medium">{singleClientResult.name}</div></TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-gray-500"/><span className="text-sm">{singleClientResult.email || '-'}</span></div>
-                        <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-500"/><span className="text-sm">{singleClientResult.phoneNumber}</span></div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1 text-sm">
-                        {(singleClientResult.ownerName && singleClientResult.ownerName.length > 0) ? (singleClientResult.ownerName.map((name, index) => (<div key={index}>{name} - {singleClientResult.ownerNumber?.[index] || 'N/A'}</div>))) : 'N/A'}
-                      </div>
-                    </TableCell>
-                    <TableCell><Badge className={`${getStatusColor(singleClientResult.status || "")} text-white`}>{singleClientResult.status}</Badge></TableCell>
-                    <TableCell>{singleClientResult.portalName}</TableCell>
-                    <TableCell>
-                      <Button size="icon" variant="ghost" onClick={() => openEditModal(singleClientResult)}><Edit className="w-4 h-4"/></Button>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>{singleClientResult.portalName}</CardTitle>
+            <Button variant="outline" size="sm" onClick={() => openEditModal(singleClientResult)}><Edit className="w-4 h-4 mr-2" />Edit Status</Button>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                <div><p className="text-muted-foreground">Client Name</p><p className="font-medium text-base">{singleClientResult.name}</p></div>
+                <div><p className="text-muted-foreground">Phone Number</p><p className="font-medium text-base">{singleClientResult.phoneNumber}</p></div>
+                <div><p className="text-muted-foreground">Status</p><Badge className={`${getStatusColor(singleClientResult.status || "")} text-white`}>{singleClientResult.status}</Badge></div>
+                <div><p className="text-muted-foreground">E-KYC Status</p><div className="flex items-center gap-2 font-medium">{singleClientResult.ekyc_stage === 'complete' ? <ShieldCheck className="w-4 h-4 text-green-500" /> : <ShieldAlert className="w-4 h-4 text-orange-500" />}<span>{singleClientResult.ekyc_stage === 'complete' ? 'Complete' : 'Not Complete'}</span></div></div>
+                <div className="md:col-span-2"><p className="text-muted-foreground">Trade Status</p><div className="flex items-center gap-2 font-medium">{singleClientResult.trade_status === 'matched' ? <ShieldCheck className="w-4 h-4 text-green-500" /> : <ShieldAlert className="w-4 h-4 text-orange-500" />}<span>{singleClientResult.trade_status === 'matched' ? 'Matched' : 'Not Matched'}</span></div></div>
+                <div className="md:col-span-2"><p className="text-muted-foreground">Current Owner(s)</p>{(singleClientResult.ownerName && singleClientResult.ownerName.length > 0) ? (<ul className="list-disc list-inside mt-1 font-medium">{singleClientResult.ownerName.map((name, i) => <li key={i}>{name} - {singleClientResult.ownerNumber?.[i] || 'N/A'}</li>)}</ul>) : (<p className="text-muted-foreground italic mt-1">No owners have claimed this client yet.</p>)}</div>
             </div>
+            {(() => {
+                const canClaim = singleClientResult.ekyc_stage === 'complete' || singleClientResult.trade_status === 'matched';
+                return (
+                    <div className="border-t pt-6">
+                        <h3 className="font-semibold text-lg flex items-center gap-2 mb-4"><UserPlus className="w-5 h-5" />Claim This Client</h3>
+                        {!canClaim && (<div className="p-3 mb-4 rounded-md text-sm flex items-center gap-2 bg-yellow-50 text-yellow-800 border border-yellow-200"><AlertCircle className="w-4 h-4" /><span>Client must have a 'Complete' KYC or 'Matched' Trade status to be claimed.</span></div>)}
+                        <form onSubmit={handleAddOwnerSubmit} className="space-y-3">
+                            <Input placeholder="Your Name" value={newOwnerName} onChange={e => setNewOwnerName(e.target.value)} required disabled={!canClaim || isAddOwnerLoading} />
+                            <Input placeholder="Your Phone Number" value={newOwnerNumber} onChange={e => setNewOwnerNumber(e.target.value)} required disabled={!canClaim || isAddOwnerLoading}/>
+                            <Button type="submit" className="w-full" disabled={!canClaim || isAddOwnerLoading || !newOwnerName || !newOwnerNumber}>
+                                {isAddOwnerLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                Add Me as Owner
+                            </Button>
+                        </form>
+                    </div>
+                );
+            })()}
           </CardContent>
         </Card>
       )}
 
+      {/* --- MODAL FOR EDITING STATUS ONLY --- */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit Client</DialogTitle></DialogHeader>
-          <form onSubmit={handleFormSubmit} className="space-y-4 pt-4">
-            <div>
-                <label className="text-sm font-medium">Existing Owner(s)</label>
-                <div className="mt-2 p-3 border rounded-md bg-muted text-muted-foreground text-sm space-y-1">
-                    {editClient?.ownerName && editClient.ownerName.length > 0 ? (
-                        editClient.ownerName.map((name, index) => (
-                            <div key={index}>{name} ({editClient.ownerNumber?.[index] || 'No number'})</div>
-                        ))
-                    ) : (
-                        <p>No existing owners.</p>
-                    )}
-                </div>
-            </div>
+          <DialogHeader><DialogTitle>Edit Client Status</DialogTitle></DialogHeader>
+          <form onSubmit={handleStatusFormSubmit} className="space-y-4 pt-4">
             
-            {!showAddOwnerForm && (
-                <Button type="button" variant="outline" className="w-full" onClick={() => setShowAddOwnerForm(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Owner
-                </Button>
-            )}
-
-            {showAddOwnerForm && (
-                <div className="space-y-2 border-t pt-4">
-                    <label className="text-sm font-medium">New Owner Details</label>
-                    <Input placeholder="New Owner Name" value={newOwnerName} onChange={(e) => setNewOwnerName(e.target.value)} required/>
-                    <Input placeholder="New Owner Phone Number" value={newOwnerNumber} onChange={(e) => setNewOwnerNumber(e.target.value)} required/>
-                </div>
-            )}
-            
+            {/* **** MODIFIED: Replaced old statuses with the new list **** */}
             <Select value={formStatus} onValueChange={setFormStatus}>
               <SelectTrigger><SelectValue placeholder="Select Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="New">New</SelectItem>
-                <SelectItem value="Contacted">Contacted</SelectItem>
-                <SelectItem value="Interested">Interested</SelectItem>
-                <SelectItem value="Not Interested">Not Interested</SelectItem>
-                <SelectItem value="Converted">Converted</SelectItem>
+                <SelectItem value="RegisterationDone">Registration Done</SelectItem>
+                <SelectItem value="CallCut">Call Cut</SelectItem>
+                <SelectItem value="CallNotPickUp">Call Not Picked Up</SelectItem>
+                <SelectItem value="NotInterested">Not Interested</SelectItem>
+                <SelectItem value="InvalidNumber">Invalid Number</SelectItem>
               </SelectContent>
             </Select>
 
-            {formStatus === 'Not Interested' && (
+            {/* This conditional logic for the reason input remains correct */}
+            {formStatus === 'NotInterested' && (
               <Input placeholder="Reason for not being interested" value={formReason} onChange={(e) => setFormReason(e.target.value)}/>
             )}
             
@@ -284,7 +266,7 @@ export default function Clients() {
               <Button type="button" variant="outline" onClick={() => setModalOpen(false)} disabled={formLoading}>Cancel</Button>
               <Button type="submit" disabled={formLoading}>
                 {formLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : null}
-                {formLoading ? 'Saving...' : 'Done'}
+                {formLoading ? 'Saving...' : 'Update Status'}
               </Button>
             </DialogFooter>
           </form>

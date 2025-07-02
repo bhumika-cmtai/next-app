@@ -19,7 +19,9 @@ const navigation = [
   { name: "Leaders", href: "/dashboard/admin/users", icon: Users },
   { name: "Leads", href: "/dashboard/admin/leads", icon: FileText },
   { name: "Contacts", href: "/dashboard/admin/contacts", icon: Contact },
-  { name: "Clients", href: "/dashboard/admin/clients", icon: User },
+  { name: "Data Claims", href: "/dashboard/admin/data-claims", icon: User },
+  { name: "Link Clicks", href: "/dashboard/admin/link-clicks", icon: User },
+  { name: "Registeration", href: "/dashboard/admin/registeration", icon: User },
   {name: "Links", href: "/dashboard/admin/links", icon: Link2},
   { name: "Setting", href: "/dashboard/admin/settings", icon: Settings },
   { name: "Logout", href: "/logout", icon: LogOut },
@@ -83,7 +85,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                     }
                   }}
                   className={`
-                    relative flex items-center gap-4 rounded-xl px-5 py-4 text-slate-600 
+                    relative flex items-center gap-4 rounded-xl px-5 py-2 text-slate-600 
                     transition-all duration-200 ease-in-out text-lg
                     ${!isActive 
                       ? "hover:bg-purple-500/10 hover:text-purple-600 hover:scale-[0.98]" 

@@ -6,6 +6,8 @@ import clientReducer from './redux/clientSlice';
 import authReducer from './redux/authSlice';
 import linkReducer from './redux/linkSlice'
 import applinkReducer from './redux/appLinkSlice'
+import linkclickReducer from './redux/linkclickSlice'
+import registerationReducer from './redux/registerationSlice'
 export const store = configureStore({
   reducer: {
     users: userReducer,
@@ -14,7 +16,9 @@ export const store = configureStore({
     auth: authReducer,
     clients: clientReducer,
     links: linkReducer,
-    applinks: applinkReducer
+    applinks: applinkReducer,
+    linkclicks: linkclickReducer,
+    registerations: registerationReducer
   },
 });
 

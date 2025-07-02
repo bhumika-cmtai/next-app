@@ -21,6 +21,11 @@ export interface Client {
   updatedOn?: string;
 }
 
+export interface GroupedClients {
+  portalName: string | null; // portalName can be null
+  clients: Client[];
+}
+
 
 export interface Pagination {
   currentPage: number;
@@ -35,6 +40,7 @@ interface ClientState {
   selectedClient: Client | null;
   pagination: Pagination;
   portalNames: string[];
+  clientsByOwner: GroupedClients[];
 }
 
 const initialState: ClientState = {
@@ -48,6 +54,7 @@ const initialState: ClientState = {
     totalClients: 0,
   },
   portalNames: [],
+  clientsByOwner: []
   };  
 
 const clientSlice = createSlice({
@@ -84,22 +91,36 @@ const clientSlice = createSlice({
     setPortalNames: (state, action) => { // <-- NEW: Reducer to set portal names
       state.portalNames = action.payload;
     },
+    setClientsByOwner: (state, action) => {
+      state.clientsByOwner = action.payload;
+      state.loading = false;
+      state.error = null;
+    },
   },
 }); 
 
-export const { setClients, setLoading, setError, setSelectedClient, clearSelectedClient, setPagination, setCurrentPage,setPortalNames } = clientSlice.actions;
+export const { setClients, setLoading, setError, setSelectedClient, clearSelectedClient, setPagination, setCurrentPage,setPortalNames,setClientsByOwner } = clientSlice.actions;
 
-export const fetchClients = (params: { searchQuery?: string; status?: string; page?: number }) => async (dispatch: Dispatch) => {
+export const fetchClients = (params: { 
+  searchQuery?: string; 
+  status?: string; 
+  portalName?: string; // <-- ADD THIS
+  page?: number; 
+}) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', String(params.page));
     if (params.status && params.status !== 'all') queryParams.append('status', params.status);
     if (params.searchQuery) queryParams.append('searchQuery', params.searchQuery);
+    // MODIFIED: Add portalName to the query if it exists
+    if (params.portalName && params.portalName !== 'all') { // <-- ADD THIS BLOCK
+      queryParams.append('portalName', params.portalName);
+    }
 
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/getAllClient?${queryParams.toString()}`);
 
-    if (response.data) {
+    if (response.data && response.data.data) {
       dispatch(setClients(response.data.data));
     } else {
       dispatch(setError(response.data.message || "Failed to fetch clients"));
@@ -188,11 +209,26 @@ export const fetchPortalNames = () => async (dispatch: Dispatch) => {
       dispatch(setPortalNames(response.data.data));
     }
   } catch (error: any) {
-    console.error("Failed to fetch portal names:", error.message);
+    console.log("Failed to fetch portal names:", error.message);
     // Optionally dispatch an error action
   }
 };
 
+export const fetchClientsByOwner = (phoneNumber: string) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/getClientsByOwner/${phoneNumber}`);
+    if (response.data && response.data.data) {
+      console.log(response.data)
+      dispatch(setClientsByOwner(response.data.data));
+    } else {
+      dispatch(setError(response.data.message || "Failed to fetch owner's clients"));
+    }
+  } catch (error: any) {
+    const message = error.response?.data?.message || error.message || "Unknown error occurred";
+    dispatch(setError(message));
+  }
+}
 
 export const selectClients = (state: RootState) => state.clients.data;
 export const selectClientById = (state: RootState) => state.clients.selectedClient;
@@ -203,4 +239,6 @@ export const selectCurrentPage = (state: RootState) => state.clients.pagination.
 export const selectTotalPages = (state: RootState) => state.clients.pagination.totalPages;
 export const selectTotalClients = (state: RootState) => state.clients.pagination.totalClients;
 export const selectPortalNames = (state: RootState) => state.clients.portalNames
+export const selectClientsByOwner = (state: RootState) => state.clients.clientsByOwner;
+
 export default clientSlice.reducer;

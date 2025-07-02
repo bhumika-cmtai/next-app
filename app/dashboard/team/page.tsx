@@ -1,34 +1,68 @@
-import React from "react";
-import { Users, FileText, Contact, TrendingUp } from "lucide-react";
+"use client";
 
-const stats = [
-    {
-        name: "Total Income",
-        value: "20,543",
-        change: "+12.5%",
-        icon: Users,
-        trend: "up",
-    },
-    {
-        name: "Total Leads",
-        value: "1,234",
-        change: "+8.2%",
-        icon: FileText,
-        trend: "up",
-    },
-    // {
-    //     name: "Conversion Rate",
-    //     value: "24.8%",
-    //     change: "+4.1%",
-    //     icon: TrendingUp,
-    //     trend: "up",
-    // },
-];
+import React, { useEffect, useMemo } from "react";
+import { Users, FileText } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "@/lib/store";
+import { 
+    fetchCurrentUser, 
+    selectUser, 
+    selectIsLoading as selectAuthLoading 
+} from "@/lib/redux/authSlice";
+import { 
+    fetchClientsByOwner, 
+    selectClientsByOwner, 
+    selectLoading as selectClientLoading 
+} from "@/lib/redux/clientSlice";
+import { Skeleton } from "@/components/ui/skeleton"; 
 
 export default function Dashboard() {
+    const dispatch = useDispatch<AppDispatch>();
+
+    const user = useSelector(selectUser);
+    const authLoading = useSelector(selectAuthLoading);
+    const clientsByOwner = useSelector(selectClientsByOwner);
+    const clientLoading = useSelector(selectClientLoading);
+
+    useEffect(() => {
+        if (!user) {
+            dispatch(fetchCurrentUser());
+        }
+    }, [dispatch, user]);
+
+    useEffect(() => {
+        if (user?.phoneNumber && clientsByOwner.length === 0) {
+            dispatch(fetchClientsByOwner(user.phoneNumber));
+        }
+    }, [dispatch, user, clientsByOwner.length]); 
+    const totalClaims = useMemo(() => {
+        if (!clientsByOwner) return 0;
+        return clientsByOwner.reduce((accumulator, group) => accumulator + group.clients.length, 0);
+    }, [clientsByOwner]);
+    
+    const stats = [
+        {
+            name: "Total Income",
+            value: user?.income ? `₹${user.income.toLocaleString()}` : "₹0",
+            icon: Users,
+            trend: "up", 
+        },
+        {
+            name: "Total Data Claims",
+            value: totalClaims.toLocaleString(),
+            icon: FileText,
+            trend: "up",
+        },
+    ];
+
+    const isLoading = authLoading || (clientLoading && clientsByOwner.length === 0);
+    if (isLoading) {
+        return <DashboardLoadingSkeleton />;
+    }
+
     return (
         <div className="space-y-6">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2"> 
                 {stats.map((stat) => (
                     <div
                         key={stat.name}
@@ -51,64 +85,30 @@ export default function Dashboard() {
                                 <stat.icon className="h-6 w-6" />
                             </div>
                         </div>
-                        <div className="mt-4">
-                            <span
-                                className={`text-sm font-medium ${
-                                    stat.trend === "up"
-                                        ? "text-green-600"
-                                        : "text-red-600"
-                                }`}
-                            >
-                                {stat.change}
-                            </span>
-                            <span className="text-sm text-slate-600"> from last month</span>
-                        </div>
                     </div>
                 ))}
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-                {/* <div className="rounded-lg border bg-white p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold text-slate-900">
-                        Recent Activity
-                    </h2>
-                    <div className="mt-4 space-y-4">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex items-center gap-4">
-                                <div className="h-10 w-10 rounded-full bg-purple-100" />
-                                <div>
-                                    <p className="text-sm font-medium text-slate-900">
-                                        User Activity {i}
-                                    </p>
-                                    <p className="text-sm text-slate-600">
-                                        Description of activity {i}
-                                    </p>
-                                </div>
-                                <div className="ml-auto text-sm text-slate-600">2h ago</div>
-                            </div>
-                        ))}
-                    </div>
-                </div> */}
-
-                {/* <div className="rounded-lg border bg-white p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold text-slate-900">
-                        Quick Actions
-                    </h2>
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                        {[
-                            "Get Leads",
-                            "Find Lead",
-                        ].map((action) => (
-                            <button
-                                key={action}
-                                className="rounded-lg border bg-white px-4 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
-                            >
-                                {action}
-                            </button>
-                        ))}
-                    </div>
-                </div> */}
             </div>
+        </div>
+    );
+}
+
+const DashboardLoadingSkeleton = () => {
+    return (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+            {[1, 2].map((i) => (
+                <div key={i} className="rounded-lg border bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="mt-2 h-9 w-24" />
+                        </div>
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                    </div>
+                </div>
+            ))}
         </div>
     );
 }

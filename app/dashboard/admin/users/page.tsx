@@ -216,7 +216,7 @@ export default function Users() {
         </div>
       </div>
       
-      <div className="flex flex-wrap justify-center items-end gap-2 p-4 border rounded-lg bg-slate-50 mb-4">
+      <div className="flex flex-wrap justify-center items-end gap-2 p-4 border rounded-lg bg-slate-50">
         <div className="space-y-1"><Label htmlFor="start-date" className="text-sm font-medium">Start Date</Label><Input id="start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}/></div>
         <div className="space-y-1"><Label htmlFor="end-date" className="text-sm font-medium">End Date</Label><Input id="end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}/></div>
         <Button onClick={handleDateRangeSearch} disabled={isCountLoading} className="gap-1"><Search className="w-4 h-4"/>{isCountLoading ? 'Searching...':'Search Dates'}</Button>

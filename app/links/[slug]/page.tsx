@@ -1,5 +1,3 @@
-// app/links/[slug]/page.tsx
-
 "use client";
 import React, { useState, useEffect, use } from "react";
 import Image from "next/image";
@@ -11,11 +9,11 @@ import { AppDispatch, RootState } from "@/lib/store";
 
 // Import the specific thunks you need
 import { fetchLeaderCode } from "@/lib/redux/userSlice";
-import { addClient } from "@/lib/redux/clientSlice";
+import { addLinkclick } from "@/lib/redux/linkclickSlice"; // <-- CHANGED
 import { fetchLinkBySlug } from "@/lib/redux/linkSlice";
 import { Loader2 } from "lucide-react";
 
-const Page = ({ params }:{ params: Promise<{ slug: string }> }) => {
+const Page = ({ params }: { params: Promise<{ slug: string }> }) => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
@@ -48,7 +46,7 @@ const Page = ({ params }:{ params: Promise<{ slug: string }> }) => {
       }
     };
     loadLink();
-  }, [dispatch,slug, router, formattedTitle]);
+  }, [dispatch, slug, router, formattedTitle]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,23 +65,34 @@ const Page = ({ params }:{ params: Promise<{ slug: string }> }) => {
     }
 
     try {
-      // Step 1: Validate the leader code
+      // Step 1: Validate the leader code (This logic remains)
       await dispatch(fetchLeaderCode(leaderCode));
-      console.log("leadercode fetch")
       
-      // Step 2: If leader code is valid, add the client
-      const clientPayload = { name, phoneNumber, leaderCode, status: "New", portalName: slug };
-      const result = await dispatch(addClient(clientPayload));
+      // Step 2: If leader code is valid, create the payload for a 'linkclick'
+      // The structure of the object is the same, we just rename it for clarity.
+      const linkclickPayload = { 
+        name, 
+        phoneNumber, 
+        leaderCode, 
+        status: "New", // Default status
+        portalName: slug 
+      };
+
+      // --- THIS IS THE MAIN CHANGE ---
+      // We now dispatch the `addLinkclick` action instead of `addClient`.
+      const result = await dispatch(addLinkclick(linkclickPayload));
+      // --- END OF CHANGE ---
       
-      
-      // Step 3: If client is added successfully, redirect to the portal link
+      // Step 3: If the linkclick is added successfully, redirect to the portal link
       if (result) {
         toast.success("Details saved! Redirecting to portal...");
         setTimeout(() => {
-          router.push(portalUrl);
-        }, 5000);
+          // Use window.location.href for external links to ensure a full page navigation
+          window.location.href = portalUrl;
+        }, 3000); // Increased timeout slightly for user to read the message
       } else {
-        throw new Error("Failed to register client. Please try again.");
+        // This 'else' might not be reached if addLinkclick throws an error, but it's good for safety.
+        throw new Error("Failed to save your details. Please try again.");
       }
     } catch (error: any) {
       toast.error(error.message || "An unexpected error occurred.");
@@ -154,7 +163,12 @@ const Page = ({ params }:{ params: Promise<{ slug: string }> }) => {
                       />
                       <div className="w-full mx-auto rounded-3xl p-[2px] bg-gradient-to-b from-[#A6F4C5] to-[#B6A7FF] hover:from-gold-200 hover:to-purple-500 transition-all duration-500">
                         <button className="w-full h-full text-center rounded-[22px] bg-white/90 backdrop-blur-sm px-4 py-2 font-semibold disabled:opacity-50" disabled={isSubmitting}>
-                          {isSubmitting ? "Submitting..." : "Submit"}
+                          {isSubmitting ? (
+                            <span className="flex items-center justify-center">
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Submitting...
+                            </span>
+                          ) : "Submit"}
                         </button>
                       </div>
                     </form>

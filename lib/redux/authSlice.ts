@@ -1,5 +1,3 @@
-// lib/redux/authSlice.ts (Updated)
-
 import { createSlice, Dispatch } from "@reduxjs/toolkit";
 import axios from "axios";
 import { RootState } from "../store";
@@ -26,6 +24,7 @@ export interface User {
   account_number?: string;
   Ifsc?: string;
   upi_id?: string;
+  income?: number;
   //session
 }
 
@@ -120,7 +119,7 @@ export const login = ({ email, password, rememberMe }: { email: string; password
 export const fetchCurrentUser = () => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
   const token = Cookies.get('auth-token');
-  console.log(token)
+  // console.log(token)
   if (!token) {
     dispatch(setError("Authentication token not found. Please log in."));
     // We set isLoading to false via the setError reducer
@@ -194,7 +193,7 @@ export const updateSessionDetails = (sessionData: Partial<GlobalSession>) => asy
         headers: { 'Authorization': `Bearer ${token}` }
       }
     );
-    console.log(response.data)
+    // console.log(response.data)
 
     // IMPORTANT: We NO LONGER dispatch `setUser`. The session is not part of the user object.
     // Instead, we just stop the loading indicator and return the data.
@@ -225,7 +224,7 @@ export const fetchSession = () => async (dispatch: Dispatch) => {
         
         // Stop loading and return the fetched data.
         dispatch(setIsLoading(false));
-        console.log(response.data)
+        // console.log(response.data)
         return response.data.data; // This will be the session object or null
 
     } catch (error: any) {

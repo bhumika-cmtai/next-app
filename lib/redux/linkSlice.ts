@@ -9,6 +9,7 @@ export interface PortalLink {
   _id: string;
   portalName: string;
   link: string;
+  commission?: string; // **** NEW: Added optional commission field ****
 }
 
 // Interface for the state managed by this slice
@@ -69,6 +70,7 @@ export const fetchAllLinks = () => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
   try {
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/link/all`);
+    console.log(response.data.data)
     dispatch(setLinks(response.data.data));
   } catch (error: any) {
     const message = error.response?.data?.message || "Failed to fetch portal links.";
@@ -77,7 +79,8 @@ export const fetchAllLinks = () => async (dispatch: Dispatch) => {
 };
 
 // POST - /v1/link/add
-export const createPortalLink = (data: { portalName: string; link: string }) => async (dispatch: Dispatch) => {
+// **** MODIFIED: Added commission to the data type ****
+export const createPortalLink = (data: { portalName: string; link: string; commission?: string }) => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
   try {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/link/add`, data);
@@ -91,17 +94,17 @@ export const createPortalLink = (data: { portalName: string; link: string }) => 
 };
 
 // PATCH - /v1/link/:id
-export const updatePortalLink = (id: string, data: { link: string }) => async (dispatch: Dispatch) => {
+// **** MODIFIED: Added commission to the data type, made fields optional for partial updates ****
+export const updatePortalLink = (id: string, data: { link?: string; commission?: string }) => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
   try {
     const response = await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/link/${id}`, data);
-    console.log(response.data.data)
     dispatch(updateLinkSuccess(response.data.data));
     return response.data;
-  } catch (error: any) {
+  } catch (error: any)
+  {
     const message = error.response?.data?.message || "Failed to update portal link.";
     dispatch(setError(message));
-    // console.log(error)
     return null;
   }
 };
@@ -132,7 +135,6 @@ export const fetchLinkBySlug = (slug: string) =>
         dispatch(setIsLoading(false));
     }
 };
-
 
 // --- SELECTORS ---
 export const selectAllLinks = (state: RootState) => state.links.links;

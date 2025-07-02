@@ -25,10 +25,12 @@ export default function PortalLinksPage() {
   // State for the "Create New" form
   const [newPortalName, setNewPortalName] = useState('');
   const [newLink, setNewLink] = useState('');
-  
+  const [newCommission, setNewCommission] = useState('');
+
   // State for inline editing
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingLinkValue, setEditingLinkValue] = useState('');
+  const [editingCommissionValue, setEditingCommissionValue] = useState('');
 
   useEffect(() => {
     dispatch(fetchAllLinks());
@@ -36,31 +38,46 @@ export default function PortalLinksPage() {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPortalName || !newLink) {
-        alert("Both Portal Name and Link URL are required.");
-        return;
+    if (!newPortalName || !newLink || !newCommission) {
+      alert("All fields are required.");
+      return;
     };
-    const result = await dispatch(createPortalLink({ portalName: newPortalName, link: newLink }));
+
+    const result = await dispatch(createPortalLink({
+      portalName: newPortalName,
+      link: newLink,
+      commission: newCommission
+    }));
+
     if (result) {
       // Clear the form on successful creation
       setNewPortalName('');
       setNewLink('');
+      setNewCommission('');
     }
   };
-  
+
   const handleEditClick = (link: PortalLink) => {
     setEditingId(link._id);
     setEditingLinkValue(link.link);
+    // This correctly populates the edit form with the existing value
+    setEditingCommissionValue(link.commission || '');
   };
-  
+
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditingLinkValue('');
+    setEditingCommissionValue('');
   };
-  
+
   const handleUpdateSubmit = async () => {
-    if (!editingId || !editingLinkValue) return;
-    const result = await dispatch(updatePortalLink(editingId, { link: editingLinkValue }));
+    if (!editingId) return;
+
+    const result = await dispatch(updatePortalLink(editingId, {
+      link: editingLinkValue,
+      commission: editingCommissionValue
+    }));
+
     if (result) {
       handleCancelEdit(); // Close the edit form on success
     }
@@ -100,6 +117,18 @@ export default function PortalLinksPage() {
                     required
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="commission">Commission</Label>
+                  <Input
+                    id="commission"
+                    type="text"
+                    placeholder="e.g. Rs. 100"
+                    required
+                    value={newCommission}
+                    onChange={(e) => setNewCommission(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Saving...' : 'Create Link'}
                 </Button>
@@ -126,42 +155,59 @@ export default function PortalLinksPage() {
                       {editingId === link._id ? (
                         // --- EDITING VIEW ---
                         <div className="flex flex-col gap-3 rounded-md border p-4 bg-muted/50">
-                            <div className="flex items-center justify-between">
-                                 <p className="text-sm font-medium text-muted-foreground">{link.portalName}</p>
-                                 <Input
-                                    value={editingLinkValue}
-                                    onChange={(e) => setEditingLinkValue(e.target.value)}
-                                    className="max-w-xs"
-                                    placeholder="Enter new link URL"
-                                    />
-                            </div>
-                            <div className="flex items-center justify-end gap-2 mt-2">
-                                <Button size="sm" variant="outline" onClick={handleUpdateSubmit} disabled={isLoading}>
-                                    <Save className="h-4 w-4 mr-2" />
-                                    {isLoading ? 'Saving...' : 'Save'}
-                                </Button>
-                                <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
-                                    <X className="h-4 w-4 mr-2"/>
-                                    Cancel
-                                </Button>
-                            </div>
+                          <p className="text-sm font-medium text-muted-foreground">{link.portalName}</p>
+                          <div className='space-y-2'>
+                            <Label htmlFor={`edit-link-${link._id}`}>Link URL</Label>
+                            <Input
+                                id={`edit-link-${link._id}`}
+                                value={editingLinkValue}
+                                onChange={(e) => setEditingLinkValue(e.target.value)}
+                                placeholder="Enter new link URL"
+                            />
+                          </div>
+                          {/* **** EDIT COMMISSION **** */}
+                          <div className='space-y-2'>
+                            <Label htmlFor={`edit-commission-${link._id}`}>Commission</Label>
+                            <Input
+                                id={`edit-commission-${link._id}`}
+                                value={editingCommissionValue} // This correctly uses the state
+                                onChange={(e) => setEditingCommissionValue(e.target.value)}
+                                placeholder="e.g., 5% or Rs. 10"
+                            />
+                          </div>
+                          <div className="flex items-center justify-end gap-2 mt-2">
+                            <Button size="sm" variant="outline" onClick={handleUpdateSubmit} disabled={isLoading}>
+                              <Save className="h-4 w-4 mr-2" />
+                              {isLoading ? 'Saving...' : 'Save'}
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                              <X className="h-4 w-4 mr-2" />
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
                       ) : (
-                        // --- DISPLAY VIEW (Styled like the image) ---
+                        // --- DISPLAY VIEW ---
                         <div className="flex items-center justify-between border-b py-3 group">
-                           <div>
-                             <p className="text-sm font-medium text-muted-foreground">{link.portalName}</p>
-                             <p className="text-sm font-semibold">{link.link}</p>
-                           </div>
-                           <Button 
-                             size="icon" 
-                             variant="ghost"
-                             onClick={() => handleEditClick(link)}
-                             className="opacity-0 group-hover:opacity-100 transition-opacity"
-                             aria-label={`Edit ${link.portalName}`}
-                           >
-                              <Edit className="h-4 w-4"/>
-                           </Button>
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">{link.portalName}</p>
+                            <p className="text-sm font-semibold">{link.link}</p>
+                            {/* **** DISPLAY COMMISSION **** */}
+                            {link.commission && (
+                              <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                                Commission: {link.commission}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleEditClick(link)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label={`Edit ${link.portalName}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
                         </div>
                       )}
                     </div>

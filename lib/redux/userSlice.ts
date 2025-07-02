@@ -207,17 +207,25 @@ export const fetchLeaderCode = (leaderCode: string) => async (dispatch: Dispatch
   dispatch(setLoading(true));
   try {
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getLeaderCode/${leaderCode}`);
-        const data: User = response.data;
-    if (response.status === 200) { 
-      dispatch(setLoading(false)); 
-    } else {
-      dispatch(setError(response.data.message));
+    
+    if (!response.data.data) {
+        const errorMsg = response.data.message || "Leader code not found";
+        dispatch(setError(errorMsg));
+        throw new Error(errorMsg); 
     }
-  } catch (error: unknown) {
-    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    dispatch(setError(message || "Unknown error"));
+    
+    // Success case
+    dispatch(setLoading(false));
+    return response.data.data; // Return the data on success
+
+  } catch (error: any) {
+    const message = error.response?.data?.message || error.message || "Unknown error";
+    dispatch(setError(message));
+    dispatch(setLoading(false));
+    throw new Error(message); // Re-throw the error to be caught by the component
   }
 };
+
 
 
 export const selectUsers = (state: RootState) => state.users.data;
