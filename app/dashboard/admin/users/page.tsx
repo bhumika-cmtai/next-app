@@ -185,7 +185,7 @@ export default function Users() {
     setCountError(null);
     setDateRangeCount(null);
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/getClientsCountByDate`, { startDate, endDate });
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/registers/getRegistersCountByDate`, { startDate, endDate });
       setDateRangeCount(response.data?.data?.count ?? 0);
     } catch (error: any) {
       setCountError(error.response?.data?.message || "An error occurred.");
@@ -224,7 +224,7 @@ export default function Users() {
 
       <div className="mb-4 h-6">
         {countError && <p className="text-red-500 font-medium">{countError}</p>}
-        {dateRangeCount !== null && (<p className="text-lg font-semibold text-primary">Total Clients Found: {dateRangeCount}</p>)}
+        {dateRangeCount !== null && (<p className="text-lg font-semibold text-primary">Total Registerations Found: {dateRangeCount}</p>)}
       </div>
 
       <Card>

@@ -136,6 +136,26 @@ export const fetchLinkBySlug = (slug: string) =>
     }
 };
 
+export const fetchCommissionByPortal = async (portalName: string): Promise<number> => {
+    try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/link/portal/${portalName}/commission`);
+        
+        if (response.data?.data?.commission) {
+            const commissionValue = parseFloat(response.data.data.commission);
+            if (!isNaN(commissionValue)) {
+                return commissionValue;
+            }
+        }
+        // If we reach here, the commission was missing or not a number
+        throw new Error(`No valid commission found for portal: ${portalName}`);
+    } catch (error: any) {
+        console.error(`Error fetching commission for ${portalName}:`, error);
+        // Re-throw a clean, user-friendly error message
+        const message = error.response?.data?.message || error.message || `Could not fetch commission for ${portalName}.`;
+        throw new Error(message);
+    }
+};
+
 // --- SELECTORS ---
 export const selectAllLinks = (state: RootState) => state.links.links;
 export const selectLinksLoading = (state: RootState) => state.links.isLoading;

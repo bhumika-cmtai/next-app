@@ -10,6 +10,7 @@ import { AppDispatch } from "@/lib/store";
 import { createRegisteration } from "@/lib/redux/registerationSlice";
 import { fetchLeaderCode } from "@/lib/redux/userSlice"; // Import the thunk to verify the leader code
 import { Loader2 } from "lucide-react";
+import { verifyCredentialsAndGetLink } from "@/lib/redux/joinlinkSlice";
 
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -96,14 +97,27 @@ const Page = () => {
         leaderCode,
       };
 
-      const registrationResult = await dispatch(
+      const registerationResult = await dispatch(
         createRegisteration(registerationPayload)
       );
 
-      if (registrationResult ) {
+      if (registerationResult ) {
         toast.success(
-          "Registration submitted successfully!"
+          "Registration successful! Redirecting to join the group...!"
         );
+        const WHATSAPP_GROUP_APP_NAME = 'whatsapp';
+        const whatsappLink = await dispatch(verifyCredentialsAndGetLink({ appName: WHATSAPP_GROUP_APP_NAME }));
+
+        if (whatsappLink) {
+          // If the link is found, redirect the user to it.
+          // Using window.location.href is best for external URLs.
+          window.location.href = whatsappLink;
+        } else {
+          // If the link is not found, the thunk will show an error toast.
+          // We can show an info message and redirect to a fallback page.
+          toast.info("Could not retrieve the group link. Redirecting to homepage.");
+          router.push("/");
+        }
         router.push("/"); // Redirect on success
       } else {
         // Handle failure, e.g., duplicate phone number

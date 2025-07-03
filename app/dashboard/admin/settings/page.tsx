@@ -22,12 +22,21 @@ import {
   selectAppLinksLoading, 
   AppLink 
 } from '@/lib/redux/appLinkSlice';
+// NEW: Import actions and selectors from joinlinkSlice
+import {
+  fetchAllJoinlinks,
+  updateJoinlink,
+  selectAllJoinlinks,
+  selectJoinlinksLoading,
+  Joinlink
+} from '@/lib/redux/joinlinkSlice';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, User, Landmark, Edit, Clock, KeyRound } from 'lucide-react';
+// NEW: Import Link icon
+import { Loader2, User, Landmark, Edit, Clock, KeyRound, Link as LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 const DetailItem = ({ label, value }: { label: string; value?: string | number | null }) => (
@@ -48,8 +57,13 @@ const SettingsPage = () => {
   // AppLinks State
   const appLinks = useSelector(selectAllAppLinks);
   const isLinksLoading = useSelector(selectAppLinksLoading);
+  
+  // NEW: JoinLinks State
+  const joinLinks = useSelector(selectAllJoinlinks);
+  const isJoinlinksLoading = useSelector(selectJoinlinksLoading);
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'session' | 'passwords'>('profile');
+  // NEW: Added 'links' to activeTab state
+  const [activeTab, setActiveTab] = useState<'profile' | 'session' | 'passwords' | 'links'>('profile');
   
   // Profile Modal State
   const [profileData, setProfileData] = useState({ name: '', whatsappNumber: '', city: '', bio: '', newPassword: '', confirmPassword: '' });
@@ -59,9 +73,15 @@ const SettingsPage = () => {
   const [sessionData, setSessionData] = useState<Partial<GlobalSession>>({});
   const [isSessionLoading, setIsSessionLoading] = useState(false);
 
-  // AppLink Modal State
+  // AppLink Modal State (for Passwords tab)
   const [isLinkModalOpen, setLinkModalOpen] = useState(false);
   const [currentLink, setCurrentLink] = useState<AppLink | null>(null);
+
+  // NEW: Joinlink Modal State (for Links Manager tab)
+  const [isJoinlinkModalOpen, setJoinlinkModalOpen] = useState(false);
+  const [currentJoinlink, setCurrentJoinlink] = useState<Joinlink | null>(null);
+  const [editedLinkValue, setEditedLinkValue] = useState('');
+
 
   useEffect(() => {
     if (!user) {
@@ -89,7 +109,11 @@ const SettingsPage = () => {
     if (activeTab === 'passwords' && user?.role === 'admin' && appLinks.length === 0) {
       dispatch(fetchAllAppLinks());
     }
-  }, [dispatch, activeTab, user, appLinks.length]);
+    // NEW: Fetch join links when the 'links' tab is active
+    if (activeTab === 'links' && user?.role === 'admin' && joinLinks.length === 0) {
+      dispatch(fetchAllJoinlinks());
+    }
+  }, [dispatch, activeTab, user, appLinks.length, joinLinks.length]);
 
   useEffect(() => {
     if (authError) {
@@ -162,6 +186,26 @@ const SettingsPage = () => {
     }
   };
 
+  // NEW: Handler to open the modal for editing a Joinlink
+  const handleOpenJoinlinkModal = (joinlink: Joinlink) => {
+    setCurrentJoinlink(joinlink);
+    setEditedLinkValue(joinlink.link); // Pre-fill the input with the current link
+    setJoinlinkModalOpen(true);
+  };
+  
+  // NEW: Handler to update the Joinlink
+  const handleJoinlinkUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentJoinlink) return;
+
+    const result = await dispatch(updateJoinlink(currentJoinlink._id, { link: editedLinkValue }));
+    if (result) {
+      setJoinlinkModalOpen(false);
+      setCurrentJoinlink(null);
+    }
+  };
+
+
   if (isAuthLoading && !user) {
     return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
@@ -183,6 +227,8 @@ const SettingsPage = () => {
               <>
                 <button onClick={() => setActiveTab('session')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors shrink-0 ${activeTab === 'session' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><Clock size={16} /> Claim Client</button>
                 <button onClick={() => setActiveTab('passwords')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors shrink-0 ${activeTab === 'passwords' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><KeyRound size={16} /> Manage Passwords</button>
+                {/* NEW: Links Manager Tab */}
+                <button onClick={() => setActiveTab('links')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors shrink-0 ${activeTab === 'links' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><LinkIcon size={16} /> Links Manager</button>
               </>
             )}
           </div>
@@ -254,30 +300,70 @@ const SettingsPage = () => {
               )}
             </div>
           )}
+
+          {/* NEW: Links Manager Tab Content */}
+          {activeTab === 'links' && user.role === 'admin' && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Manage Join Links</h3>
+              {isJoinlinksLoading && joinLinks.length === 0 ? (
+                <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+              ) : (
+                <div className="space-y-4">
+                  {joinLinks.map((joinlink) => (
+                    <div key={joinlink._id} className="p-4 border rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="space-y-2">
+                        <p className="font-semibold text-gray-800">{joinlink.appName}</p>
+                        <p className="text-sm text-gray-600 break-all"><b>Link: </b>{joinlink.link}</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => handleOpenJoinlinkModal(joinlink)} className="shrink-0 self-end sm:self-center">
+                        <Edit className="mr-2 h-3 w-3" /> Edit Link
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* AppLink Edit Modal */}
+      {/* AppLink Edit Modal (for Passwords Tab) */}
       <Dialog open={isLinkModalOpen} onOpenChange={setLinkModalOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit App Link</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Edit App Link & Password</DialogTitle></DialogHeader>
           {currentLink && (
             <form onSubmit={handleLinkUpdate} className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="appName">App Name</Label>
-                <Input id="appName" name="appName" defaultValue={currentLink.appName} />
+              <div className="space-y-2"><Label htmlFor="appName">App Name</Label><Input id="appName" name="appName" defaultValue={currentLink.appName} /></div>
+              <div className="space-y-2"><Label htmlFor="link">Link</Label><Input id="link" name="link" defaultValue={currentLink.link} /></div>
+              <div className="space-y-2"><Label htmlFor="password">New Password</Label><Input id="password" name="password" type="text" placeholder="Leave blank to keep unchanged"  defaultValue={currentLink.password}/></div>
+              <DialogFooter><Button type="submit" disabled={isLinksLoading}>{isLinksLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Changes"}</Button></DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* NEW: Joinlink Edit Modal (for Links Manager Tab) */}
+      <Dialog open={isJoinlinkModalOpen} onOpenChange={setJoinlinkModalOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Join Link</DialogTitle></DialogHeader>
+          {currentJoinlink && (
+            <form onSubmit={handleJoinlinkUpdate} className="space-y-4 pt-4">
+               <div className="space-y-2">
+                <Label>App Name</Label>
+                <p className="text-sm font-medium text-gray-700 p-2 bg-gray-100 rounded-md">{currentJoinlink.appName}</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="link">Link</Label>
-                <Input id="link" name="link" defaultValue={currentLink.link} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">New Password</Label>
-                <Input id="password" name="password" type="text" placeholder="Leave blank to keep unchanged"  defaultValue={currentLink.password}/>
+                <Label htmlFor="joinlink-link">Link</Label>
+                <Input 
+                  id="joinlink-link" 
+                  name="link" 
+                  value={editedLinkValue}
+                  onChange={(e) => setEditedLinkValue(e.target.value)}
+                />
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={isLinksLoading}>
-                  {isLinksLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Changes"}
+                <Button type="submit" disabled={isJoinlinksLoading}>
+                  {isJoinlinksLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Link"}
                 </Button>
               </DialogFooter>
             </form>

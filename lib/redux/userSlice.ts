@@ -34,6 +34,7 @@ export interface UserState {
   selectedUser: User | null;
   pagination: Pagination;
   totalUsersCount: number; // For dashboard count
+  totalIncome: number;
 }
 
 const initialState: UserState = {
@@ -47,6 +48,7 @@ const initialState: UserState = {
     totalUsers: 0,
   },
   totalUsersCount: 0, // Initial value for dashboard count
+  totalIncome: 0,
 };  
 
 const userSlice = createSlice({
@@ -83,10 +85,13 @@ const userSlice = createSlice({
     setTotalUsersCount: (state, action) => {
       state.totalUsersCount = action.payload;
     },
+    setTotalIncome: (state, action) => {
+      state.totalIncome = action.payload;
+    },
   },
 }); 
 
-export const { setUsers, setLoading, setError, setSelectedUser, clearSelectedUser, setCurrentPage, setTotalUsersCount } = userSlice.actions;
+export const { setUsers, setLoading, setError, setSelectedUser, clearSelectedUser, setCurrentPage, setTotalUsersCount,setTotalIncome } = userSlice.actions;
 
 export const fetchUsersCount = () => async (dispatch: Dispatch) => {
   try {
@@ -226,6 +231,22 @@ export const fetchLeaderCode = (leaderCode: string) => async (dispatch: Dispatch
   }
 };
 
+export const fetchTotalIncome = () => async (dispatch: Dispatch) => {
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getTotalIncome`);
+    // Assuming the API returns a structure like { data: { totalIncome: 50000 } }
+    if (response.data && response.data.data) {
+      dispatch(setTotalIncome(response.data.data.totalIncome));
+    } else {
+      console.error("Failed to fetch total income:", response.data.message);
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    console.error("Error fetching total income:", message);
+  }
+};
+
+
 
 
 export const selectUsers = (state: RootState) => state.users.data;
@@ -237,5 +258,5 @@ export const selectCurrentPage = (state: RootState) => state.users.pagination.cu
 export const selectTotalPages = (state: RootState) => state.users.pagination.totalPages;
 export const selectTotalUsers = (state: RootState) => state.users.pagination.totalUsers;
 export const selectTotalUsersCount = (state: RootState) => state.users.totalUsersCount;
-
+export const selectTotalIncome = (state: RootState) => state.users.totalIncome;
 export default userSlice.reducer;

@@ -1,31 +1,40 @@
 "use client"
-import React, { useEffect } from "react";
-import { useRouter } from "next/navigation"; // 1. Import useRouter
+// NEW: Import useState
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Users, FileText, Contact, TrendingUp } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchUsersCount, selectTotalUsersCount } from "@/lib/redux/userSlice";
+import { fetchUsersCount, selectTotalUsersCount,fetchTotalIncome, selectTotalIncome} from "@/lib/redux/userSlice";
 import { fetchLeadsCount, selectTotalLeadsCount } from "@/lib/redux/leadSlice";
+// NEW: Import the thunk to get the registrations count
+import { getRegisterationsCount } from "@/lib/redux/registerationSlice";
 import { AppDispatch } from "@/lib/store";
 
 export default function Dashboard() {
     const dispatch = useDispatch<AppDispatch>();
-    const router = useRouter(); // 2. Initialize the router
+    const router = useRouter();
     const totalUsers = useSelector(selectTotalUsersCount);
     const totalLeads = useSelector(selectTotalLeadsCount);
+    const totalIncome = useSelector(selectTotalIncome); 
+    // NEW: State to store the registrations count
+    const [registrationsCount, setRegistrationsCount] = useState<number | null>(null);
 
     useEffect(() => {
         dispatch(fetchUsersCount());
         dispatch(fetchLeadsCount());
-    }, [dispatch]);
+        dispatch(fetchTotalIncome()); 
+        // NEW: Create an async function to fetch the count and update the state
+        const fetchRegistrations = async () => {
+            const count = await dispatch(getRegisterationsCount());
+            if (count !== null) {
+                setRegistrationsCount(count);
+            }
+        };
 
-    // 3. Create a handler for the button clicks
-    // const handleQuickAction = (action: string) => {
-    //     if (action === "Add New User") {
-    //         router.push('/dashboard/admin/users');
-    //     } else if (action === "Create Lead") {
-    //         router.push('/dashboard/admin/leads');
-    //     }
-    // };
+        // Call the new function
+        fetchRegistrations();
+
+    }, [dispatch]);
     
     const stats = [
         {
@@ -44,14 +53,15 @@ export default function Dashboard() {
         },
         {
             name: "Employee Income",
-            value: "456",
+            value: (totalIncome ?? 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' }),
             change: "-2.4%",
             icon: Contact,
             trend: "down",
         },
         {
-            name: "Conversion Rate",
-            value: "24.8%",
+            name: "Total Registrations",
+            // NEW: Use the state variable to display the count. Shows '...' while loading.
+            value: registrationsCount !== null ? registrationsCount.toLocaleString() : '...',
             change: "+4.1%",
             icon: TrendingUp,
             trend: "up",
@@ -98,29 +108,6 @@ export default function Dashboard() {
                     </div>
                 ))}
             </div>
-
-            {/* <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-lg border bg-white p-6 shadow-sm">
-                    <h2 className="text-lg font-semibold text-slate-900">
-                        Quick Actions
-                    </h2>
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                        {[
-                            "Add New User",
-                            "Create Lead",
-                        ].map((action) => (
-                            <button
-                                key={action}
-                                // 4. Add the onClick handler
-                                onClick={() => handleQuickAction(action)}
-                                className="rounded-lg border bg-white px-4 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
-                            >
-                                {action}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div> */}
         </div>
     );
 }

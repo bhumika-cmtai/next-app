@@ -1,6 +1,7 @@
 import { createSlice, Dispatch } from "@reduxjs/toolkit";
 import axios from "axios";
 import { RootState } from "../store";
+import { fetchCommissionByPortal } from "./linkSlice"; 
 
 export interface Client {
   _id?: string;
@@ -229,6 +230,39 @@ export const fetchClientsByOwner = (phoneNumber: string) => async (dispatch: Dis
     dispatch(setError(message));
   }
 }
+
+export const distributeCommissionForClient = (params: { clientId: string; portalName: string; }) => 
+  async (dispatch: Dispatch) => {
+    const { clientId, portalName } = params;
+
+    try {
+      // Step 1: Fetch the commission amount. This will throw an error if it fails.
+      const commission = await fetchCommissionByPortal(portalName);
+      
+      // Step 2: If step 1 succeeds, call the distribution API.
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/${clientId}/distribute-commission`,
+        { commission } // Send commission in the request body
+      );
+
+      if (response.data) {
+        // On success, we just return the data. The component will know it succeeded
+        // because no error was dispatched.
+        return response.data;
+      } else {
+        // Handle cases where the API returns a non-200 status without throwing
+        const message = response.data.message || "Failed to distribute commission.";
+        dispatch(setError(message));
+        return null;
+      }
+    } catch (error: any) {
+      // This single catch block handles errors from BOTH fetchCommissionByPortal AND the axios.post call.
+      const message = error.message || "An unexpected error occurred while distributing the commission.";
+      dispatch(setError(message));
+      return null;
+    }
+};
+
 
 export const selectClients = (state: RootState) => state.clients.data;
 export const selectClientById = (state: RootState) => state.clients.selectedClient;

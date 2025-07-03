@@ -36,26 +36,6 @@ const Header = () => {
     };
   }, [hasMounted]); // Depend on hasMounted
 
-  useEffect(() => {
-    document.body.style.overflow = isMenuOpen ? 'hidden' : 'auto';
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [isMenuOpen]);
-
-  // --- CORRECTION 1: Use valid anchor hrefs for on-page scrolling ---
-  const navLinksLaptop = [
-    { href: "/#home", label: "Home" },
-    { href: "/#aboutus", label: "About Us" },
-    { href: "/#join", label: "Who Can Join" },
-    { href: "/#contactus", label: "Contact Us" },
-  ];
-  const navLinksMobile = [
-    { href: "/#home", label: "Home" },
-    { href: "/#aboutus", label: "About Us" },
-    { href: "/#join", label: "Who Can Join" },
-    { href: "/#contactus", label: "Contact Us" },
-  ];
 
   // Determine header background, but only after client has mounted
   const headerBg = hasMounted && (isScrolled || isMenuOpen) ? 'bg-white shadow-md' : 'bg-transparent';
@@ -77,54 +57,7 @@ const Header = () => {
             className='w-[60px] md:w-[80px] h-auto'
           />
         </Link>
-        
-        {/* --- CORRECTION 2: Use <Link> for desktop navigation, not <button> --- */}
-        <ul className='hidden lg:flex gap-8 text-gray-800 font-semibold text-lg'>
-          {navLinksLaptop.map((link) => (
-            <li key={link.label}>
-              <Link
-                href={link.href}
-                className="text-gray-600 hover:text-purple-600 transition-colors"
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-
-        <div className="lg:hidden">
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="text-gray-800"
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={isMenuOpen}
-          >
-            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
-          </button>
-        </div>
       </nav>
-
-      <div
-        className={`
-          lg:hidden absolute top-full left-0 w-full bg-white overflow-hidden transition-all duration-500 ease-in-out
-          ${isMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}
-        `}
-      >
-        {/* --- CORRECTION 3: Fix invalid HTML (<li> must wrap <a>) --- */}
-        <ul className='flex flex-col items-center gap-6 p-8 text-lg'>
-          {navLinksMobile.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                onClick={() => setIsMenuOpen(false)}
-                className='cursor-pointer hover:text-purple-600 transition-colors'
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
     </header>
   );
 };
