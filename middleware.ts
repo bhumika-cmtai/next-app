@@ -22,6 +22,10 @@ export default function middleware(request: NextRequest) {
 
   // Get token from cookie
   const token = request.cookies.get('auth-token')?.value;
+  let user = null;
+    try {
+    user = token ? JSON.parse(decodeURIComponent(token)) : null;
+  } catch {}
 
   // Public paths that don't require authentication
    const alwaysPublicPaths = ['/', '/get-started'];
@@ -41,7 +45,12 @@ export default function middleware(request: NextRequest) {
 
   // If the path is public and user is logged in, redirect to dashboard
   if (isPublicPath && token) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    if(user.role=="admin"){
+      return NextResponse.redirect(new URL('/dashboard/admin', request.url));
+    }
+    else{
+      return NextResponse.redirect(new URL('/dashboard/user', request.url));
+    }
   }
 
   // If the path is protected (including protected resources) and user is not logged in, redirect to login
@@ -50,6 +59,16 @@ export default function middleware(request: NextRequest) {
     return NextResponse.redirect(
       new URL(`/login?from=${from}`, request.url)
     );
+  }
+
+   // Protect /login
+  if (pathname.startsWith("/login")) {
+    if (user && user.role === "admin") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    if (user && user.role === "user") {
+      return NextResponse.redirect(new URL("/profile", request.url));
+    }
   }
 
   return NextResponse.next();

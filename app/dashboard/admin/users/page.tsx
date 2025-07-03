@@ -261,7 +261,7 @@ export default function Users() {
                       <TableCell>{user.phoneNumber || '-'}</TableCell>
                       <TableCell><Badge variant={user.status === "Active" ? "default" : "secondary"}>{user.status || 'N/A'}</Badge></TableCell>
                       <TableCell>{user.leaderCode || '-'}</TableCell>
-                      <TableCell>{user.createdOn ? new Date(user.createdOn).toLocaleDateString() : '-'}</TableCell>
+                      <TableCell>{user.createdOn ? new Date(parseInt(user.createdOn)).toLocaleDateString() : '-'}</TableCell>
                       <TableCell>{user.registeredClientCount}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">

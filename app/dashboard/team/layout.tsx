@@ -13,7 +13,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex">
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col lg:ml-64">
         <Header title="Dashboard" onMenuClick={toggleSidebar} />
         <main className="flex-1 bg-[var(--background)] p-6">{children}</main>
       </div>

@@ -20,6 +20,7 @@ export interface Client {
   leaderCode?: string;
   createdOn?: string;
   updatedOn?: string;
+  isApproved?: boolean;
 }
 
 export interface GroupedClients {
@@ -261,6 +262,20 @@ export const distributeCommissionForClient = (params: { clientId: string; portal
       dispatch(setError(message));
       return null;
     }
+};
+
+export const addManyClients = (clients: Client[]) => async (dispatch: Dispatch) => {
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/addManyClient`, clients);
+    if (response.status === 201) {
+      return response.data;
+    } else {
+      dispatch(setError(response.data.message));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+  }
 };
 
 

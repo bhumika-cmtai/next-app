@@ -93,7 +93,7 @@ export default function Dashboard() {
                                 <stat.icon className="h-6 w-6" />
                             </div>
                         </div>
-                        <div className="mt-4">
+                        {/* <div className="mt-4">
                             <span
                                 className={`text-sm font-medium ${
                                     stat.trend === "up"
@@ -104,7 +104,7 @@ export default function Dashboard() {
                                 {stat.change}
                             </span>
                             <span className="text-sm text-slate-600"> from last month</span>
-                        </div>
+                        </div> */}
                     </div>
                 ))}
             </div>

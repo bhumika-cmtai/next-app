@@ -179,6 +179,7 @@ export const addManyLeads = (leads: Lead[]) => async (dispatch: Dispatch) => {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/addManyLead`, leads);
     dispatch(setLoading(false));  
     if (response.status === 201) {
+      console.log(response.data)
       return response.data;
     } else {
       dispatch(setError(response.data.message));

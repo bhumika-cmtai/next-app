@@ -57,8 +57,10 @@ const LoginForm = () => {
       toast.success("Successfully logged in!");
       // The cookie is already set inside the thunk, so we just redirect
       if (user.role === 'admin') {
+        console.log(user.role)
         router.push('/dashboard/admin');
       } else {
+        console.log(user.role)
         router.push('/dashboard/team');
       }
     }

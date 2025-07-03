@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-// **** MODIFIED: Removed Trash2, kept Edit and Phone ****
 import { Plus, Edit, Phone, Trash2 } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 
@@ -22,14 +21,19 @@ import {
   Client, 
   addClient, 
   updateClient, 
-  // **** MODIFIED: No longer importing deleteClientAction ****
   setCurrentPage,
   fetchPortalNames,
   selectPortalNames,
-distributeCommissionForClient 
+  distributeCommissionForClient 
 } from "@/lib/redux/clientSlice";
 import { AppDispatch } from "@/lib/store";
 import { useSelector, useDispatch } from "react-redux";
+import { toast } from "sonner";
+
+// Define a type for the form state that includes the 'isApproved' field
+type ClientFormState = Omit<Client, "_id" | "createdOn" | "updatedOn" | "leaderCode"> & {
+  isApproved?: boolean;
+};
 
 export default function Clients() {
   const dispatch = useDispatch<AppDispatch>();
@@ -49,19 +53,12 @@ export default function Clients() {
   
   const [modalOpen, setModalOpen] = useState(false);
   const [editClient, setEditClient] = useState<Client | null>(null);
-  // **** NEW: State to manage per-button loading and success ****
-  const [approvingId, setApprovingId] = useState<string | null>(null);
-  const [approvedClients, setApprovedClients] = useState<string[]>([]);
-
   
-  // **** MODIFIED: Removed deleteClient state ****
-  // const [deleteClient, setDeleteClient] = useState<Client | null>(null);
-
   const [formLoading, setFormLoading] = useState(false);
-  // **** MODIFIED: Removed deleteLoading state ****
-  // const [deleteLoading, setDeleteLoading] = useState(false);
+  // **** NEW: State to manage the approval process within the modal ****
+  const [isApproving, setIsApproving] = useState(false);
 
-  const [form, setForm] = useState<Omit<Client, "_id" | "createdOn" | "updatedOn" | "leaderCode">>({
+  const [form, setForm] = useState<ClientFormState>({
     name: "",
     email: "",
     phoneNumber: "",
@@ -74,6 +71,7 @@ export default function Clients() {
     reason: "",
     ekyc_stage: 'notComplete',
     trade_status: 'notMatched',
+    isApproved: false,
   });
   
   // Fetch portal names on component mount
@@ -129,7 +127,7 @@ export default function Clients() {
   const openAddModal = () => {
     setEditClient(null);
     setForm({
-      name: "", email: "", phoneNumber: "", status: "New", ownerName: [], ownerNumber: [], city: "", age: 0, portalName: "", reason: "", ekyc_stage: 'notComplete', trade_status: 'notMatched'
+      name: "", email: "", phoneNumber: "", status: "New", ownerName: [], ownerNumber: [], city: "", age: 0, portalName: "", reason: "", ekyc_stage: 'notComplete', trade_status: 'notMatched', isApproved: false
     });
     setModalOpen(true);
   };
@@ -148,7 +146,9 @@ export default function Clients() {
       portalName: client.portalName || "",
       reason: client.reason || "",
       ekyc_stage: client.ekyc_stage || "notComplete",
-      trade_status: client.trade_status || 'notMatched'
+      trade_status: client.trade_status || 'notMatched',
+      // **** MODIFIED: Set isApproved from client data ****
+      isApproved: (client as any).isApproved || false,
     });
     setModalOpen(true);
   };
@@ -181,27 +181,41 @@ export default function Clients() {
     });
   };
 
-  // **** NEW: Placeholder function for approving payment ****
-  const handleApprovePayment = async (client: Client) => {
-    if (!client._id || !client.portalName) return;
+  // **** NEW: Handler for the "Approve Payment" button inside the modal ****
+  const handleApproveClick = async () => {
+    if (!editClient?._id || !editClient.portalName) {
+        toast.error("Client information is missing.");
+        return;
+    }
 
-    setApprovingId(client._id); // Set loading state for this specific button
+    setIsApproving(true);
     try {
-      const result = await dispatch(distributeCommissionForClient({ 
-        clientId: client._id, 
-        portalName: client.portalName 
-      }));
-      
-      if (result) {
-        // Mark this client as approved to change the button state permanently
-        setApprovedClients(prev => [...prev, client._id!]);
-      }
+        const result = await dispatch(distributeCommissionForClient({ 
+            clientId: editClient._id, 
+            portalName: editClient.portalName 
+        }));
+        
+        if (result) {
+            toast.success("Payment approved successfully!");
+            // Update the form state to disable the button immediately
+            setForm(prev => ({ ...prev, isApproved: true }));
+            // Refresh the client list in the background to ensure data consistency
+            dispatch(fetchClients({ 
+                searchQuery: debouncedSearch, 
+                status: statusFilter, 
+                portalName: portalFilter, 
+                page: currentPage 
+            }));
+        } else {
+            toast.error("Failed to approve payment. Please try again.");
+        }
+    } catch (error) {
+        console.error("Approval error:", error);
+        toast.error("An unexpected error occurred during approval.");
     } finally {
-      setApprovingId(null); // Clear loading state regardless of outcome
+        setIsApproving(false);
     }
   };
-
-  // **** MODIFIED: Removed the handleDelete function ****
 
   const getStatusColor = (status: string) => {
     const statusColors: { [key: string]: string } = {
@@ -280,21 +294,12 @@ export default function Clients() {
                       <TableCell>{client.ownerNumber?.join(', ') || '-'}</TableCell>
                       <TableCell>{client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : '-'}</TableCell>
                       
-                      {/* **** MODIFIED: Actions Cell now has "Edit" and "Approve Payment" buttons **** */}
+                      {/* **** MODIFIED: Actions Cell now only has the "Edit" button **** */}
                       <TableCell>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <Button size="sm" variant="outline" onClick={() => openEditModal(client)}>
-                            <Edit className="h-3 w-3 mr-2" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="bg-green-600 text-white hover:bg-green-700"
-                            onClick={() => handleApprovePayment(client)}
-                          >
-                            Approve 
-                          </Button>
-                        </div>
+                        <Button size="sm" variant="outline" onClick={() => openEditModal(client)}>
+                          <Edit className="h-3 w-3 mr-2" />
+                          Edit
+                        </Button>
                       </TableCell>
 
                     </TableRow>
@@ -411,16 +416,29 @@ export default function Clients() {
                  </div>
             )}
             
-            <DialogFooter className="col-span-2 pt-4">
-              <DialogClose asChild><Button type="button" variant="outline" disabled={formLoading}>Cancel</Button></DialogClose>
-              <Button type="submit" disabled={formLoading}>{formLoading ? 'Saving...' : (editClient ? 'Update Client' : 'Add Client')}</Button>
+            {/* **** MODIFIED: Dialog footer now contains the Approve button logic **** */}
+            <DialogFooter className="col-span-2 pt-4 flex-wrap gap-2">
+              <DialogClose asChild><Button type="button" variant="outline" disabled={formLoading || isApproving}>Cancel</Button></DialogClose>
+              
+              {editClient && (
+                <Button
+                  type="button"
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={handleApproveClick}
+                  disabled={isApproving || formLoading || form.isApproved}
+                >
+                  {isApproving ? 'Approving...' : form.isApproved ? 'Approved' : 'Approve Payment'}
+                </Button>
+              )}
+
+              <Button type="submit" disabled={formLoading || isApproving}>
+                {formLoading ? 'Saving...' : (editClient ? 'Update Client' : 'Add Client')}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
       
-      {/* **** MODIFIED: Removed the delete dialog **** */}
-
       {pagination.totalPages > 1 && !loading && (
         <div className="mt-4">
           <Pagination>

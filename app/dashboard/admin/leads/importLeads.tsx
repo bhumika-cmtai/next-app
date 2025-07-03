@@ -182,12 +182,12 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                 name: row[fieldMapping.name],
                 email: row[fieldMapping.email],
                 phoneNumber: row[fieldMapping.phoneNumber],
-                qualification: row[fieldMapping.qualification],
-                city: row[fieldMapping.city],
-                date_of_birth: row[fieldMapping.date_of_birth],
-                gender: row[fieldMapping.gender],
-                message: row[fieldMapping.message],
-                status: row[fieldMapping.status],
+                qualification: row[fieldMapping.qualification] || "",
+                city: row[fieldMapping.city] || "",
+                date_of_birth: row[fieldMapping.date_of_birth] || "",
+                gender: row[fieldMapping.gender] || "",
+                message: row[fieldMapping.message] || "",
+                status: row[fieldMapping.status] || "New",
                 source: row[fieldMapping.source] || "",
                 portal_name: row[fieldMapping.portal_name] || "",
                 password: fieldMapping.password ? row[fieldMapping.password] : undefined,
@@ -197,7 +197,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
 
             console.log('Mapped leads:', mappedData);
             const response = await dispatch(addManyLeads(mappedData));
-            if (response.payload) {
+            if (response) {
               toast.success(`Successfully imported ${mappedData.length} leads`);
               handleReset();
               onOpenChange(false);

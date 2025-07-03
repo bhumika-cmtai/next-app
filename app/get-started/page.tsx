@@ -9,10 +9,15 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/lib/store";
 import { verifyCredentialsAndGetLink } from "@/lib/redux/joinlinkSlice";
 import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle,DialogHeader } from "@/components/ui/dialog";
 
 const Page = () => {
   // NEW: Initialize Redux dispatch
   const dispatch = useDispatch<AppDispatch>();
+  // NEW: State for the image modal
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [modalImageUrl, setModalImageUrl] = useState("");
+  const [modalImageTitle, setModalImageTitle] = useState("");
 
   const initialTimeInSeconds = 1 * 60;
   
@@ -61,7 +66,15 @@ const Page = () => {
     }
   };
 
+  const handleDocumentClick = (imageUrl: string, title: string) => {
+    setModalImageUrl(imageUrl);
+    setModalImageTitle(title);
+    setIsImageModalOpen(true);
+  };
+
+
   return (
+    <>
     <section
       className="relative w-full z-10 py-4 mx-auto overflow-hidden"
       id="get-started"
@@ -237,16 +250,35 @@ const Page = () => {
         <div className="w-full border-t-[1px] border-t-black flex justify-center pt-4">
             
           <div className="flex flex-col gap-2 items-start px-4">
-            <p className="text-left">PAN Card</p>
-            <p className="text-left">Udyam Registration Certificate</p>
-            <p className="text-left">GST Certificate</p>
+           <button onClick={() => handleDocumentClick('/pan_card.jpg', 'PAN Card')} className="text-left underline cursor-pointer hover:text-blue-600 transition-colors">PAN Card</button>
+              <button onClick={() => handleDocumentClick('/udyam_Registration Certificate.jpg', 'Udyam Registration Certificate')} className="text-left underline cursor-pointer hover:text-blue-600 transition-colors">Udyam Registration Certificate</button>
+              <button onClick={() => handleDocumentClick('/gst_certificate.jpg', 'GST Certificate')} className="text-left underline cursor-pointer hover:text-blue-600 transition-colors">GST Certificate</button>
             <p className="text-left"> <Link className="underline" href="/privacy-policy">Privacy-Policy</Link> | <Link className="underline" href="/terms-and-conditions">Terms and Conditions</Link> | 
             <Link href="https://www.instagram.com/indiagrowup__?igsh=Ymttb3FoZGh1Zm1u" className="inline-flex items-center gap-1.5 underline ">Follow Us On Insta <Image src="/instagram.png" alt="instagram" width={16} height={16} className="w-4"/></Link></p>
           </div>
         </div>
       </div>
-
+      {/* NEW: Dialog component for displaying the image */}
+      <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{modalImageTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="relative w-full h-[70vh] mt-4">
+            <Image
+              src={modalImageUrl}
+              alt={modalImageTitle}
+              fill
+              className="object-contain"
+              priority={true} // Prioritize loading the image in the modal
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
+    </>
   );
 };
 

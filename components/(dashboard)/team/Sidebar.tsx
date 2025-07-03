@@ -1,3 +1,5 @@
+// sidebar.tsx
+
 "use client";
 
 import Link from "next/link";
@@ -34,9 +36,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
         onClick={onClose}
       />
       
+      {/* CHANGE: Removed `lg:relative` so the sidebar is always fixed. */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 flex-col border-r bg-white 
-        transform transition-all duration-300 ease-in-out lg:relative lg:translate-x-0
+        transform transition-all duration-300 ease-in-out lg:translate-x-0
         ${isOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full'}
         lg:flex lg:shadow-none
       `}>

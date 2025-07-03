@@ -29,10 +29,9 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { generatePassword } from "./passwordGenerator";
-import { addManyUsers } from "@/lib/redux/userSlice";
-import { AppDispatch } from "@/lib/store";
+import { addManyLeads } from "@/lib/redux/leadSlice";
 import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/lib/store";
 
 interface ImportUserProps {
   open: boolean;
@@ -41,20 +40,27 @@ interface ImportUserProps {
 }
 
 interface ParsedUser {
+   _id?: string;
   name: string;
   email: string;
+  portal_name: string;
   phoneNumber: string;
-  whatsappNumber: string;
+  qualification: string;
   city: string;
-  role: string;
+  date_of_birth: string;
+  gender: string;
+  ekyc_stage?: string;
+  trade_status?: string;
+  message: string;
+  source: string;
+  status: string;
+  createdOn?: string;
+  updatedOn?: string;
   password?: string;
-  status?: string;
-  leaderCode?: string;
-  abhi_aap_kya_karte_hai?: string;
-  work_experience?: string;
 }
 
 export default function ImportUser({ open, onOpenChange, onImportSuccess }: ImportUserProps) {
+  const dispatch = useDispatch<AppDispatch>();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileHeaders, setFileHeaders] = useState<string[]>([]);
   const [previewData, setPreviewData] = useState<any[]>([]);
@@ -66,18 +72,18 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     name: "",
     email: "",
     phoneNumber: "",
-    whatsappNumber: "",
+    qualification: "",
     city: "",
-    role: "",
-    password: "",
+    date_of_birth: "",
+    gender: "",
+    message: "",
     status: "",
-    leaderCode: "",
-    abhi_aap_kya_karte_hai: "",
-    work_experience: "",
+    source: "",
+    portal_name: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const dispatch = useDispatch<AppDispatch>();
+
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
@@ -131,7 +137,6 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     });
   };
 
-  // Update preview data when page changes
   useEffect(() => {
     if (allData.length > 0) {
       const startIndex = (currentPage - 1) * itemsPerPage;
@@ -173,35 +178,32 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
         complete: async (results) => {
           try {
             const mappedData = results.data.map((row: any) => {
-              const name = row[fieldMapping.name];
-              const phoneNumber = row[fieldMapping.phoneNumber];
-              const generatedPassword = generatePassword(name, phoneNumber);
-              
               const mappedUser: ParsedUser = {
-                name: name,
+                name: row[fieldMapping.name],
                 email: row[fieldMapping.email],
-                phoneNumber: phoneNumber,
-                whatsappNumber: row[fieldMapping.whatsappNumber] || phoneNumber,
-                city: row[fieldMapping.city] || "",
-                role: row[fieldMapping.role] || "user",
-                password: generatedPassword,
-                status: row[fieldMapping.status] || "Active",
-                leaderCode: row[fieldMapping.leaderCode] || "",
-                abhi_aap_kya_karte_hai: row[fieldMapping.abhi_aap_kya_karte_hai] || "",
-                work_experience: row[fieldMapping.work_experience] || "",
+                phoneNumber: row[fieldMapping.phoneNumber],
+                qualification: row[fieldMapping.qualification],
+                city: row[fieldMapping.city],
+                date_of_birth: row[fieldMapping.date_of_birth],
+                gender: row[fieldMapping.gender],
+                message: row[fieldMapping.message],
+                status: row[fieldMapping.status],
+                source: row[fieldMapping.source] || "",
+                portal_name: row[fieldMapping.portal_name] || "",
+                password: fieldMapping.password ? row[fieldMapping.password] : undefined,
               };
               return mappedUser;
             });
 
-            console.log('Mapped users:', mappedData);
-            const response = await dispatch(addManyUsers(mappedData));
-            if (response) {
-              toast.success(`Successfully imported ${mappedData.length} users`);
+            console.log('Mapped leads:', mappedData);
+            const response = await dispatch(addManyLeads(mappedData));
+            if (response.payload) {
+              toast.success(`Successfully imported ${mappedData.length} leads`);
               handleReset();
               onOpenChange(false);
               onImportSuccess?.();
             } else {
-              toast.error("Failed to import users: " + (response.error?.message || "Unknown error"));
+              toast.error("Failed to import leads: " + (response.error?.message || "Unknown error"));
             }
           } catch (error) {
             toast.error("Error processing data: " + (error as Error).message);
@@ -231,14 +233,15 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       name: "",
       email: "",
       phoneNumber: "",
-      whatsappNumber: "",
+      qualification: "",
       city: "",
-      role: "",
-      password: "",
+      date_of_birth: "",
+      gender: "",
+      message: "",
       status: "",
-      leaderCode: "",
-      abhi_aap_kya_karte_hai: "",
-      work_experience: "",
+      source: "",
+      portal_name: "",
+      password: "",
     });
   };
 
@@ -249,9 +252,9 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     }}>
       <DialogContent className="max-h-[90vh] w-screen max-w-[95%] !min-w-[80vw] flex flex-col gap-0 p-0">
         <DialogHeader className="px-6 py-4 border-b">
-          <DialogTitle className="text-2xl">Import Users</DialogTitle>
+          <DialogTitle className="text-2xl">Import Leads</DialogTitle>
           <DialogDescription className="text-base">
-            Upload a CSV file to import multiple users at once.
+            Upload a CSV file to import multiple leads at once.
           </DialogDescription>
         </DialogHeader>
         
@@ -387,7 +390,6 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                               Previous
                             </Button>
                             <div className="flex items-center gap-1">
-                              {/* Always show first page */}
                               <Button
                                 variant={currentPage === 1 ? "default" : "outline"}
                                 size="sm"
@@ -397,12 +399,10 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                                 1
                               </Button>
                               
-                              {/* Show ellipsis if needed */}
                               {currentPage > 3 && (
                                 <span className="px-2">...</span>
                               )}
                               
-                              {/* Show current page and neighbors */}
                               {totalPages > 1 && currentPage !== 1 && currentPage !== totalPages && (
                                 <>
                                   {currentPage > 2 && (
@@ -435,12 +435,10 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                                 </>
                               )}
                               
-                              {/* Show ellipsis if needed */}
                               {currentPage < totalPages - 2 && (
                                 <span className="px-2">...</span>
                               )}
                               
-                              {/* Always show last page */}
                               {totalPages > 1 && (
                                 <Button
                                   variant={currentPage === totalPages ? "default" : "outline"}
@@ -486,7 +484,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                   Processing...
                 </>
               ) : (
-                "Import Users"
+                "Import Leads"
               )}
             </Button>
             <DialogClose asChild>

@@ -233,7 +233,7 @@ export default function Leads() {
                   leads.map((lead, idx) => (
                     <TableRow key={lead._id}>
                       <TableCell>{(currentPage - 1) * 20 + idx + 1}</TableCell>
-                      <TableCell>{lead.createdOn ? new Date(lead.createdOn).toLocaleDateString() : '-'}</TableCell>
+                      <TableCell>{lead.createdOn ? new Date(parseInt(lead.createdOn)).toLocaleDateString() : '-'}</TableCell>
                       <TableCell><div className="font-medium">{lead.name}</div></TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
