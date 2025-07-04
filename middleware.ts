@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Add matcher for the paths we want to protect
+// Protect all dashboard and resources routes (including subroutes)
 export const config = {
   matcher: [
-    /*
-     * Match all paths except:
-     * 1. /api routes
-     * 2. /_next (Next.js internals)
-     * 3. /fonts (inside public)
-     * 4. /examples (inside public)
-     * 5. all files inside public (images, fonts, icons, etc)
-     * 6. all auth routes (/login, /register, /forgot-password)
-     */
-    '/((?!api|_next|fonts|examples|[\\w-]+\\.\\w+|login|register|forgot-password).*)',
-    '/resources/:path*', // Protect all resources paths
+    '/dashboard/:path*',
+    '/resources/:path*',
   ],
 };
 
@@ -23,51 +14,37 @@ export default function middleware(request: NextRequest) {
   // Get token from cookie
   const token = request.cookies.get('auth-token')?.value;
   let user = null;
-    try {
+  try {
     user = token ? JSON.parse(decodeURIComponent(token)) : null;
   } catch {}
 
-  // Public paths that don't require authentication
-   const alwaysPublicPaths = ['/', '/get-started'];
-  
-  // If the path is always public, allow access
-  if (alwaysPublicPaths.includes(pathname)) {
-    return NextResponse.next();
-  }
+  // Role-based route protection
+  const isAdminRoute = pathname.startsWith('/dashboard/admin');
+  const isTeamRoute = pathname.startsWith('/dashboard/team');
+  const isUserRoute = pathname.startsWith('/dashboard/user');
 
-  const publicPaths = ['/login', '/register', '/forgot-password'];
-  
-  // Check if the path is public
-  const isPublicPath = publicPaths.includes(pathname);
-
-  // Check if the path is a protected resource
-  const isProtectedResource = pathname.startsWith('/resources/');
-
-  // If the path is public and user is logged in, redirect to dashboard
-  if (isPublicPath && token) {
-    if(user.role=="admin"){
-      return NextResponse.redirect(new URL('/dashboard/admin', request.url));
+  if (user) {
+    if (user.role === 'admin' && (isTeamRoute || isUserRoute)) {
+      return NextResponse.rewrite(new URL('/404', request.url));
     }
-    else{
-      return NextResponse.redirect(new URL('/dashboard/user', request.url));
+    if (user.role === 'team' && (isAdminRoute || isUserRoute)) {
+      return NextResponse.rewrite(new URL('/404', request.url));
+    }
+    if (user.role === 'user' && (isAdminRoute || isTeamRoute)) {
+      return NextResponse.rewrite(new URL('/404', request.url));
     }
   }
 
-  // If the path is protected (including protected resources) and user is not logged in, redirect to login
-  if ((!isPublicPath || isProtectedResource) && !token) {
-    const from = encodeURIComponent(pathname);
-    return NextResponse.redirect(
-      new URL(`/login?from=${from}`, request.url)
-    );
-  }
-
-   // Protect /login
-  if (pathname.startsWith("/login")) {
-    if (user && user.role === "admin") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+  // On login, redirect to correct dashboard for all roles
+  if (pathname.startsWith("/login") && user) {
+    if (user.role === "admin") {
+      return NextResponse.redirect(new URL("/dashboard/admin", request.url));
     }
-    if (user && user.role === "user") {
-      return NextResponse.redirect(new URL("/profile", request.url));
+    if (user.role === "team") {
+      return NextResponse.redirect(new URL("/dashboard/team", request.url));
+    }
+    if (user.role === "user") {
+      return NextResponse.redirect(new URL("/dashboard/user", request.url));
     }
   }
 
