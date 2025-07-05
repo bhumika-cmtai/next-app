@@ -6,16 +6,11 @@ export interface Lead {
   _id?: string;
   name: string;
   email: string;
-  portal_name: string;
+  transactionId?: string;
   phoneNumber: string;
-  qualification: string;
   city: string;
-  date_of_birth: string;
-  gender: string;
-  ekyc_stage?: string;
-  trade_status?: string;
-  message: string;
-  source: string;
+  age: string;
+  gender?: string;
   status: string;
   createdOn?: string;
   updatedOn?: string;
@@ -179,7 +174,7 @@ export const addManyLeads = (leads: Lead[]) => async (dispatch: Dispatch) => {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/addManyLead`, leads);
     dispatch(setLoading(false));  
     if (response.status === 201) {
-      console.log(response.data)
+      // console.log(response.data)
       return response.data;
     } else {
       dispatch(setError(response.data.message));
@@ -228,6 +223,33 @@ export const deleteLead = (id: string) => async (dispatch: Dispatch) => {
     const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
     dispatch(setError(message || "Unknown error"));
     return null;
+  }
+};
+
+
+// New thunk to fetch a lead by transactionId
+export const fetchLeadByTransactionId = (transactionId: string) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/getLeadByTransactionId/${transactionId}`);
+    
+    if (response.status === 200) {
+      const leadData: Lead | [] = response.data.data;
+      // Backend returns a lead object if found, or an empty array if not found
+      if (leadData && !Array.isArray(leadData)) {
+        dispatch(setSelectedLead(leadData));
+      } else {
+        // Lead not found, but the request was successful. Clear any previously selected lead.
+        dispatch(setSelectedLead(null));
+      }
+    } else {
+      dispatch(setError(response.data.message || 'Failed to fetch lead by transaction ID'));
+      dispatch(setSelectedLead(null));
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+    dispatch(setSelectedLead(null)); // Also clear selected lead on error
   }
 };
 

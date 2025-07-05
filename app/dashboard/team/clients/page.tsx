@@ -226,14 +226,14 @@ export default function Clients() {
                 <div className="md:col-span-2"><p className="text-muted-foreground">Current Owner(s)</p>{(singleClientResult.ownerName && singleClientResult.ownerName.length > 0) ? (<ul className="list-disc list-inside mt-1 font-medium">{singleClientResult.ownerName.map((name, i) => <li key={i}>{name} - {singleClientResult.ownerNumber?.[i] || 'N/A'}</li>)}</ul>) : (<p className="text-muted-foreground italic mt-1">No owners have claimed this client yet.</p>)}</div>
             </div>
             {(() => {
-                const canClaim = singleClientResult.ekyc_stage === 'complete' || singleClientResult.trade_status === 'matched';
+                const canClaim = (singleClientResult.ekyc_stage === 'complete' || singleClientResult.trade_status === 'matched') && singleClientResult.status==="RegisterationDone";
                 const isAlreadyOwner = newOwnerNumber.trim() ? singleClientResult.ownerNumber?.includes(newOwnerNumber.trim()) : false;
 
                 return (
                     <div className="border-t pt-6">
                         <h3 className="font-semibold text-lg flex items-center gap-2 mb-4"><UserPlus className="w-5 h-5" />Claim This Client</h3>
                         
-                        {!canClaim && (<div className="p-3 mb-4 rounded-md text-sm flex items-center gap-2 bg-yellow-50 text-yellow-800 border border-yellow-200"><AlertCircle className="w-4 h-4" /><span>Client must have a 'Complete' KYC or 'Matched' Trade status to be claimed.</span></div>)}
+                        {!canClaim && (<div className="p-3 mb-4 rounded-md text-sm flex items-center gap-2 bg-yellow-50 text-yellow-800 border border-yellow-200"><AlertCircle className="w-4 h-4" /><span>Client must have a 'Complete' KYC or 'Matched' Trade status or RegisterationDone to be claimed.</span></div>)}
                         
                         {isAlreadyOwner && (
                             <div className="p-3 mb-4 rounded-md text-sm flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-200">

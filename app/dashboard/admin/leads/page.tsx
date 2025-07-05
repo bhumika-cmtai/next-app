@@ -22,16 +22,11 @@ const initialFormState: Omit<Lead, "_id" | "createdOn" | "updatedOn"> = {
   name: "",
   email: "",
   phoneNumber: "",
-  portal_name: "",
-  qualification: "",
+  transactionId: "",
   city: "",
-  date_of_birth: "",
+  age: "",
   gender: "",
-  message: "",
   status: "New",
-  source: "",
-  ekyc_stage: 'notComplete',
-  trade_status: 'notMatched', // Matches the typo in your slice
 };
 
 export default function Leads() {
@@ -91,16 +86,11 @@ export default function Leads() {
       name: lead.name ?? '',
       email: lead.email ?? '',
       phoneNumber: lead.phoneNumber ?? '',
-      portal_name: lead.portal_name ?? '',
-      qualification: lead.qualification ?? '',
+      transactionId: lead.transactionId ?? '',
       city: lead.city ?? '',
-      date_of_birth: lead.date_of_birth ? lead.date_of_birth.split('T')[0] : '', // Format date for input
+      age: lead.age ? lead.age : '', // Format date for input
       gender: lead.gender ?? '',
-      message: lead.message ?? '',
       status: lead.status ?? 'New',
-      source: lead.source ?? '',
-      ekyc_stage: lead.ekyc_stage ?? 'notComplete',
-      trade_status: lead.trade_status ?? 'notMatched',
     });
     setModalOpen(true);
   };
@@ -157,7 +147,7 @@ export default function Leads() {
       ? leads 
       : leads.filter(lead => lead.status === exportStatus);
     
-    const headers = ["Name", "Email", "Phone", "Status", "Source", "Message", "Created"];
+    const headers = ["Name", "Email", "Phone", "Status", "Age", "TransactionId","Gender","Created"];
     const csvContent = [
       headers.join(","),
       ...filteredLeads.map(lead => [
@@ -165,8 +155,10 @@ export default function Leads() {
         `"${lead.email.replace(/"/g, '""')}"`,
         `"${lead.phoneNumber}"`,
         `"${lead.status}"`,
-        `"${lead.source}"`,
-        `"${(lead.message || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+        `"${lead.age}"`,
+        `"${lead.transactionId}"`,
+        `"${lead.gender}"`,
+        // `"${(lead.message || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
         `"${lead.createdOn ? new Date(lead.createdOn).toLocaleDateString() : ''}"`
       ].join(","))
     ].join("\n");
@@ -216,11 +208,13 @@ export default function Leads() {
                   <TableHead className="w-12">S. No.</TableHead>
                   <TableHead>Created Date</TableHead>
                   <TableHead>Lead Name</TableHead>
+                  <TableHead>Transaction Id</TableHead>
                   <TableHead>Contact Info</TableHead>
                   <TableHead>Age</TableHead>
+                  <TableHead>Gender</TableHead>
                   <TableHead>City</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Remark</TableHead>
+                  {/* <TableHead>Remark</TableHead> */}
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -235,16 +229,17 @@ export default function Leads() {
                       <TableCell>{(currentPage - 1) * 20 + idx + 1}</TableCell>
                       <TableCell>{lead.createdOn ? new Date(parseInt(lead.createdOn)).toLocaleDateString() : '-'}</TableCell>
                       <TableCell><div className="font-medium">{lead.name}</div></TableCell>
+                      <TableCell><div className="font-medium">{lead.transactionId || "-"}</div></TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-gray-500" /><span className="text-sm">{lead.email || '-'}</span></div>
                           <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-500" /><span className="text-sm">{lead.phoneNumber}</span></div>
                         </div>
                       </TableCell>
-                      <TableCell><AgeCell dateOfBirth={lead.date_of_birth} /></TableCell>
+                      <TableCell>{lead?.age || "-"}</TableCell>
+                      <TableCell>{lead?.gender || "-"}</TableCell>
                       <TableCell><div className="font-medium">{lead.city || '-'}</div></TableCell>
                       <TableCell><Badge className={`${getStatusColor(lead.status)} text-white`}>{lead.status}</Badge></TableCell>
-                      <TableCell><div className="max-w-[200px] truncate text-sm text-gray-600">{lead.message || '-'}</div></TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button size="icon" variant="ghost" onClick={() => openEditModal(lead)} title="Edit"><Edit className="w-4 h-4" /></Button>
@@ -268,17 +263,13 @@ export default function Leads() {
               <div className="space-y-2"><Label htmlFor="name">Name*</Label><Input id="name" name="name" value={form.name} onChange={handleFormChange} required /></div>
               <div className="space-y-2"><Label htmlFor="phoneNumber">Phone Number*</Label><Input id="phoneNumber" name="phoneNumber" value={form.phoneNumber} onChange={handleFormChange} required /></div>
               {/* <div className="space-y-2"><Label htmlFor="portal_name">Portal Name*</Label><Input id="portal_name" name="portal_name" value={form.portal_name} onChange={handleFormChange} required /></div> */}
-              <div className="space-y-2"><Label htmlFor="portal_name">Portal Name*</Label><Select value={form.portal_name} onValueChange={(value) => handleFormSelectChange('portal_name', value)}><SelectTrigger><SelectValue placeholder="Select Portal"/></SelectTrigger><SelectContent><SelectItem value="angel-list">angel-list</SelectItem><SelectItem value="airtel-payment">airtel-payment</SelectItem><SelectItem value="paytm">paytm</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></div>
-              <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" value={form.email} onChange={handleFormChange} /></div>
+              <div className="space-y-2"><Label htmlFor="email">Email*</Label><Input id="email" name="email" type="email" value={form.email} onChange={handleFormChange} required/></div>
+              <div className="space-y-2"><Label htmlFor="transactionId">Transaction Id</Label><Input id="transactionId" name="transactionId" type="text" value={form.transactionId} onChange={handleFormChange}/></div>
               <div className="space-y-2"><Label htmlFor="city">City</Label><Input id="city" name="city" value={form.city} onChange={handleFormChange} /></div>
-              <div className="space-y-2"><Label htmlFor="qualification">Qualification</Label><Input id="qualification" name="qualification" value={form.qualification} onChange={handleFormChange} /></div>
-              <div className="space-y-2"><Label htmlFor="date_of_birth">Date of Birth</Label><Input id="date_of_birth" name="date_of_birth" type="date" value={form.date_of_birth} onChange={handleFormChange} /></div>
+              <div className="space-y-2"><Label htmlFor="age">Age</Label><Input id="age" name="age" value={form.age} onChange={handleFormChange} /></div>
               <div className="space-y-2"><Label htmlFor="gender">Gender</Label><Select value={form.gender} onValueChange={(value) => handleFormSelectChange('gender', value)}><SelectTrigger><SelectValue placeholder="Select Gender"/></SelectTrigger><SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></div>
-              <div className="space-y-2"><Label htmlFor="source">Source</Label><Select value={form.source} onValueChange={(value) => handleFormSelectChange('source', value)}><SelectTrigger><SelectValue placeholder="Select Source"/></SelectTrigger><SelectContent><SelectItem value="angel-list">angel-list</SelectItem><SelectItem value="airtel-payment">airtel-payment</SelectItem><SelectItem value="paytm">paytm</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></div>
               <div className="space-y-2"><Label htmlFor="status">Status</Label><Select value={form.status} onValueChange={(value) => handleFormSelectChange('status', value)}><SelectTrigger><SelectValue placeholder="Select Status"/></SelectTrigger><SelectContent><SelectItem value="New">New</SelectItem><SelectItem value="RegisterationDone">Registration Done</SelectItem><SelectItem value="CallCut">Call Cut</SelectItem><SelectItem value="CallNotPickUp">Call Not Picked Up</SelectItem><SelectItem value="NotInterested">Not Interested</SelectItem><SelectItem value="InvalidNumber">Invalid Number</SelectItem></SelectContent></Select></div>
-              <div className="space-y-2"><Label htmlFor="ekyc_stage">eKYC Stage</Label><Select value={form.ekyc_stage} onValueChange={(value) => handleFormSelectChange('ekyc_stage', value)}><SelectTrigger><SelectValue placeholder="Select eKYC Stage"/></SelectTrigger><SelectContent><SelectItem value="notComplete">Not Complete</SelectItem><SelectItem value="complete">Complete</SelectItem></SelectContent></Select></div>
-              <div className="space-y-2"><Label htmlFor="trade_status">Trade Status</Label><Select value={form.trade_status} onValueChange={(value) => handleFormSelectChange('trade_status', value)}><SelectTrigger><SelectValue placeholder="Select Trade Status"/></SelectTrigger><SelectContent><SelectItem value="notMatched">Not Matched</SelectItem><SelectItem value="matched">Matched</SelectItem></SelectContent></Select></div>
-              <div className="space-y-2 md:col-span-2"><Label htmlFor="message">Remark / Message</Label><textarea id="message" name="message" className="w-full min-h-[100px] p-3 rounded-md border border-input bg-background text-sm" placeholder="Add a note..." value={form.message} onChange={handleFormChange}/></div>
+              {/* <div className="space-y-2 md:col-span-2"><Label htmlFor="message">Remark / Message</Label><textarea id="message" name="message" className="w-full min-h-[100px] p-3 rounded-md border border-input bg-background text-sm" placeholder="Add a note..." value={form.message} onChange={handleFormChange}/></div> */}
             </div>
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="outline" disabled={formLoading}>Cancel</Button></DialogClose>

@@ -22,7 +22,6 @@ import {
   selectAppLinksLoading, 
   AppLink 
 } from '@/lib/redux/appLinkSlice';
-// NEW: Import actions and selectors from joinlinkSlice
 import {
   fetchAllJoinlinks,
   updateJoinlink,
@@ -32,12 +31,12 @@ import {
 } from '@/lib/redux/joinlinkSlice';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// NEW: Import Link icon
-import { Loader2, User, Landmark, Edit, Clock, KeyRound, Link as LinkIcon } from 'lucide-react';
+import { Loader2, User, Clock, KeyRound, Link as LinkIcon, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import axios from 'axios';
 
 const DetailItem = ({ label, value }: { label: string; value?: string | number | null }) => (
   <div className="flex justify-between items-center py-3 border-b last:border-b-0">
@@ -58,12 +57,12 @@ const SettingsPage = () => {
   const appLinks = useSelector(selectAllAppLinks);
   const isLinksLoading = useSelector(selectAppLinksLoading);
   
-  // NEW: JoinLinks State
+  // JoinLinks State
   const joinLinks = useSelector(selectAllJoinlinks);
   const isJoinlinksLoading = useSelector(selectJoinlinksLoading);
 
-  // NEW: Added 'links' to activeTab state
-  const [activeTab, setActiveTab] = useState<'profile' | 'session' | 'passwords' | 'links'>('profile');
+  // Component State
+  const [activeTab, setActiveTab] = useState<'profile' | 'session' | 'passwords' | 'links' | 'data'>('profile');
   
   // Profile Modal State
   const [profileData, setProfileData] = useState({ name: '', whatsappNumber: '', city: '', bio: '', newPassword: '', confirmPassword: '' });
@@ -73,14 +72,19 @@ const SettingsPage = () => {
   const [sessionData, setSessionData] = useState<Partial<GlobalSession>>({});
   const [isSessionLoading, setIsSessionLoading] = useState(false);
 
-  // AppLink Modal State (for Passwords tab)
+  // AppLink Modal State
   const [isLinkModalOpen, setLinkModalOpen] = useState(false);
   const [currentLink, setCurrentLink] = useState<AppLink | null>(null);
 
-  // NEW: Joinlink Modal State (for Links Manager tab)
+  // Joinlink Modal State
   const [isJoinlinkModalOpen, setJoinlinkModalOpen] = useState(false);
   const [currentJoinlink, setCurrentJoinlink] = useState<Joinlink | null>(null);
   const [editedLinkValue, setEditedLinkValue] = useState('');
+  
+  // Data Deletion State
+  const [isDeleteDataModalOpen, setDeleteDataModalOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+  const [isDeletingData, setIsDeletingData] = useState(false);
 
 
   useEffect(() => {
@@ -109,7 +113,6 @@ const SettingsPage = () => {
     if (activeTab === 'passwords' && user?.role === 'admin' && appLinks.length === 0) {
       dispatch(fetchAllAppLinks());
     }
-    // NEW: Fetch join links when the 'links' tab is active
     if (activeTab === 'links' && user?.role === 'admin' && joinLinks.length === 0) {
       dispatch(fetchAllJoinlinks());
     }
@@ -186,14 +189,12 @@ const SettingsPage = () => {
     }
   };
 
-  // NEW: Handler to open the modal for editing a Joinlink
   const handleOpenJoinlinkModal = (joinlink: Joinlink) => {
     setCurrentJoinlink(joinlink);
-    setEditedLinkValue(joinlink.link); // Pre-fill the input with the current link
+    setEditedLinkValue(joinlink.link);
     setJoinlinkModalOpen(true);
   };
   
-  // NEW: Handler to update the Joinlink
   const handleJoinlinkUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentJoinlink) return;
@@ -202,6 +203,32 @@ const SettingsPage = () => {
     if (result) {
       setJoinlinkModalOpen(false);
       setCurrentJoinlink(null);
+    }
+  };
+  
+  const handleDeleteAllData = async () => {
+    if (deleteConfirmationText !== 'confirm delete') {
+      toast.error("Please type the confirmation text correctly.");
+      return;
+    }
+
+    setIsDeletingData(true);
+    try {
+      const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/deleteAllData`);
+      
+      if (response.status === 200) {
+        toast.success("Data deletion process initiated successfully.", {
+          description: `Summary: ${JSON.stringify(response.data.data)}`,
+          duration: 8000
+        });
+        setDeleteDataModalOpen(false);
+        setDeleteConfirmationText('');
+      }
+    } catch (err) {
+      toast.error("An error occurred while deleting data. Please check the logs.");
+      console.error("Data Deletion Error:", err);
+    } finally {
+      setIsDeletingData(false);
     }
   };
 
@@ -227,8 +254,8 @@ const SettingsPage = () => {
               <>
                 <button onClick={() => setActiveTab('session')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors shrink-0 ${activeTab === 'session' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><Clock size={16} /> Claim Client</button>
                 <button onClick={() => setActiveTab('passwords')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors shrink-0 ${activeTab === 'passwords' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><KeyRound size={16} /> Manage Passwords</button>
-                {/* NEW: Links Manager Tab */}
                 <button onClick={() => setActiveTab('links')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors shrink-0 ${activeTab === 'links' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-primary'}`}><LinkIcon size={16} /> Links Manager</button>
+                <button onClick={() => setActiveTab('data')} className={`flex items-center gap-2 py-3 px-4 text-sm font-medium transition-colors shrink-0 ${activeTab === 'data' ? 'border-b-2 border-red-500 text-red-500' : 'text-gray-500 hover:text-red-500'}`}><Trash2 size={16} /> Manage Data</button>
               </>
             )}
           </div>
@@ -287,11 +314,9 @@ const SettingsPage = () => {
                   {appLinks.map((link) => (
                     <div key={link._id} className="p-4 border rounded-lg flex items-center justify-between">
                       <div className='flex flex-col gap-3'>
-                        
                           <p className="font-semibold">{link.appName}</p>
-                          <p className="text-sm"><b >Password: </b>{link.password}</p>
-                        
-                        <p className="text-base  truncate"><b>Link: </b>{link.link}</p>
+                          <p className="text-sm"><b>Password: </b>{link.password}</p>
+                        <p className="text-base truncate"><b>Link: </b>{link.link}</p>
                       </div>
                       <Button variant="outline" size="sm" onClick={() => handleOpenLinkModal(link)}><Edit className="mr-2 h-3 w-3" /> Edit</Button>
                     </div>
@@ -301,7 +326,6 @@ const SettingsPage = () => {
             </div>
           )}
 
-          {/* NEW: Links Manager Tab Content */}
           {activeTab === 'links' && user.role === 'admin' && (
             <div>
               <h3 className="text-lg font-semibold mb-4">Manage Join Links</h3>
@@ -324,10 +348,39 @@ const SettingsPage = () => {
               )}
             </div>
           )}
+
+          {activeTab === 'data' && user.role === 'admin' && (
+            <div className="space-y-6">
+              <Card className="border-destructive bg-red-50/50">
+                <CardHeader>
+                  <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                  <CardDescription className="text-red-600">
+                    This action is irreversible and will permanently delete data across the application.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-800">
+                    Executing this action will perform the following operations:
+                  </p>
+                  <ul className="list-disc pl-5 mt-2 text-sm text-gray-800">
+                    <li>Permanently delete <strong>all Leads</strong>.</li>
+                    <li>Permanently delete <strong>all Clients</strong>.</li>
+                    <li>Reset the income field for <strong>all Users</strong> to 0.</li>
+                  </ul>
+                  <p className="mt-4 font-semibold text-destructive">This cannot be undone. Please proceed with extreme caution.</p>
+                </CardContent>
+                <CardFooter>
+                  <Button variant="destructive" onClick={() => setDeleteDataModalOpen(true)}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete All Data
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* AppLink Edit Modal (for Passwords Tab) */}
       <Dialog open={isLinkModalOpen} onOpenChange={setLinkModalOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit App Link & Password</DialogTitle></DialogHeader>
@@ -342,7 +395,6 @@ const SettingsPage = () => {
         </DialogContent>
       </Dialog>
       
-      {/* NEW: Joinlink Edit Modal (for Links Manager Tab) */}
       <Dialog open={isJoinlinkModalOpen} onOpenChange={setJoinlinkModalOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Join Link</DialogTitle></DialogHeader>
@@ -368,6 +420,38 @@ const SettingsPage = () => {
               </DialogFooter>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isDeleteDataModalOpen} onOpenChange={setDeleteDataModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you absolutely sure?</DialogTitle>
+            <DialogDescription>
+              This action cannot be reversed. This will permanently delete critical application data. To confirm, please type <strong>confirm delete</strong> into the box below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <Label htmlFor="delete-confirm" className="font-semibold">Confirmation Text</Label>
+            <Input 
+              id="delete-confirm"
+              value={deleteConfirmationText}
+              onChange={(e) => setDeleteConfirmationText(e.target.value)}
+              placeholder="confirm delete"
+              className="border-gray-300 focus:ring-destructive focus:border-destructive"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDataModalOpen(false)}>Cancel</Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteAllData}
+              disabled={isDeletingData || deleteConfirmationText !== 'confirm delete'}
+            >
+              {isDeletingData && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+              Confirm & Delete Data
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

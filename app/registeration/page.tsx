@@ -11,7 +11,8 @@ import { createRegisteration } from "@/lib/redux/registerationSlice";
 import { fetchLeaderCode } from "@/lib/redux/userSlice"; // Import the thunk to verify the leader code
 import { Loader2 } from "lucide-react";
 import { verifyCredentialsAndGetLink } from "@/lib/redux/joinlinkSlice";
-
+import Link from "next/link";
+import { Dialog, DialogContent, DialogTitle,DialogHeader } from "@/components/ui/dialog";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -38,6 +39,12 @@ const Page = () => {
   const [isCheckingCode, setIsCheckingCode] = useState(false);
   const [validatedLeaderName, setValidatedLeaderName] = useState<string | null>(null);
   const [codeError, setCodeError] = useState<string | null>(null);
+  // NEW: State for the image modal
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+    const [modalImageUrl, setModalImageUrl] = useState("");
+    const [modalImageTitle, setModalImageTitle] = useState("");
+  const [isFetchingZoom, setIsFetchingZoom] = useState(false);
+    
 
   // Debounce the leaderCode input
   const debouncedLeaderCode = useDebounce(leaderCode, 500);
@@ -136,7 +143,39 @@ const Page = () => {
     }
   };
 
+  const handleZoomClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault(); // Prevent any default button behavior
+      setIsFetchingZoom(true);
+  
+      // This appName MUST match an entry in your database's joinlinks collection
+      const ZOOM_APP_NAME = 'zoom';
+  
+      try {
+        const link = await dispatch(verifyCredentialsAndGetLink({ appName: ZOOM_APP_NAME }));
+  
+        if (link) {
+          // Redirect to the fetched link if successful
+          window.location.href = link;
+        }
+        // If the link is null, the thunk already shows an error toast, so we don't need to do anything here.
+      } catch (error) {
+        console.error("Failed to fetch Zoom link:", error);
+        // The thunk should handle the toast, but this is a fallback.
+      } finally {
+        // Ensure the loading state is turned off, even if redirection fails
+        setIsFetchingZoom(false);
+      }
+    };
+
+  const handleDocumentClick = (imageUrl: string, title: string) => {
+    setModalImageUrl(imageUrl);
+    setModalImageTitle(title);
+    setIsImageModalOpen(true);
+  };
+
+
   return (
+    <>
     <section className="w-full relative overflow-hidden" id="registeration">
       <div className="max-w-7xl w-full relative z-10 px-4 py-4 mx-auto">
         <div className="w-full flex justify-center min-h-screen ">
@@ -185,7 +224,7 @@ const Page = () => {
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={isLoading}
                         type="email"
-                        placeholder="Your Email (Optional)"
+                        placeholder="Your Email "
                         className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"
                       />
                       <input
@@ -247,7 +286,49 @@ const Page = () => {
         transition={{ duration: 1, ease: "easeInOut" }}
         className="absolute block top-[260px] -left-[150px] lg:top-[220px] lg:-left-[240px] lg:h-[600px] h-[200px] w-[200px] lg:w-[600px] bg-gradient-to-b from-purple-400 to-pink-200 rounded-full opacity-20"
       ></motion.div>
+      <div className="mt-5 mb-10 w-full flex flex-col items-center justify-center gap-3">
+        <div className="flex items-center gap-2">
+            <Image
+              src="/legalImg.png" 
+              width={40}
+              height={40}
+              alt="Document icon"
+              />
+            <div className="text-lg font-semibold text-black">Legal Documents:</div>
+           
+        </div>
+        <div className="w-full border-t-[1px] border-t-black flex justify-center pt-4">
+            
+          <div className="flex flex-col gap-2 items-start px-4">
+           <button onClick={() => handleDocumentClick('/pan_card.jpg', 'PAN Card')} className="text-left underline cursor-pointer hover:text-blue-600 transition-colors">PAN Card</button>
+              <button onClick={() => handleDocumentClick('/udyam_Registration Certificate.jpg', 'Udyam Registration Certificate')} className="text-left underline cursor-pointer hover:text-blue-600 transition-colors">Udyam Registration Certificate</button>
+              <button onClick={() => handleDocumentClick('/gst_certificate.jpg', 'GST Certificate')} className="text-left underline cursor-pointer hover:text-blue-600 transition-colors">GST Certificate</button>
+            <p className="text-left"> <Link className="underline" href="/privacy-policy">Privacy-Policy</Link> | <Link className="underline" href="/terms-and-conditions">Terms and Conditions</Link> | 
+            <Link href="https://www.instagram.com/indiagrowup__?igsh=Ymttb3FoZGh1Zm1u" className="inline-flex items-center gap-1.5 underline ">Follow Us On Insta <Image src="/instagram.png" alt="instagram" width={16} height={16} className="w-4"/></Link></p>
+          </div>
+        </div>
+      </div>
+      {/* NEW: Dialog component for displaying the image */}
+      <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{modalImageTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="relative w-full h-[70vh] mt-4">
+            <Image
+              src={modalImageUrl}
+              alt={modalImageTitle}
+              fill
+              className="object-contain"
+              priority={true} // Prioritize loading the image in the modal
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
+    </>
   );
 };
 

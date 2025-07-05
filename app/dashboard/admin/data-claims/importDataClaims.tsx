@@ -29,7 +29,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { addManyLeads } from "@/lib/redux/leadSlice";
+import { addManyClients} from "@/lib/redux/clientSlice";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/lib/store";
 
@@ -39,24 +39,24 @@ interface ImportUserProps {
   onImportSuccess?: () => void;
 }
 
-interface ParsedUser {
-   _id?: string;
+interface ParsedUser  {
+  _id?: string;
   name: string;
-  email: string;
-  portal_name: string;
+  email?: string;
   phoneNumber: string;
-  qualification: string;
-  city: string;
-  date_of_birth: string;
-  gender: string;
+  ownerName?: string[]; 
+  ownerNumber?: string[];
+  // city?: string;
+  // age?: number;
+  status: string;
+  portalName?: string;
   ekyc_stage?: string;
   trade_status?: string;
-  message: string;
-  source: string;
-  status: string;
+  reason?: string;
+  // leaderCode?: string;
   createdOn?: string;
   updatedOn?: string;
-  password?: string;
+  isApproved?: boolean;
 }
 
 export default function ImportUser({ open, onOpenChange, onImportSuccess }: ImportUserProps) {
@@ -72,14 +72,15 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     name: "",
     email: "",
     phoneNumber: "",
-    qualification: "",
-    city: "",
-    date_of_birth: "",
-    gender: "",
-    message: "",
+    ekyc_stage: "",
+    trade_status: "",
+    // qualification: "",
+    // city: "",
+    // date_of_birth: "",
+    // gender: "",
+    // message: "",
     status: "",
-    source: "",
-    portal_name: "",
+    portalName: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -182,23 +183,19 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                 name: row[fieldMapping.name],
                 email: row[fieldMapping.email],
                 phoneNumber: row[fieldMapping.phoneNumber],
-                qualification: row[fieldMapping.qualification],
-                city: row[fieldMapping.city],
-                date_of_birth: row[fieldMapping.date_of_birth],
-                gender: row[fieldMapping.gender],
-                message: row[fieldMapping.message],
+                // city: row[fieldMapping.city],
                 status: row[fieldMapping.status],
-                source: row[fieldMapping.source] || "",
-                portal_name: row[fieldMapping.portal_name] || "",
-                password: fieldMapping.password ? row[fieldMapping.password] : undefined,
+                portalName: row[fieldMapping.portalName],
+                ekyc_stage: row[fieldMapping.ekyc_stage],
+                trade_status: row[fieldMapping.trade_status],
               };
               return mappedUser;
             });
 
-            console.log('Mapped leads:', mappedData);
-            const response = await dispatch(addManyLeads(mappedData));
-            if (response.payload) {
-              toast.success(`Successfully imported ${mappedData.length} leads`);
+            console.log('Mapped clients:', mappedData);
+            const response = await dispatch(addManyClients(mappedData));
+            if (response) {
+              toast.success(`Successfully imported ${mappedData.length} clients`);
               handleReset();
               onOpenChange(false);
               onImportSuccess?.();
@@ -233,15 +230,14 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       name: "",
       email: "",
       phoneNumber: "",
-      qualification: "",
-      city: "",
-      date_of_birth: "",
-      gender: "",
-      message: "",
+      // city: "",
+      // date_of_birth: "",
+      // gender: "",
+      // message: "",
       status: "",
-      source: "",
-      portal_name: "",
-      password: "",
+      ekyc_stage: "",
+      trade_status: "",
+      portalName: "",
     });
   };
 
@@ -252,9 +248,9 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     }}>
       <DialogContent className="max-h-[90vh] w-screen max-w-[95%] !min-w-[80vw] flex flex-col gap-0 p-0">
         <DialogHeader className="px-6 py-4 border-b">
-          <DialogTitle className="text-2xl">Import Leads</DialogTitle>
+          <DialogTitle className="text-2xl">Import Data Claims</DialogTitle>
           <DialogDescription className="text-base">
-            Upload a CSV file to import multiple leads at once.
+            Upload a CSV file to import multiple data claims at once.
           </DialogDescription>
         </DialogHeader>
         
@@ -324,7 +320,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                       <p className="text-sm text-muted-foreground mb-4">Fields marked with <span className="text-red-500">*</span> are required</p>
                       <div className="flex gap-6 overflow-x-auto pb-4">
                         {Object.keys(fieldMapping).map((field) => {
-                          const isRequired = ["name", "email", "phoneNumber"].includes(field);
+                          const isRequired = ["name", "email", "phoneNumber", "ekyc_stage", "trade_status"].includes(field);
                           return (
                           <div key={field} className="min-w-[200px]">
                             <label className="text-sm font-medium capitalize block mb-2">

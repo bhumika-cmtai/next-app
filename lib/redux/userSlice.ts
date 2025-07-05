@@ -7,14 +7,14 @@ export interface User {
   name: string;
   email: string;
   phoneNumber: string;
-  whatsappNumber: string;
+  whatsappNumber?: string;
   city: string;
   role: string;
   password?: string;
   status?: string;
   leaderCode?:string;
-  abhi_aap_kya_karte_hai?:string;
-  work_experience?:string;
+  // abhi_aap_kya_karte_hai?:string;
+  // work_experience?:string;
   createdOn?: string;
   updatedOn?: string;
   income?: number;

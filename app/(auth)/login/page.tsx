@@ -41,7 +41,8 @@ const LoginForm = () => {
    // 3. This effect will now correctly catch and display login errors
    useEffect(() => {
     if (error) {
-      toast.error(error);
+      // toast.error(error);
+      toast.error("incorrect credentials try again...")
       dispatch(setError(null)); // Clear error after showing
     }
   }, [error, dispatch]);
@@ -57,10 +58,10 @@ const LoginForm = () => {
       toast.success("Successfully logged in!");
       // The cookie is already set inside the thunk, so we just redirect
       if (user.role === 'admin') {
-        console.log(user.role)
+        // console.log(user.role)
         router.push('/dashboard/admin');
       } else {
-        console.log(user.role)
+        // console.log(user.role)
         router.push('/dashboard/team');
       }
     }

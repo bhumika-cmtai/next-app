@@ -10,14 +10,14 @@ export interface Client {
   phoneNumber: string;
   ownerName?: string[]; 
   ownerNumber?: string[];
-  city?: string;
-  age?: number;
+  // city?: string;
+  // age?: number;
   status: string;
   portalName?: string;
   ekyc_stage?: string;
   trade_status?: string;
   reason?: string;
-  leaderCode?: string;
+  // leaderCode?: string;
   createdOn?: string;
   updatedOn?: string;
   isApproved?: boolean;
@@ -266,7 +266,7 @@ export const distributeCommissionForClient = (params: { clientId: string; portal
 
 export const addManyClients = (clients: Client[]) => async (dispatch: Dispatch) => {
   try {
-    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/addManyClient`, clients);
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/clients/addManyClient`, clients);
     if (response.status === 201) {
       return response.data;
     } else {

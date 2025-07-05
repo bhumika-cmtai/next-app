@@ -12,13 +12,15 @@ import {
   LogOut,
   User,
   X,
-  Settings
+  Settings,
+  FileUser 
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard/team", icon: LayoutGrid },
   { name: "Leads", href: "/dashboard/team/leads", icon: Users },
-  { name: "Clients", href: "/dashboard/team/clients", icon: User },
+  { name: "Data Claim", href: "/dashboard/team/clients", icon: User },
+  { name: "Get Leads", href: "/dashboard/team/get-leads", icon: FileUser },
   { name: "Setting", href: "/dashboard/team/setting", icon:Settings},
   { name: "Logout", href: "/logout", icon: LogOut },
 ];

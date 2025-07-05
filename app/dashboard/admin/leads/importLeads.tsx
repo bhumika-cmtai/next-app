@@ -43,20 +43,15 @@ interface ParsedUser {
    _id?: string;
   name: string;
   email: string;
-  portal_name: string;
   phoneNumber: string;
-  qualification: string;
+  transactionId: string;
   city: string;
-  date_of_birth: string;
+  age: string;
   gender: string;
-  ekyc_stage?: string;
-  trade_status?: string;
-  message: string;
-  source: string;
   status: string;
   createdOn?: string;
   updatedOn?: string;
-  password?: string;
+  // password?: string;
 }
 
 export default function ImportUser({ open, onOpenChange, onImportSuccess }: ImportUserProps) {
@@ -72,14 +67,11 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     name: "",
     email: "",
     phoneNumber: "",
-    qualification: "",
+    transactionId: "",
     city: "",
-    date_of_birth: "",
+    age: "",
     gender: "",
-    message: "",
     status: "",
-    source: "",
-    portal_name: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -159,7 +151,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
   };
 
   const handleImport = async () => {
-    const requiredFields = ["name", "email", "phoneNumber"];
+    const requiredFields = ["name", "email", "phoneNumber","transactionId"];
     const missingRequiredFields = requiredFields.filter(field => !fieldMapping[field]);
     
     if (!selectedFile || missingRequiredFields.length > 0) {
@@ -182,15 +174,12 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                 name: row[fieldMapping.name],
                 email: row[fieldMapping.email],
                 phoneNumber: row[fieldMapping.phoneNumber],
-                qualification: row[fieldMapping.qualification] || "",
+                transactionId: row[fieldMapping.transactionId],
                 city: row[fieldMapping.city] || "",
-                date_of_birth: row[fieldMapping.date_of_birth] || "",
+                age: row[fieldMapping.age] ,
                 gender: row[fieldMapping.gender] || "",
-                message: row[fieldMapping.message] || "",
                 status: row[fieldMapping.status] || "New",
-                source: row[fieldMapping.source] || "",
-                portal_name: row[fieldMapping.portal_name] || "",
-                password: fieldMapping.password ? row[fieldMapping.password] : undefined,
+                // password: fieldMapping.password ? row[fieldMapping.password] : undefined,
               };
               return mappedUser;
             });
@@ -233,15 +222,13 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       name: "",
       email: "",
       phoneNumber: "",
-      qualification: "",
+      transactionId: "",
       city: "",
-      date_of_birth: "",
+      age: "",
       gender: "",
       message: "",
       status: "",
-      source: "",
-      portal_name: "",
-      password: "",
+      // password: "",
     });
   };
 

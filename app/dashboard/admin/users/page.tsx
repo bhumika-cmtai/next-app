@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Upload, Edit, Trash2, Search, Loader2 } from "lucide-react";
+import { Plus, Upload, Edit, Trash2, Search, Loader2, Download } from "lucide-react"; // Added Download icon
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchUsers, selectUsers, selectLoading, User, selectPagination, selectCurrentPage,addUser,updateUser,deleteUser as deleteUserAction, } from "@/lib/redux/userSlice";
@@ -43,6 +43,7 @@ import ImportUser from "./importUser";
 import { generatePassword } from "./passwordGenerator";
 import axios from "axios";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner"; // Added for export notifications
 
 // Define the initial state for our expanded form
 const initialFormState: Omit<User, 'role' | '_id' | 'password' | 'createdOn' | 'updatedOn' | 'registeredClientCount' > = {
@@ -53,8 +54,6 @@ const initialFormState: Omit<User, 'role' | '_id' | 'password' | 'createdOn' | '
   city: "",
   status: "New",
   leaderCode: "",
-  abhi_aap_kya_karte_hai: "",
-  work_experience: "",
   income: 0
 };
 
@@ -77,7 +76,12 @@ export default function Users() {
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // State for Import Modal
   const [importModalOpen, setImportModalOpen] = useState(false);
+
+  // State for Export Modal
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportStatus, setExportStatus] = useState("all");
   
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -97,7 +101,6 @@ export default function Users() {
   }, [dispatch, debouncedSearch, status, currentPage]);
 
   const handlePageChange = (page: number) => {
-    // Prevent fetching if the page is out of bounds
     if (page < 1 || page > pagination.totalPages) return;
     dispatch(fetchUsers({ search: debouncedSearch, status, page }));
   };
@@ -123,15 +126,14 @@ export default function Users() {
       city: user.city ?? '',
       status: user.status ?? 'New',
       leaderCode: user.leaderCode ?? '',
-      abhi_aap_kya_karte_hai: user.abhi_aap_kya_karte_hai ?? '',
-      work_experience: user.work_experience ?? ''
+      income: user.income ?? 0
     });
     setIsModalOpen(true);
   };
 
   const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm(prevForm => ({...prevForm, [name]: name === 'income' ? (value === '' ? '' : Number(value)) : value}));
+    setForm(prevForm => ({...prevForm, [name]: name === 'income' ? (value === '' ? 0 : Number(value)) : value}));
   };
   
   const handleFormSelectChange = (fieldName: string, value: string) => {
@@ -178,6 +180,52 @@ export default function Users() {
       setDeleteLoading(false);
     }
   };
+
+  // Function to handle the CSV export
+  const handleExport = () => {
+    if (!users || users.length === 0) {
+        toast.warning("There is no leader data to export.");
+        return;
+    }
+      
+    const filteredUsers = exportStatus === "all" 
+      ? users 
+      : users.filter(user => user.status === exportStatus);
+    
+    if (filteredUsers.length === 0) {
+        toast.warning(`No leaders found with the status "${exportStatus}".`);
+        return;
+    }
+
+    const headers = ["Name", "Email", "Phone Number", "WhatsApp Number", "City", "Status", "Leader Code", "Income", "Registered Clients", "Joined On"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredUsers.map(user => [
+        `"${(user.name || '').replace(/"/g, '""')}"`,
+        `"${(user.email || '').replace(/"/g, '""')}"`,
+        `"${user.phoneNumber || ''}"`,
+        `"${user.whatsappNumber || ''}"`,
+        `"${(user.city || '').replace(/"/g, '""')}"`,
+        `"${user.status || 'N/A'}"`,
+        `"${user.leaderCode || 'N/A'}"`,
+        `${user.income || 0}`,
+        `${user.registeredClientCount || 0}`,
+        `"${user.createdOn ? new Date(parseInt(user.createdOn)).toISOString() : 'N/A'}"`
+      ].join(","))
+    ].join("\n");
+    
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `leaders-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setExportModalOpen(false);
+    toast.success("Leader data has been exported.");
+  };
   
   const handleDateRangeSearch = async () => {
     if (!startDate || !endDate) return;
@@ -212,6 +260,7 @@ export default function Users() {
             </Select>
             <Button size="sm" className="gap-1" onClick={openAddModal}><Plus className="w-4 h-4"/> Add Leader</Button>
             <Button variant="outline" size="sm" className="gap-1" onClick={() => setImportModalOpen(true)}><Upload className="w-4 h-4"/> Import</Button>
+            <Button variant="outline" size="sm" className="gap-1" onClick={() => setExportModalOpen(true)}><Download className="w-4 h-4"/> Export</Button>
           </div>
         </div>
       </div>
@@ -224,7 +273,7 @@ export default function Users() {
 
       <div className="mb-4 h-6">
         {countError && <p className="text-red-500 font-medium">{countError}</p>}
-        {dateRangeCount !== null && (<p className="text-lg font-semibold text-primary">Total Registerations Found: {dateRangeCount}</p>)}
+        {dateRangeCount !== null && (<p className="text-lg font-semibold text-primary">Total Registrations Found: {dateRangeCount}</p>)}
       </div>
 
       <Card>
@@ -324,21 +373,50 @@ export default function Users() {
           <form onSubmit={handleFormSubmit} className="space-y-4 mt-2 max-h-[70vh] overflow-y-auto pr-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2"><Label htmlFor="name">Name*</Label><Input id="name" name="name" value={form.name} onChange={handleFormChange} required /></div>
-              <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" name="email" type="email" value={form.email} onChange={handleFormChange}/></div>
+              <div className="space-y-2"><Label htmlFor="email">Email*</Label><Input id="email" name="email" type="email" value={form.email} onChange={handleFormChange} required/></div>
               <div className="space-y-2"><Label htmlFor="phoneNumber">Phone Number*</Label><Input id="phoneNumber" name="phoneNumber" value={form.phoneNumber} onChange={handleFormChange} required /></div>
               <div className="space-y-2"><Label htmlFor="whatsappNumber">WhatsApp Number</Label><Input id="whatsappNumber" name="whatsappNumber" value={form.whatsappNumber} onChange={handleFormChange}/></div>
               <div className="space-y-2"><Label htmlFor="city">City</Label><Input id="city" name="city" value={form.city} onChange={handleFormChange}/></div>
               <div className="space-y-2"><Label htmlFor="income">Income</Label><Input id="income" name="income" type="number" value={form.income || ''} onChange={handleFormChange}/></div>
               <div className="space-y-2"><Label htmlFor="leaderCode">Leader Code</Label><Input id="leaderCode" name="leaderCode" value={form.leaderCode} onChange={handleFormChange}/></div>
               <div className="space-y-2"><Label htmlFor="status">Status</Label><Select value={form.status} onValueChange={(value) => handleFormSelectChange('status', value)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="New">New</SelectItem><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem></SelectContent></Select></div>
-              <div className="space-y-2 md:col-span-2"><Label htmlFor="work_experience">Work Experience</Label><Input id="work_experience" name="work_experience" value={form.work_experience} onChange={handleFormChange}/></div>
-              <div className="space-y-2 md:col-span-2"><Label htmlFor="abhi_aap_kya_karte_hai">Current Occupation</Label><Input id="abhi_aap_kya_karte_hai" name="abhi_aap_kya_karte_hai" value={form.abhi_aap_kya_karte_hai} onChange={handleFormChange}/></div>
             </div>
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="outline" disabled={formLoading}>Cancel</Button></DialogClose>
               <Button type="submit" disabled={formLoading}>{formLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}{formLoading ? 'Saving...' : (editUser ? 'Update Leader' : 'Add Leader')}</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Export Dialog */}
+      <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Export Leaders</DialogTitle>
+            <DialogDescription>
+              Choose a status to filter leaders for export, or export all.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Select value={exportStatus} onValueChange={setExportStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="New">New</SelectItem>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleExport}>Export CSV</Button>
+            <Button variant="outline" onClick={() => setExportModalOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       

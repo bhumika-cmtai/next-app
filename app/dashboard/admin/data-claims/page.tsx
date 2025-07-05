@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Phone, Trash2 } from "lucide-react";
+import { Plus, Edit, Phone, Trash2, Upload, Download } from "lucide-react"; // Added Download icon
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
+import ImportDataClaims from "./importDataClaims";
 
 import { 
   fetchClients, 
@@ -31,6 +32,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { toast } from "sonner";
 
 // Define a type for the form state that includes the 'isApproved' field
+// For a proper fix, you should add `isApproved?: boolean` to the Client interface in clientSlice.ts
 type ClientFormState = Omit<Client, "_id" | "createdOn" | "updatedOn" | "leaderCode"> & {
   isApproved?: boolean;
 };
@@ -53,9 +55,11 @@ export default function Clients() {
   
   const [modalOpen, setModalOpen] = useState(false);
   const [editClient, setEditClient] = useState<Client | null>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportStatus, setExportStatus] = useState("all");
   
   const [formLoading, setFormLoading] = useState(false);
-  // **** NEW: State to manage the approval process within the modal ****
   const [isApproving, setIsApproving] = useState(false);
 
   const [form, setForm] = useState<ClientFormState>({
@@ -65,8 +69,8 @@ export default function Clients() {
     status: "New",
     ownerName: [],
     ownerNumber: [],
-    city: "",
-    age: 0,
+    // city: "",
+    // age: 0,
     portalName: "",
     reason: "",
     ekyc_stage: 'notComplete',
@@ -127,7 +131,7 @@ export default function Clients() {
   const openAddModal = () => {
     setEditClient(null);
     setForm({
-      name: "", email: "", phoneNumber: "", status: "New", ownerName: [], ownerNumber: [], city: "", age: 0, portalName: "", reason: "", ekyc_stage: 'notComplete', trade_status: 'notMatched', isApproved: false
+      name: "", email: "", phoneNumber: "", status: "New", ownerName: [], ownerNumber: [], portalName: "", reason: "", ekyc_stage: 'notComplete', trade_status: 'notMatched', isApproved: false
     });
     setModalOpen(true);
   };
@@ -141,13 +145,12 @@ export default function Clients() {
       status: client.status || "New",
       ownerName: client.ownerName || [],
       ownerNumber: client.ownerNumber || [],
-      city: client.city || "",
-      age: client.age || 0,
+      // city: client.city || "",
+      // age: client.age || 0,
       portalName: client.portalName || "",
       reason: client.reason || "",
       ekyc_stage: client.ekyc_stage || "notComplete",
       trade_status: client.trade_status || 'notMatched',
-      // **** MODIFIED: Set isApproved from client data ****
       isApproved: (client as any).isApproved || false,
     });
     setModalOpen(true);
@@ -181,7 +184,6 @@ export default function Clients() {
     });
   };
 
-  // **** NEW: Handler for the "Approve Payment" button inside the modal ****
   const handleApproveClick = async () => {
     if (!editClient?._id || !editClient.portalName) {
         toast.error("Client information is missing.");
@@ -197,15 +199,8 @@ export default function Clients() {
         
         if (result) {
             toast.success("Payment approved successfully!");
-            // Update the form state to disable the button immediately
             setForm(prev => ({ ...prev, isApproved: true }));
-            // Refresh the client list in the background to ensure data consistency
-            dispatch(fetchClients({ 
-                searchQuery: debouncedSearch, 
-                status: statusFilter, 
-                portalName: portalFilter, 
-                page: currentPage 
-            }));
+            dispatch(fetchClients({ searchQuery: debouncedSearch, status: statusFilter, portalName: portalFilter, page: currentPage }));
         } else {
             toast.error("Failed to approve payment. Please try again.");
         }
@@ -227,6 +222,48 @@ export default function Clients() {
       'InvalidNumber': 'bg-gray-500',
     };
     return statusColors[status] || "bg-gray-400";
+  };
+
+  // **** FIXED: Export function now correctly uses the 'clients' variable and 'Client' fields ****
+  const handleExport = () => {
+    if (!clients || clients.length === 0) {
+        toast.warning("There is no data to export.");
+        return;
+    }
+      
+    const filteredClients = exportStatus === "all" 
+      ? clients 
+      : clients.filter(client => client.status === exportStatus);
+    
+    if (filteredClients.length === 0) {
+        toast.warning(`No clients found with the status "${exportStatus}".`);
+        return;
+    }
+
+    const headers = ["Portal", "Name", "Email", "Phone", "KYC Status", "Trade Status", "Created"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredClients.map(client => [
+        `"${client.portalName?.replace(/"/g, '""') || ''}"`,
+        `"${client.name.replace(/"/g, '""')}"`,
+        `"${client.email?.replace(/"/g, '""') || ''}"`,
+        `"${client.phoneNumber}"`,
+        `"${client.ekyc_stage || ''}"`,
+        `"${client.trade_status || ''}"`,
+        `"${client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : ''}"`
+      ].join(","))
+    ].join("\n");
+    
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `clients-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setExportModalOpen(false);
   };
 
   return (
@@ -255,6 +292,8 @@ export default function Clients() {
             </SelectContent>
           </Select>
           <Button variant="default" size="sm" className="gap-1" onClick={openAddModal}><Plus className="w-4 h-4" /> Add Client</Button>
+          <Button variant="outline" size="sm" className="gap-1" onClick={() => setImportModalOpen(true)}><Upload className="w-4 h-4"/> Import</Button>
+          <Button variant="outline" size="sm" className="gap-1" onClick={() => setExportModalOpen(true)}><Download className="w-4 h-4"/> Export</Button>
         </div>
       </div>
 
@@ -293,15 +332,12 @@ export default function Clients() {
                       <TableCell>{client.ownerName?.join(', ') || '-'}</TableCell>
                       <TableCell>{client.ownerNumber?.join(', ') || '-'}</TableCell>
                       <TableCell>{client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : '-'}</TableCell>
-                      
-                      {/* **** MODIFIED: Actions Cell now only has the "Edit" button **** */}
                       <TableCell>
                         <Button size="sm" variant="outline" onClick={() => openEditModal(client)}>
                           <Edit className="h-3 w-3 mr-2" />
                           Edit
                         </Button>
                       </TableCell>
-
                     </TableRow>
                   ))
                 )}
@@ -315,7 +351,6 @@ export default function Clients() {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editClient ? 'Edit Client' : 'Add Client'}</DialogTitle></DialogHeader>
           <form onSubmit={handleFormSubmit} className="grid grid-cols-2 gap-x-4 gap-y-6 py-4">
-            
             {editClient && (
               <div className="col-span-2 space-y-2">
                 <Label>Manage Owners</Label>
@@ -324,121 +359,43 @@ export default function Clients() {
                     form.ownerName.map((name, index) => (
                       <div key={index} className="flex items-center justify-between text-sm p-1 rounded-md bg-muted/50">
                         <span>{name} - {(form.ownerNumber?.[index] ?? "")}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-red-500"
-                          onClick={() => handleRemoveOwner(index)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveOwner(index)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-2">No owners assigned.</p>
-                  )}
+                  ) : (<p className="text-sm text-muted-foreground text-center py-2">No owners assigned.</p>)}
                 </div>
               </div>
             )}
-            
-            <div className="col-span-2 sm:col-span-1 space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" placeholder="Client's full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            </div>
-
-            <div className="col-span-2 sm:col-span-1 space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="client@example.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            </div>
-
-            <div className="col-span-2 sm:col-span-1 space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
-              <Input id="phoneNumber" placeholder="10-digit number" value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} required />
-            </div>
-
-            <div className="col-span-2 sm:col-span-1 space-y-2">
-              <Label htmlFor="city">City</Label>
-              <Input id="city" placeholder="Client's city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-            </div>
-
-            <div className="col-span-2 sm:col-span-1 space-y-2">
-              <Label htmlFor="portalName">Portal Name</Label>
-              <Input id="portalName" placeholder="e.g., Angel-One" value={form.portalName} onChange={(e) => setForm({ ...form, portalName: e.target.value })} />
-            </div>
-
-            <div className="col-span-2 sm:col-span-1 space-y-2">
-              <Label htmlFor="age">Age</Label>
-              <Input id="age" type="number" placeholder="Client's age" value={form.age || ''} onChange={(e) => setForm({ ...form, age: Number(e.target.value) || 0 })} />
-            </div>
-            
-            <div className="col-span-2 sm:col-span-1 space-y-2">
-              <Label htmlFor="ekyc_stage">KYC Status</Label>
-              <Select value={form.ekyc_stage} onValueChange={(value) => setForm({ ...form, ekyc_stage: value })}>
-                <SelectTrigger id="ekyc_stage"><SelectValue placeholder="Select KYC Status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="notComplete">Not Complete</SelectItem>
-                  <SelectItem value="complete">Complete</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="col-span-2 sm:col-span-1 space-y-2">
-              <Label htmlFor="trade_status">Trade Status</Label>
-              <Select value={form.trade_status} onValueChange={(value) => setForm({ ...form, trade_status: value })}>
-                <SelectTrigger id="trade_status"><SelectValue placeholder="Select Trade Status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="notMatched">Not Matched</SelectItem>
-                  <SelectItem value="matched">Matched</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="col-span-2 space-y-2">
-              <Label htmlFor="status">Client Status</Label>
-              <Select value={form.status} onValueChange={(value: string) => setForm({ ...form, status: value })} >
-                  <SelectTrigger id="status"><SelectValue placeholder="Select Status" /></SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="New">New</SelectItem>
-                      <SelectItem value="RegisterationDone">Registered</SelectItem>
-                      <SelectItem value="CallCut">Call Cut</SelectItem>
-                      <SelectItem value="CallNotPickUp">Not Picked Up</SelectItem>
-                      <SelectItem value="NotInterested">Not Interested</SelectItem>
-                      <SelectItem value="InvalidNumber">Invalid Number</SelectItem>
-                  </SelectContent>
-              </Select>
-            </div>
-            
-            {form.status === "NotInterested" && (
-                 <div className="col-span-2 space-y-2">
-                  <Label htmlFor="reason">Reason for Not Interested</Label>
-                  <Input id="reason" placeholder="Enter reason" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
-                 </div>
-            )}
-            
-            {/* **** MODIFIED: Dialog footer now contains the Approve button logic **** */}
+            <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="name">Name</Label><Input id="name" placeholder="Client's full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
+            <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" placeholder="client@example.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="phoneNumber">Phone Number</Label><Input id="phoneNumber" placeholder="10-digit number" value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} required /></div>
+            {/* <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="city">City</Label><Input id="city" placeholder="Client's city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div> */}
+            <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="portalName">Portal Name</Label><Input id="portalName" placeholder="e.g., Angel-One" value={form.portalName} onChange={(e) => setForm({ ...form, portalName: e.target.value })} /></div>
+            {/* <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="age">Age</Label><Input id="age" type="number" placeholder="Client's age" value={form.age || ''} onChange={(e) => setForm({ ...form, age: Number(e.target.value) || 0 })} /></div> */}
+            <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="ekyc_stage">KYC Status</Label><Select value={form.ekyc_stage} onValueChange={(value) => setForm({ ...form, ekyc_stage: value })}><SelectTrigger id="ekyc_stage"><SelectValue placeholder="Select KYC Status" /></SelectTrigger><SelectContent><SelectItem value="notComplete">Not Complete</SelectItem><SelectItem value="complete">Complete</SelectItem></SelectContent></Select></div>
+            <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="trade_status">Trade Status</Label><Select value={form.trade_status} onValueChange={(value) => setForm({ ...form, trade_status: value })}><SelectTrigger id="trade_status"><SelectValue placeholder="Select Trade Status" /></SelectTrigger><SelectContent><SelectItem value="notMatched">Not Matched</SelectItem><SelectItem value="matched">Matched</SelectItem></SelectContent></Select></div>
+            <div className="col-span-2 space-y-2"><Label htmlFor="status">Client Status</Label><Select value={form.status} onValueChange={(value: string) => setForm({ ...form, status: value })} ><SelectTrigger id="status"><SelectValue placeholder="Select Status" /></SelectTrigger><SelectContent><SelectItem value="New">New</SelectItem><SelectItem value="RegisterationDone">Registered</SelectItem><SelectItem value="CallCut">Call Cut</SelectItem><SelectItem value="CallNotPickUp">Not Picked Up</SelectItem><SelectItem value="NotInterested">Not Interested</SelectItem><SelectItem value="InvalidNumber">Invalid Number</SelectItem></SelectContent></Select></div>
+            {form.status === "NotInterested" && (<div className="col-span-2 space-y-2"><Label htmlFor="reason">Reason for Not Interested</Label><Input id="reason" placeholder="Enter reason" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} /></div>)}
             <DialogFooter className="col-span-2 pt-4 flex-wrap gap-2">
               <DialogClose asChild><Button type="button" variant="outline" disabled={formLoading || isApproving}>Cancel</Button></DialogClose>
-              
-              {editClient && (
-                <Button
-                  type="button"
-                  className="bg-green-600 hover:bg-green-700"
-                  onClick={handleApproveClick}
-                  disabled={isApproving || formLoading || form.isApproved}
-                >
-                  {isApproving ? 'Approving...' : form.isApproved ? 'Approved' : 'Approve Payment'}
-                </Button>
-              )}
-
-              <Button type="submit" disabled={formLoading || isApproving}>
-                {formLoading ? 'Saving...' : (editClient ? 'Update Client' : 'Add Client')}
-              </Button>
+              {editClient && (<Button type="button" className="bg-green-600 hover:bg-green-700" onClick={handleApproveClick} disabled={isApproving || formLoading || form.isApproved}>{isApproving ? 'Approving...' : form.isApproved ? 'Approved' : 'Approve Payment'}</Button>)}
+              <Button type="submit" disabled={formLoading || isApproving}>{formLoading ? 'Saving...' : (editClient ? 'Update Client' : 'Add Client')}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
       
+      {/* **** FIXED: Correctly calls fetchClients on success **** */}
+      <ImportDataClaims open={importModalOpen} onOpenChange={setImportModalOpen} onImportSuccess={() => dispatch(fetchClients({ searchQuery: debouncedSearch, status: statusFilter, portalName: portalFilter, page: currentPage }))} />
+      
+      <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader><DialogTitle>Export Clients</DialogTitle><DialogDescription>Choose a status to filter clients for export</DialogDescription></DialogHeader>
+          <div className="py-4"><Select value={exportStatus} onValueChange={setExportStatus}><SelectTrigger className="w-full"><SelectValue placeholder="Select Status"/></SelectTrigger><SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="New">New</SelectItem><SelectItem value="RegisterationDone">Registered</SelectItem><SelectItem value="CallCut">Call Cut</SelectItem><SelectItem value="CallNotPickUp">Not Picked Up</SelectItem><SelectItem value="NotInterested">Not Interested</SelectItem><SelectItem value="InvalidNumber">Invalid Number</SelectItem></SelectContent></Select></div>
+          <DialogFooter><Button onClick={handleExport}>Export CSV</Button><Button variant="outline" onClick={() => setExportModalOpen(false)}>Cancel</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {pagination.totalPages > 1 && !loading && (
         <div className="mt-4">
           <Pagination>

@@ -50,8 +50,8 @@ interface ParsedUser {
   password?: string;
   status?: string;
   leaderCode?: string;
-  abhi_aap_kya_karte_hai?: string;
-  work_experience?: string;
+  // abhi_aap_kya_karte_hai?: string;
+  // work_experience?: string;
 }
 
 export default function ImportUser({ open, onOpenChange, onImportSuccess }: ImportUserProps) {
@@ -72,8 +72,8 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     password: "",
     status: "",
     leaderCode: "",
-    abhi_aap_kya_karte_hai: "",
-    work_experience: "",
+    // abhi_aap_kya_karte_hai: "",
+    // work_experience: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -187,8 +187,8 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                 password: generatedPassword,
                 status: row[fieldMapping.status] || "Active",
                 leaderCode: row[fieldMapping.leaderCode] || "",
-                abhi_aap_kya_karte_hai: row[fieldMapping.abhi_aap_kya_karte_hai] || "",
-                work_experience: row[fieldMapping.work_experience] || "",
+                // abhi_aap_kya_karte_hai: row[fieldMapping.abhi_aap_kya_karte_hai] || "",
+                // work_experience: row[fieldMapping.work_experience] || "",
               };
               return mappedUser;
             });
@@ -237,8 +237,8 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       password: "",
       status: "",
       leaderCode: "",
-      abhi_aap_kya_karte_hai: "",
-      work_experience: "",
+      // abhi_aap_kya_karte_hai: "",
+      // work_experience: "",
     });
   };
 

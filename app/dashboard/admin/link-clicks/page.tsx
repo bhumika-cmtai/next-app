@@ -1,15 +1,24 @@
 "use client";
 
-import React, { useState, ChangeEvent, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription, // Added for export dialog
+  DialogFooter, 
+  DialogClose 
+} from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Loader2, ChevronsLeft, ChevronsRight, Hash } from "lucide-react";
+import { Phone, Loader2, ChevronsLeft, ChevronsRight, Hash, Download } from "lucide-react"; // Added Download icon
 import { useSelector, useDispatch } from "react-redux";
+import { toast } from "sonner"; // Added for notifications
 
 import {
   fetchLinkclicks,
@@ -66,6 +75,10 @@ export default function LinkclicksPage() {
   const [newStatus, setNewStatus] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // State for the export modal
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportStatus, setExportStatus] = useState("all");
+
   const ITEMS_PER_PAGE = 8; // Match with backend limit
 
   // Main effect to fetch data when page or any debounced filter changes
@@ -94,7 +107,7 @@ export default function LinkclicksPage() {
   // Modal and Update Logic
   const openUpdateModal = (linkclick: Linkclick) => {
     setEditLinkclick(linkclick);
-    setNewStatus(linkclick.status || "New");
+    setNewStatus(linkclick.status || "inComplete");
     setModalOpen(true);
   };
 
@@ -106,19 +119,60 @@ export default function LinkclicksPage() {
       // Refetch the current page to show updated data
       dispatch(fetchLinkclicks({ page, name: debouncedName, phoneNumber: debouncedPhone, leaderCode: debouncedCode, portalName: portalFilter, status: statusFilter, limit: ITEMS_PER_PAGE }));
       setModalOpen(false);
+      toast.success("Status updated successfully!");
+    } catch (error) {
+      toast.error("Failed to update status.");
     } finally {
       setIsUpdating(false);
     }
   };
 
+  // Function to handle the CSV export
+  const handleExport = () => {
+    if (!linkclicks || linkclicks.length === 0) {
+        toast.warning("There is no link click data to export.");
+        return;
+    }
+      
+    const filteredLinkclicks = exportStatus === "all" 
+      ? linkclicks 
+      : linkclicks.filter(click => click.status === exportStatus);
+    
+    if (filteredLinkclicks.length === 0) {
+        toast.warning(`No link clicks found with the status "${exportStatus}".`);
+        return;
+    }
+
+    const headers = ["Leader Code", "Name", "Phone Number", "Portal", "Status", "Created On"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredLinkclicks.map(click => [
+        `"${click.leaderCode || 'N/A'}"`,
+        `"${click.name.replace(/"/g, '""')}"`,
+        `"${click.phoneNumber.replace(/"/g, '""')}"`,
+        `"${click.portalName || 'N/A'}"`,
+        `"${click.status}"`,
+        `"${click.createdOn ? new Date(parseInt(click.createdOn)).toISOString() : 'N/A'}"`
+      ].join(","))
+    ].join("\n");
+    
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `linkclicks-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setExportModalOpen(false);
+    toast.success("Link click data has been exported.");
+  };
+
   const getStatusColor = (status: string) => {
     const statusColors: { [key: string]: string } = {
-      'New': 'bg-blue-500',
-      'RegisterationDone': 'bg-teal-500',
-      'CallCut': 'bg-yellow-500',
-      'CallNotPickUp': 'bg-orange-500',
-      'NotInterested': 'bg-red-500',
-      'InvalidNumber': 'bg-gray-500',
+      'complete': 'bg-blue-500',
+      'inComplete': 'bg-orange-500',
     };
     return statusColors[status] || "bg-gray-400";
   };
@@ -142,14 +196,18 @@ export default function LinkclicksPage() {
             <SelectTrigger className="w-full sm:w-auto md:w-40"><SelectValue placeholder="All Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="New">New</SelectItem>
-              <SelectItem value="RegisterationDone">Registered</SelectItem>
-              <SelectItem value="CallCut">Call Cut</SelectItem>
-              <SelectItem value="CallNotPickUp">Not Picked Up</SelectItem>
-              <SelectItem value="NotInterested">Not Interested</SelectItem>
-              <SelectItem value="InvalidNumber">Invalid Number</SelectItem>
+              <SelectItem value="complete">Complete</SelectItem>
+              <SelectItem value="inComplete">InComplete</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            onClick={() => setExportModalOpen(true)}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
         </div>
       </div>
 
@@ -204,6 +262,7 @@ export default function LinkclicksPage() {
         </div>
       )}
 
+      {/* Update Status Dialog */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Update Status for {editLinkclick?.name}</DialogTitle></DialogHeader>
@@ -211,18 +270,38 @@ export default function LinkclicksPage() {
             <Select value={newStatus} onValueChange={setNewStatus} disabled={isUpdating}>
               <SelectTrigger className="w-full"><SelectValue placeholder="Select Status" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="New">New</SelectItem>
-                <SelectItem value="RegisterationDone">Registered</SelectItem>
-                <SelectItem value="CallCut">Call Cut</SelectItem>
-                <SelectItem value="CallNotPickUp">Not Picked Up</SelectItem>
-                <SelectItem value="NotInterested">Not Interested</SelectItem>
-                <SelectItem value="InvalidNumber">Invalid Number</SelectItem>
+                <SelectItem value="complete">Complete</SelectItem>
+                <SelectItem value="inComplete">InComplete</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <DialogFooter>
             <DialogClose asChild><Button type="button" variant="outline" disabled={isUpdating}>Cancel</Button></DialogClose>
             <Button type="button" onClick={handleStatusUpdate} disabled={isUpdating || newStatus === editLinkclick?.status}>{isUpdating ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</>) : ('Save Changes')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Export Link Clicks Dialog */}
+      <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Export Link Clicks</DialogTitle>
+            <DialogDescription>Choose a status to filter link clicks for export, or export all.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Select value={exportStatus} onValueChange={setExportStatus}>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Select Status"/></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="complete">Complete</SelectItem>
+                <SelectItem value="inComplete">InComplete</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleExport}>Export CSV</Button>
+            <Button variant="outline" onClick={() => setExportModalOpen(false)}>Cancel</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

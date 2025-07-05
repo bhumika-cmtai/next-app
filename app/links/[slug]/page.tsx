@@ -74,7 +74,7 @@ const Page = ({ params }: { params: Promise<{ slug: string }> }) => {
         name, 
         phoneNumber, 
         leaderCode, 
-        status: "New", // Default status
+        status: "inComplete", // Default status
         portalName: slug 
       };
 
@@ -89,7 +89,7 @@ const Page = ({ params }: { params: Promise<{ slug: string }> }) => {
         setTimeout(() => {
           // Use window.location.href for external links to ensure a full page navigation
           window.location.href = portalUrl;
-        }, 3000); // Increased timeout slightly for user to read the message
+        }, 2000); // Increased timeout slightly for user to read the message
       } else {
         // This 'else' might not be reached if addLinkclick throws an error, but it's good for safety.
         throw new Error("Failed to save your details. Please try again.");

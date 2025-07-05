@@ -7,8 +7,9 @@ export interface Contact {
   name: string;
   email: string;
   phoneNumber: string;
-  message: string;
+  // message: string;
   status?: string;
+  reason?: string;
   createdOn?: string;
   updatedOn?: string;
 }
@@ -162,14 +163,24 @@ export const deleteContact = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
     const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/deleteContact/${id}`);
-    if (response.status === 200) {
-      return response.data;   
+   if (response.status === 200) {
+      // NOTE: Your component currently refetches the list, which also works.
+      // This dispatch is for "optimistic updates" - removing it from the UI immediately.
+      // dispatch(contactDeleted(id));
+      // Since you are refetching, we can just turn off loading.
+      dispatch(setLoading(false)); 
+      return response.data; // Return a success indicator
     } else {
-      dispatch(setError(response.data.message));
+      dispatch(setError(response.data.message || 'Failed to delete contact.'));
+      return null;
     }
-  } catch (error: unknown) {
-    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    dispatch(setError(message || "Unknown error"));
+  } catch (error: any) {
+    const message = error.response?.data?.message || error.message || "Unknown error";
+    dispatch(setError(message));
+    return null;
+  } finally {
+    // Ensure loading is always turned off
+    dispatch(setLoading(false));
   }
 };
 
