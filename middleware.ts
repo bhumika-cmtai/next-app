@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
+
 
 // Protect all dashboard and resources routes (including subroutes)
 export const config = {
@@ -8,15 +10,27 @@ export const config = {
   ],
 };
 
-export default function middleware(request: NextRequest) {
+const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+
+export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Get token from cookie
   const token = request.cookies.get('auth-token')?.value;
   let user = null;
+  // try {
+  //   user = token ? JSON.parse(decodeURIComponent(token)) : null;
+  // } catch {}
   try {
-    user = token ? JSON.parse(decodeURIComponent(token)) : null;
-  } catch {}
+    if (token) {
+      const { payload } = await jwtVerify(token, secret);
+      user = payload;
+    }
+  } catch (e) {
+    user = null;
+  }
+  // console.log("token", token)
+  // console.log("user", user)
 
   // Block access to /dashboard/admin or /dashboard/team if no valid auth-token
   if (

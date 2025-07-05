@@ -91,14 +91,29 @@ export const login = ({ email, password, rememberMe }: { email: string; password
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, { email, password });
     if (response.status === 200 && response.data?.data?.user && response.data?.data?.token) {
       const { user, token } = response.data.data;
+    // const x = token ? JSON.parse(decodeURIComponent(token)) : null;
+    // console.log(x)
+      
       // console.log(user, token)
       // Set the cookie here inside the thunk for reliability
-      Cookies.set('auth-token', token, {
-        expires: rememberMe ? 30 : 1, // Use rememberMe to set expiration
+      // 1. Define the base cookie options
+      const cookieOptions: Cookies.CookieAttributes = {
         sameSite: 'lax',
-        // secure: process.env.NODE_ENV !== 'development' // Optional: uncomment for production
-      });
+        // secure: process.env.NODE_ENV !== 'development' // Optional
+      };
+
+      // 2. Conditionally add the 'expires' property ONLY if rememberMe is true
+      if (rememberMe) {
+        // This now matches your backend's 30-day token expiration
+        cookieOptions.expires = 30; 
+      }
       
+      // If rememberMe is false, 'expires' is NOT added, creating a session cookie
+      // that is deleted when the browser closes.
+
+      // 3. Set the cookie with the dynamic options
+      Cookies.set('auth-token', token, cookieOptions);
+       
       dispatch(setUser(user));
       return user; // Return the user object on success
     } else {
