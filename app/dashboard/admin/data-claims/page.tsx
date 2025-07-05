@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Phone, Trash2, Upload, Download } from "lucide-react"; // Added Download icon
+import { Plus, Edit, Phone, Trash2, Upload, Download,Loader2  } from "lucide-react"; // Added Download icon
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import ImportDataClaims from "./importDataClaims";
 
@@ -24,6 +24,7 @@ import {
   updateClient, 
   setCurrentPage,
   fetchPortalNames,
+   deleteClient, // NEW: Import the deleteClient thunk
   selectPortalNames,
   distributeCommissionForClient 
 } from "@/lib/redux/clientSlice";
@@ -61,6 +62,10 @@ export default function Clients() {
   
   const [formLoading, setFormLoading] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
+  // NEW: State for delete confirmation modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [form, setForm] = useState<ClientFormState>({
     name: "",
@@ -172,6 +177,33 @@ export default function Clients() {
       dispatch(fetchClients({ searchQuery: debouncedSearch, status: statusFilter, portalName: portalFilter, page: currentPage }));
     }
   };
+
+  // NEW: Handler to open the delete confirmation dialog
+  const openDeleteModal = (client: Client) => {
+    setClientToDelete(client);
+    setIsDeleteModalOpen(true);
+  };
+
+  // NEW: Handler to perform the deletion
+  const handleConfirmDelete = async () => {
+    if (!clientToDelete?._id) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await dispatch(deleteClient(clientToDelete._id));
+      if (result) {
+        toast.success(`Client "${clientToDelete.name}" deleted successfully.`);
+        setIsDeleteModalOpen(false);
+        // If the deleted item was the last one on the page, go to the previous page
+        const newPage = clients.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
+        dispatch(fetchClients({ searchQuery: debouncedSearch, status: statusFilter, portalName: portalFilter, page: newPage }));
+      }
+    } finally {
+      setIsDeleting(false);
+      setClientToDelete(null);
+    }
+  };
+
 
   const handleRemoveOwner = (indexToRemove: number) => {
     const newOwnerNames = (form.ownerName ?? []).filter((_, index) => index !== indexToRemove);
@@ -339,6 +371,9 @@ export default function Clients() {
                           <Edit className="h-3 w-3 mr-2" />
                           Edit
                         </Button>
+                         <Button size="icon" variant="ghost" className="text-red-600 hover:bg-red-100" onClick={() => openDeleteModal(client)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -384,6 +419,27 @@ export default function Clients() {
               <Button type="submit" disabled={formLoading || isApproving}>{formLoading ? 'Saving...' : (editClient ? 'Update Client' : 'Add Client')}</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you sure you want to delete this client?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently delete the client record for 
+              <span className="font-semibold"> {clientToDelete?.name}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isDeleting}>Cancel</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={handleConfirmDelete} disabled={isDeleting}>
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete Client
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
