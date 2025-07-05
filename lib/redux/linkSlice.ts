@@ -52,6 +52,11 @@ const linkSlice = createSlice({
       }
       state.isLoading = false;
     },
+    deleteLinkSuccess: (state, action) => {
+      // The payload will be the ID of the deleted link
+      state.links = state.links.filter(link => link._id !== action.payload);
+      state.isLoading = false;
+    },
   },
 });
 
@@ -61,6 +66,7 @@ export const {
   setLinks,
   addLinkSuccess,
   updateLinkSuccess,
+  deleteLinkSuccess
 } = linkSlice.actions;
 
 // --- ASYNC THUNKS (API ACTIONS) ---
@@ -95,7 +101,7 @@ export const createPortalLink = (data: { portalName: string; link: string; commi
 
 // PATCH - /v1/link/:id
 // **** MODIFIED: Added commission to the data type, made fields optional for partial updates ****
-export const updatePortalLink = (id: string, data: { link?: string; commission?: string }) => async (dispatch: Dispatch) => {
+export const updatePortalLink = (id: string, data: {portalName?:string, link?: string; commission?: string }) => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
   try {
     const response = await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/link/${id}`, data);
@@ -154,6 +160,21 @@ export const fetchCommissionByPortal = async (portalName: string): Promise<numbe
         const message = error.response?.data?.message || error.message || `Could not fetch commission for ${portalName}.`;
         throw new Error(message);
     }
+};
+
+export const deletePortalLink = (id: string) => async (dispatch: Dispatch) => {
+  dispatch(setIsLoading(true));
+  try {
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/link/${id}`);
+    // Remove the deleted link from state
+    // dispatch(setLinks((prevLinks: PortalLink[]) => prevLinks.filter(link => link._id !== id)));
+    dispatch(deleteLinkSuccess(id));    
+    return response.data;
+  } catch (error: any) {
+    const message = error.response?.data?.message || "Failed to delete portal link.";
+    dispatch(setError(message));
+    return null;
+  }
 };
 
 // --- SELECTORS ---

@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Upload, Edit, Trash2, Search, Loader2, Download } from "lucide-react"; // Added Download icon
+import { Plus, Upload, Edit, Trash2, Search, Loader2, Download, Eye } from "lucide-react"; // Added Download icon
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchUsers, selectUsers, selectLoading, User, selectPagination, selectCurrentPage,addUser,updateUser,deleteUser as deleteUserAction, } from "@/lib/redux/userSlice";
@@ -76,6 +76,10 @@ export default function Users() {
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+   // NEW: State for the "View Details" modal
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
+
   // State for Import Modal
   const [importModalOpen, setImportModalOpen] = useState(false);
 
@@ -99,6 +103,11 @@ export default function Users() {
   useEffect(() => {
     dispatch(fetchUsers({ search: debouncedSearch, status, page: currentPage }));
   }, [dispatch, debouncedSearch, status, currentPage]);
+
+  const openViewModal = (user: User) => {
+    setViewingUser(user);
+    setIsViewModalOpen(true);
+  };
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > pagination.totalPages) return;
@@ -314,6 +323,9 @@ export default function Users() {
                       <TableCell>{user.registeredClientCount}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
+                          <Button size="icon" variant="ghost" onClick={() => openViewModal(user)} title="View">
+                            <Eye className="w-4 h-4 text-blue-600" />
+                          </Button>
                           <Button size="icon" variant="ghost" onClick={() => openEditModal(user)} title="Edit"><Edit className="w-4 h-4" /></Button>
                           <Dialog open={deleteUser?._id === user._id} onOpenChange={(open) => !open && setDeleteUser(null)}>
                             <DialogTrigger asChild><Button size="icon" variant="ghost" onClick={() => setDeleteUser(user)} title="Delete"><Trash2 className="w-4 h-4 text-red-500" /></Button></DialogTrigger>
@@ -389,6 +401,79 @@ export default function Users() {
         </DialogContent>
       </Dialog>
       
+        {/* NEW: View Details Dialog */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Leader Details</DialogTitle>
+            <DialogDescription>
+              Viewing the complete information for {viewingUser?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          {viewingUser && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 py-4 max-h-[70vh] overflow-y-auto">
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Name</Label>
+                <p className="font-medium">{viewingUser.name}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Email</Label>
+                <p className="font-medium">{viewingUser.email}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Phone Number</Label>
+                <p className="font-medium">{viewingUser.phoneNumber}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">WhatsApp Number</Label>
+                <p className="font-medium">{viewingUser.whatsappNumber || "-"}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">City</Label>
+                <p className="font-medium">{viewingUser.city || "-"}</p>
+              </div>
+               <div className="space-y-1">
+                <Label className="text-muted-foreground">Status</Label>
+                <p><Badge variant={viewingUser.status === "Active" ? "default" : "secondary"}>{viewingUser.status || 'N/A'}</Badge></p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Leader Code</Label>
+                <p className="font-medium">{viewingUser.leaderCode || "-"}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Income</Label>
+                <p className="font-medium">₹{viewingUser.income?.toLocaleString() || 0}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Account Number</Label>
+                <p className="font-medium">{viewingUser.account_number || '-'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Ifsc</Label>
+                <p className="font-medium">{viewingUser.Ifsc || '-'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">upi_id</Label>
+                <p className="font-medium">{viewingUser.upi_id || '-'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Joined On</Label>
+                <p className="font-medium">
+                  {viewingUser.createdOn ? new Date(parseInt(viewingUser.createdOn)).toLocaleString() : '-'}
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+
       {/* Export Dialog */}
       <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
         <DialogContent className="sm:max-w-[425px]">

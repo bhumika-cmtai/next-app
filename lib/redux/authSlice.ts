@@ -91,7 +91,7 @@ export const login = ({ email, password, rememberMe }: { email: string; password
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, { email, password });
     if (response.status === 200 && response.data?.data?.user && response.data?.data?.token) {
       const { user, token } = response.data.data;
-
+      // console.log(user, token)
       // Set the cookie here inside the thunk for reliability
       Cookies.set('auth-token', token, {
         expires: rememberMe ? 30 : 1, // Use rememberMe to set expiration

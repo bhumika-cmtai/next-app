@@ -240,7 +240,7 @@ export default function Clients() {
         return;
     }
 
-    const headers = ["Portal", "Name", "Email", "Phone", "KYC Status", "Trade Status", "Created"];
+    const headers = ["Portal", "Name", "Email", "Phone", "KYC Status", "Trade Status","Owner Name", "Owner Number" ,"Created"];
     const csvContent = [
       headers.join(","),
       ...filteredClients.map(client => [
@@ -250,6 +250,8 @@ export default function Clients() {
         `"${client.phoneNumber}"`,
         `"${client.ekyc_stage || ''}"`,
         `"${client.trade_status || ''}"`,
+        `"${(client.ownerName || []).join('; ').replace(/"/g, '""')}"`,
+         `"${(client.ownerNumber || []).join('; ').replace(/"/g, '""')}"`,
         `"${client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : ''}"`
       ].join(","))
     ].join("\n");

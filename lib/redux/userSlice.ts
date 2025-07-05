@@ -18,6 +18,9 @@ export interface User {
   createdOn?: string;
   updatedOn?: string;
   income?: number;
+  account_number?: string;
+  Ifsc?: string;
+  upi_id?: string;
   registeredClientCount?: number
 }
 
@@ -129,7 +132,7 @@ export const fetchUsers = (params?: { search?: string; status?: string; page?: n
   }
 };
 
-export const fetchLeadById = (id: string) => async (dispatch: Dispatch) => {
+export const fetchUserById = (id: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getUser/${id}`);

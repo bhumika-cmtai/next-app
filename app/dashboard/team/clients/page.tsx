@@ -152,38 +152,38 @@ export default function Clients() {
   };
 
   // --- Handles the submission from the status edit modal ---
-  const handleStatusFormSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!editClient?._id) return;
-    setFormLoading(true);
+  // const handleStatusFormSubmit = async (e: FormEvent) => {
+  //   e.preventDefault();
+  //   if (!editClient?._id) return;
+  //   setFormLoading(true);
     
-    const updatePayload: Partial<Client> = { status: formStatus };
-    if (formStatus === "NotInterested") { updatePayload.reason = formReason; }
-    else if (editClient.status === "NotInterested") { updatePayload.reason = ""; }
+  //   const updatePayload: Partial<Client> = { status: formStatus };
+  //   if (formStatus === "NotInterested") { updatePayload.reason = formReason; }
+  //   else if (editClient.status === "NotInterested") { updatePayload.reason = ""; }
     
-    const responseWrapper = await dispatch(updateClient(editClient._id, updatePayload));
-    setFormLoading(false);
+  //   const responseWrapper = await dispatch(updateClient(editClient._id, updatePayload));
+  //   setFormLoading(false);
 
-    if (responseWrapper?.data) {
-      toast.success("Client status updated successfully!");
-      setModalOpen(false);
-      if (singleClientResult?._id === editClient._id) {
-        setSingleClientResult(responseWrapper.data);
-      }
-    }
-  };
+  //   if (responseWrapper?.data) {
+  //     toast.success("Client status updated successfully!");
+  //     setModalOpen(false);
+  //     if (singleClientResult?._id === editClient._id) {
+  //       setSingleClientResult(responseWrapper.data);
+  //     }
+  //   }
+  // };
   
-  const getStatusColor = (status: string) => {
-    const statusColors: { [key: string]: string } = {
-        'New': 'bg-blue-500',
-        'RegisterationDone': 'bg-teal-500',
-        'CallCut': 'bg-yellow-500',
-        'CallNotPickUp': 'bg-orange-500',
-        'NotInterested': 'bg-red-500',
-        'InvalidNumber': 'bg-gray-600',
-    };
-    return statusColors[status] || 'bg-gray-400';
-  };
+  // const getStatusColor = (status: string) => {
+  //   const statusColors: { [key: string]: string } = {
+  //       'New': 'bg-blue-500',
+  //       'RegisterationDone': 'bg-teal-500',
+  //       'CallCut': 'bg-yellow-500',
+  //       'CallNotPickUp': 'bg-orange-500',
+  //       'NotInterested': 'bg-red-500',
+  //       'InvalidNumber': 'bg-gray-600',
+  //   };
+  //   return statusColors[status] || 'bg-gray-400';
+  // };
 
   return (
     <div className="w-full mx-auto mt-2 space-y-8">
@@ -214,19 +214,19 @@ export default function Clients() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{singleClientResult.portalName}</CardTitle>
-            <Button variant="outline" size="sm" onClick={() => openEditModal(singleClientResult)}><Edit className="w-4 h-4 mr-2" />Edit Status</Button>
+            {/* <Button variant="outline" size="sm" onClick={() => openEditModal(singleClientResult)}><Edit className="w-4 h-4 mr-2" />Edit Status</Button> */}
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                 <div><p className="text-muted-foreground">Client Name</p><p className="font-medium text-base">{singleClientResult.name}</p></div>
                 <div><p className="text-muted-foreground">Phone Number</p><p className="font-medium text-base">{singleClientResult.phoneNumber}</p></div>
-                <div><p className="text-muted-foreground">Status</p><Badge className={`${getStatusColor(singleClientResult.status || "")} text-white`}>{singleClientResult.status}</Badge></div>
+                {/* <div><p className="text-muted-foreground">Status</p><Badge className={`${getStatusColor(singleClientResult.status || "")} text-white`}>{singleClientResult.status}</Badge></div> */}
                 <div><p className="text-muted-foreground">E-KYC Status</p><div className="flex items-center gap-2 font-medium">{singleClientResult.ekyc_stage === 'complete' ? <ShieldCheck className="w-4 h-4 text-green-500" /> : <ShieldAlert className="w-4 h-4 text-orange-500" />}<span>{singleClientResult.ekyc_stage === 'complete' ? 'Complete' : 'Not Complete'}</span></div></div>
                 <div className="md:col-span-2"><p className="text-muted-foreground">Trade Status</p><div className="flex items-center gap-2 font-medium">{singleClientResult.trade_status === 'matched' ? <ShieldCheck className="w-4 h-4 text-green-500" /> : <ShieldAlert className="w-4 h-4 text-orange-500" />}<span>{singleClientResult.trade_status === 'matched' ? 'Matched' : 'Not Matched'}</span></div></div>
                 <div className="md:col-span-2"><p className="text-muted-foreground">Current Owner(s)</p>{(singleClientResult.ownerName && singleClientResult.ownerName.length > 0) ? (<ul className="list-disc list-inside mt-1 font-medium">{singleClientResult.ownerName.map((name, i) => <li key={i}>{name} - {singleClientResult.ownerNumber?.[i] || 'N/A'}</li>)}</ul>) : (<p className="text-muted-foreground italic mt-1">No owners have claimed this client yet.</p>)}</div>
             </div>
             {(() => {
-                const canClaim = (singleClientResult.ekyc_stage === 'complete' || singleClientResult.trade_status === 'matched') && singleClientResult.status==="RegisterationDone";
+                const canClaim = singleClientResult.ekyc_stage === 'complete' || singleClientResult.trade_status === 'matched';
                 const isAlreadyOwner = newOwnerNumber.trim() ? singleClientResult.ownerNumber?.includes(newOwnerNumber.trim()) : false;
 
                 return (
@@ -257,7 +257,7 @@ export default function Clients() {
         </Card>
       )}
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+      {/* <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Client Status</DialogTitle></DialogHeader>
           <form onSubmit={handleStatusFormSubmit} className="space-y-4 pt-4">
@@ -284,7 +284,7 @@ export default function Clients() {
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 }

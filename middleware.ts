@@ -18,19 +18,28 @@ export default function middleware(request: NextRequest) {
     user = token ? JSON.parse(decodeURIComponent(token)) : null;
   } catch {}
 
+  // Block access to /dashboard/admin or /dashboard/team if no valid auth-token
+  if (
+    (!token) &&
+    (pathname.startsWith('/dashboard/admin') || pathname.startsWith('/dashboard/team'))
+  ) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   // Role-based route protection
   const isAdminRoute = pathname.startsWith('/dashboard/admin');
   const isTeamRoute = pathname.startsWith('/dashboard/team');
   // const isUserRoute = pathname.startsWith('/dashboard/user');
 
   if (user) {
+    // console.log(user.role)
     if (user.role === 'admin' && (isTeamRoute)) {
       return NextResponse.rewrite(new URL('/404', request.url));
     }
     // if (user.role === 'team' && (isAdminRoute || isUserRoute)) {
     //   return NextResponse.rewrite(new URL('/404', request.url));
     // }
-    if (user.role === 'user' && (isAdminRoute)) {
+    if (user.role !== 'admin' && (isAdminRoute)) {
       return NextResponse.rewrite(new URL('/404', request.url));
     }
   }
