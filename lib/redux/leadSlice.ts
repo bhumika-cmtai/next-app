@@ -12,6 +12,7 @@ export interface Lead {
   age: string;
   gender?: string;
   status: string;
+  reason? :string;
   createdOn?: string;
   updatedOn?: string;
 }
@@ -228,28 +229,30 @@ export const deleteLead = (id: string) => async (dispatch: Dispatch) => {
 
 
 // New thunk to fetch a lead by transactionId
-export const fetchLeadByTransactionId = (transactionId: string) => async (dispatch: Dispatch) => {
+export const fetchLeadsByTransactionId = (transactionId: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/getLeadByTransactionId/${transactionId}`);
     
     if (response.status === 200) {
-      const leadData: Lead | [] = response.data.data;
-      // Backend returns a lead object if found, or an empty array if not found
-      if (leadData && !Array.isArray(leadData)) {
-        dispatch(setSelectedLead(leadData));
-      } else {
-        // Lead not found, but the request was successful. Clear any previously selected lead.
-        dispatch(setSelectedLead(null));
-      }
+      // The backend returns { data: [Lead, Lead, ...] } or { data: [] }
+      const leadsArray: Lead[] = response.data.data;
+
+      // We will now use the `setLeads` reducer to update the main data list.
+      // This treats the action as a "search" and updates the UI accordingly.
+      dispatch(setLeads({
+        leads: leadsArray,
+        totalLeads: leadsArray.length,
+        totalPages: 1, // Since this is a direct search, it's a single page of results
+        currentPage: 1,
+      }));
+
     } else {
-      dispatch(setError(response.data.message || 'Failed to fetch lead by transaction ID'));
-      dispatch(setSelectedLead(null));
+      dispatch(setError(response.data.message || 'Failed to fetch leads by transaction ID'));
     }
   } catch (error: unknown) {
     const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
     dispatch(setError(message || "Unknown error"));
-    dispatch(setSelectedLead(null)); // Also clear selected lead on error
   }
 };
 

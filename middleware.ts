@@ -21,16 +21,16 @@ export default function middleware(request: NextRequest) {
   // Role-based route protection
   const isAdminRoute = pathname.startsWith('/dashboard/admin');
   const isTeamRoute = pathname.startsWith('/dashboard/team');
-  const isUserRoute = pathname.startsWith('/dashboard/user');
+  // const isUserRoute = pathname.startsWith('/dashboard/user');
 
   if (user) {
-    if (user.role === 'admin' && (isTeamRoute || isUserRoute)) {
+    if (user.role === 'admin' && (isTeamRoute)) {
       return NextResponse.rewrite(new URL('/404', request.url));
     }
-    if (user.role === 'team' && (isAdminRoute || isUserRoute)) {
-      return NextResponse.rewrite(new URL('/404', request.url));
-    }
-    if (user.role === 'user' && (isAdminRoute || isTeamRoute)) {
+    // if (user.role === 'team' && (isAdminRoute || isUserRoute)) {
+    //   return NextResponse.rewrite(new URL('/404', request.url));
+    // }
+    if (user.role === 'user' && (isAdminRoute)) {
       return NextResponse.rewrite(new URL('/404', request.url));
     }
   }
@@ -40,12 +40,12 @@ export default function middleware(request: NextRequest) {
     if (user.role === "admin") {
       return NextResponse.redirect(new URL("/dashboard/admin", request.url));
     }
-    if (user.role === "team") {
+    else{
       return NextResponse.redirect(new URL("/dashboard/team", request.url));
     }
-    if (user.role === "user") {
-      return NextResponse.redirect(new URL("/dashboard/user", request.url));
-    }
+    // if (user.role === "user") {
+    //   return NextResponse.redirect(new URL("/dashboard/user", request.url));
+    // }
   }
 
   return NextResponse.next();
