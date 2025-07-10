@@ -23,7 +23,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '@/lib/store';
 // --- MODIFICATION START ---
 // 1. Import everything needed from the correct authSlice
-import { login, selectIsLoading, selectError, setError } from '@/lib/redux/authSlice';
+import { login, selectError, setError } from '@/lib/redux/authSlice';
 // --- MODIFICATION END ---
 
 const LoginForm = () => {
@@ -33,42 +33,46 @@ const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // 2. Selectors are now correctly pointing to authSlice
-  const isLoading = useSelector(selectIsLoading);
+  // Using error from Redux state
   const error = useSelector(selectError);
 
-   // 3. This effect will now correctly catch and display login errors
+   // This effect will catch and display login errors
    useEffect(() => {
     if (error) {
-      // toast.error(error);
       toast.error("incorrect credentials try again...")
       dispatch(setError(null)); // Clear error after showing
+      setLoading(false); // Reset loading state on error
     }
   }, [error, dispatch]);
 
-  // 4. Simplified handleSubmit to use the updated login thunk
+  // Simplified handleSubmit with manual loading control
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true); // Manually set loading to true when submitting
 
-    // The thunk now returns the user object on success or null on failure
-    const user = await dispatch(login({ email, password, rememberMe }));
+    try {
+      // The thunk returns the user object on success or null on failure
+      const user = await dispatch(login({ email, password, rememberMe }));
 
-    if (user) {
-      toast.success("Successfully logged in!");
-      // The cookie is already set inside the thunk, so we just redirect
-      if (user.role === 'admin') {
-        // console.log(user.role)
-        router.push('/dashboard/admin');
+      if (user) {
+        toast.success("Successfully logged in!");
+        // The cookie is already set inside the thunk, so we just redirect
+        if (user.role === 'admin') {
+          router.push('/dashboard/admin');
+        } else {
+          router.push('/dashboard/team');
+        }
       } else {
-        // console.log(user.role)
-        router.push('/dashboard/team');
+        // If login fails but doesn't throw, still reset loading
+        setLoading(false);
       }
+    } catch (err) {
+      // Handle any unexpected errors
+      setLoading(false);
     }
-    // If login fails, the useEffect above will handle showing the error toast.
   };
-
-  // You can now safely remove the old handleAdminLogin and handleUserLogin methods.
   
   return (
     <Card className="w-full max-w-sm bg-gradient-to-br from-[#F0FAF7]/80 to-[#EFF8FF]/80 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-none">
@@ -95,7 +99,7 @@ const LoginForm = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={loading}
               />
             </div>
           </div>
@@ -111,7 +115,7 @@ const LoginForm = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={loading}
               />
             </div>
           </div>
@@ -120,7 +124,7 @@ const LoginForm = () => {
               id="remember"
               checked={rememberMe}
               onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-              disabled={isLoading}
+              disabled={loading}
             />
             <label
               htmlFor="remember"
@@ -131,11 +135,11 @@ const LoginForm = () => {
           </div>
         </CardContent>
         <CardFooter className="p-0 pt-6">
-          <Button className="w-full" type="submit" disabled={isLoading}>
-            {isLoading ? (
+          <Button className="w-full" type="submit" disabled={loading}>
+            {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Please wait
+                Signing In...
               </>
             ) : (
               "Sign In"
