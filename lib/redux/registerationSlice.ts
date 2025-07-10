@@ -131,7 +131,7 @@ export const createRegisteration = (registerData: NewRegisterationData) => async
 export const deleteManyRegisterations = (ids: string[]) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
-    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/registers/deleteManyRegisterations`, { data: { ids } });
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/registers/deleteManyRegisters`, { data: { ids } });
     dispatch(setLoading(false));
     if (response.status === 200) {
       return response.data;
