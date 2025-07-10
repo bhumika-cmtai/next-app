@@ -9,6 +9,8 @@ import applinkReducer from './redux/appLinkSlice'
 import linkclickReducer from './redux/linkclickSlice'
 import registerationReducer from './redux/registerationSlice'
 import joinlinkReducer from './redux/joinlinkSlice'
+import countReducer from './redux/countSlice'
+
 export const store = configureStore({
   reducer: {
     users: userReducer,
@@ -20,7 +22,8 @@ export const store = configureStore({
     applinks: applinkReducer,
     linkclicks: linkclickReducer,
     registerations: registerationReducer,
-    joinlink: joinlinkReducer
+    joinlink: joinlinkReducer,
+    counts: countReducer
   },
 });
 
