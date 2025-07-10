@@ -34,16 +34,17 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Upload, Edit, Trash2, Search, Loader2, Download, Eye } from "lucide-react"; // Added Download icon
+import { Plus, Upload, Edit, Trash2, Search, Loader2, Download, Eye, CheckSquare, Square } from "lucide-react"; // Added CheckSquare, Square icons
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchUsers, selectUsers, selectLoading, User, selectPagination, selectCurrentPage,addUser,updateUser,deleteUser as deleteUserAction, } from "@/lib/redux/userSlice";
+import { fetchUsers, selectUsers, selectLoading, User, selectPagination, selectCurrentPage,addUser,updateUser,deleteUser as deleteUserAction, deleteManyUsers } from "@/lib/redux/userSlice";
 import { AppDispatch } from "@/lib/store";
 import ImportUser from "./importUser";
 import { generatePassword } from "./passwordGenerator";
 import axios from "axios";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner"; // Added for export notifications
+import { DeleteConfirmationModal } from "@/app/components/ui/delete-confirmation-modal";
 
 // Define the initial state for our expanded form
 const initialFormState: Omit<User, 'role' | '_id' | 'password' | 'createdOn' | 'updatedOn' | 'registeredClientCount' > = {
@@ -92,6 +93,11 @@ export default function Users() {
   const [dateRangeCount, setDateRangeCount] = useState<number | null>(null);
   const [isCountLoading, setIsCountLoading] = useState<boolean>(false);
   const [countError, setCountError] = useState<string | null>(null);
+
+  // NEW: State for multiple selection
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Debounce search input
   useEffect(() => {
@@ -251,6 +257,51 @@ export default function Users() {
     }
   };
 
+  // NEW: Handler for selecting/deselecting a single user
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  // NEW: Handler for selecting/deselecting all users
+  const toggleSelectAll = () => {
+    if (selectedUsers.length === users.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(users.map(user => user._id || '').filter(Boolean));
+    }
+  };
+
+  // NEW: Handler for bulk delete action
+  const handleBulkDelete = () => {
+    if (selectedUsers.length === 0) {
+      toast.warning("No leaders selected for deletion");
+      return;
+    }
+    setIsBulkDeleteModalOpen(true);
+  };
+
+  // NEW: Handler to confirm bulk deletion
+  const confirmBulkDelete = async () => {
+    const result = await dispatch(deleteManyUsers(selectedUsers));
+    if (result) {
+      toast.success(`${selectedUsers.length} leaders deleted successfully`);
+      setIsBulkDeleteModalOpen(false);
+      setSelectedUsers([]);
+      dispatch(fetchUsers({ search: debouncedSearch, status, page: currentPage }));
+    } else {
+      toast.error("Failed to delete leaders");
+    }
+  };
+
+  const openDeleteModal = (user: User) => {
+    setDeleteUser(user);
+    setIsDeleteModalOpen(true);
+  };
+
   return (
     <div className="w-full mx-auto mt-2">
       <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
@@ -285,12 +336,58 @@ export default function Users() {
         {dateRangeCount !== null && (<p className="text-lg font-semibold text-primary">Total Registrations Found: {dateRangeCount}</p>)}
       </div>
 
+      {/* NEW: Bulk Actions Bar */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="flex items-center gap-1.5" 
+            onClick={toggleSelectAll}
+          >
+            {selectedUsers.length === users.length && users.length > 0 ? (
+              <CheckSquare className="h-4 w-4" />
+            ) : (
+              <Square className="h-4 w-4" />
+            )}
+            {selectedUsers.length > 0 ? `Selected (${selectedUsers.length})` : "Select All"}
+          </Button>
+        </div>
+        {selectedUsers.length > 0 && (
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            className="flex items-center gap-1.5"
+            onClick={handleBulkDelete}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Selected
+          </Button>
+        )}
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <div className="flex items-center justify-center">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5" 
+                        onClick={toggleSelectAll}
+                      >
+                        {selectedUsers.length === users.length && users.length > 0 ? (
+                          <CheckSquare className="h-4 w-4" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </TableHead>
                   <TableHead className="w-12">S. No.</TableHead>
                   <TableHead>Leader Name</TableHead>
                   <TableHead>Leader Number</TableHead>
@@ -303,12 +400,28 @@ export default function Users() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={8} className="text-center py-8"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
                 ) : users.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center py-8">No Leaders found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8">No Leaders found.</TableCell></TableRow>
                 ) : (
                   users.map((user: User, idx: number) => (
                     <TableRow key={user._id}>
+                      <TableCell>
+                        <div className="flex items-center justify-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5" 
+                            onClick={() => toggleUserSelection(user._id || '')}
+                          >
+                            {selectedUsers.includes(user._id || '') ? (
+                              <CheckSquare className="h-4 w-4" />
+                            ) : (
+                              <Square className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell>{(currentPage - 1) * 8 + idx + 1}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -327,16 +440,9 @@ export default function Users() {
                             <Eye className="w-4 h-4 text-blue-600" />
                           </Button>
                           <Button size="icon" variant="ghost" onClick={() => openEditModal(user)} title="Edit"><Edit className="w-4 h-4" /></Button>
-                          <Dialog open={deleteUser?._id === user._id} onOpenChange={(open) => !open && setDeleteUser(null)}>
-                            <DialogTrigger asChild><Button size="icon" variant="ghost" onClick={() => setDeleteUser(user)} title="Delete"><Trash2 className="w-4 h-4 text-red-500" /></Button></DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader><DialogTitle>Delete Leader</DialogTitle><DialogDescription>Are you sure you want to delete <b>{user.name}</b>?</DialogDescription></DialogHeader>
-                              <DialogFooter>
-                                <Button variant="destructive" onClick={handleDelete} disabled={deleteLoading}>{deleteLoading ? "Deleting..." : "Delete"}</Button>
-                                <DialogClose asChild><Button type="button" variant="outline" disabled={deleteLoading}>Cancel</Button></DialogClose>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
+                          <Button size="icon" variant="ghost" onClick={() => openDeleteModal(user)} title="Delete">
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -506,6 +612,28 @@ export default function Users() {
       </Dialog>
       
       <ImportUser open={importModalOpen} onOpenChange={setImportModalOpen} onImportSuccess={() => dispatch(fetchUsers())} />
+
+      {/* Replace existing Delete Dialog with DeleteConfirmationModal */}
+      <DeleteConfirmationModal
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        title="Delete Leader"
+        description={`Are you sure you want to delete the leader "${deleteUser?.name}"? This action cannot be undone.`}
+        onConfirm={handleDelete}
+        isDeleting={deleteLoading}
+        confirmButtonText="Delete Leader"
+      />
+      
+      {/* NEW: Bulk Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        open={isBulkDeleteModalOpen}
+        onOpenChange={setIsBulkDeleteModalOpen}
+        title="Delete Multiple Leaders"
+        description={`Are you sure you want to delete ${selectedUsers.length} selected leaders? This action cannot be undone.`}
+        onConfirm={confirmBulkDelete}
+        confirmButtonText="Delete"
+        itemCount={selectedUsers.length}
+      />
     </div>
   );
 }

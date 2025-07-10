@@ -211,6 +211,21 @@ export const deleteUser = (id: string) => async (dispatch: Dispatch) => {
     dispatch(setError(message || "Unknown error"));
   }
 };
+
+// New action to delete multiple users
+export const deleteManyUsers = (ids: string[]) => async (dispatch: Dispatch) => {
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/deleteManyUsers`, { ids });
+    if (response.data && response.data.success) {
+      return true;
+    }
+    return false;
+  } catch (error: unknown) {
+    console.error("Error deleting multiple users:", error);
+    return false;
+  }
+};
+
 export const fetchLeaderCode = (leaderCode: string) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {

@@ -21,10 +21,7 @@ import { motion } from "framer-motion";
 import Image from 'next/image';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '@/lib/store';
-// --- MODIFICATION START ---
-// 1. Import everything needed from the correct authSlice
 import { login, selectError, setError } from '@/lib/redux/authSlice';
-// --- MODIFICATION END ---
 
 const LoginForm = () => {
   const router = useRouter();
