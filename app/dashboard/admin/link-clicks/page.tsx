@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Loader2, ChevronsLeft, ChevronsRight, Hash, Download } from "lucide-react"; // Added Download icon
+import { Phone, Loader2, Hash, Download, CheckSquare, Square, Trash2 } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "sonner"; // Added for notifications
 
@@ -28,8 +28,18 @@ import {
   selectLoading,
   selectPagination,
   Linkclick,
+  deleteManyLinkclicks,
 } from "@/lib/redux/linkclickSlice";
 import { AppDispatch, RootState } from "@/lib/store";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { DeleteConfirmationModal } from "@/app/components/ui/delete-confirmation-modal";
 
 // Debounce hook for search functionality
 function useDebounce<T>(value: T, delay: number): T {
@@ -78,6 +88,10 @@ export default function LinkclicksPage() {
   // State for the export modal
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportStatus, setExportStatus] = useState("all");
+
+  // NEW: State for multiple selection
+  const [selectedLinkclicks, setSelectedLinkclicks] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
   const ITEMS_PER_PAGE = 8; // Match with backend limit
 
@@ -177,6 +191,45 @@ export default function LinkclicksPage() {
     return statusColors[status] || "bg-gray-400";
   };
 
+  // NEW: Handler for selecting/deselecting a single link click
+  const toggleLinkclickSelection = (linkclickId: string) => {
+    setSelectedLinkclicks(prev => 
+      prev.includes(linkclickId)
+        ? prev.filter(id => id !== linkclickId)
+        : [...prev, linkclickId]
+    );
+  };
+
+  // NEW: Handler for selecting/deselecting all link clicks
+  const toggleSelectAll = () => {
+    if (selectedLinkclicks.length === linkclicks.length) {
+      setSelectedLinkclicks([]);
+    } else {
+      setSelectedLinkclicks(linkclicks.map(click => click._id || '').filter(Boolean));
+    }
+  };
+
+  // NEW: Handler for bulk delete action
+  const handleBulkDelete = () => {
+    if (selectedLinkclicks.length === 0) {
+      toast.warning("No link clicks selected for deletion");
+      return;
+    }
+    setIsBulkDeleteModalOpen(true);
+  };
+
+  // NEW: Handler to confirm bulk deletion
+  const confirmBulkDelete = async () => {
+    const result = await dispatch(deleteManyLinkclicks(selectedLinkclicks));
+    if (result) {
+      toast.success(`${selectedLinkclicks.length} link clicks would be deleted`);
+      setIsBulkDeleteModalOpen(false);
+      setSelectedLinkclicks([]);
+    } else {
+      toast.error("Failed to delete link clicks");
+    }
+  };
+
   return (
     <div className="w-full mx-auto mt-2">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
@@ -211,12 +264,58 @@ export default function LinkclicksPage() {
         </div>
       </div>
 
+      {/* NEW: Bulk Actions Bar */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="flex items-center gap-1.5" 
+            onClick={toggleSelectAll}
+          >
+            {selectedLinkclicks.length === linkclicks.length && linkclicks.length > 0 ? (
+              <CheckSquare className="h-4 w-4" />
+            ) : (
+              <Square className="h-4 w-4" />
+            )}
+            {selectedLinkclicks.length > 0 ? `Selected (${selectedLinkclicks.length})` : "Select All"}
+          </Button>
+        </div>
+        {selectedLinkclicks.length > 0 && (
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            className="flex items-center gap-1.5"
+            onClick={handleBulkDelete}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Selected
+          </Button>
+        )}
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <div className="flex items-center justify-center">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5" 
+                        onClick={toggleSelectAll}
+                      >
+                        {selectedLinkclicks.length === linkclicks.length && linkclicks.length > 0 ? (
+                          <CheckSquare className="h-4 w-4" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </TableHead>
                   <TableHead className="w-12">#</TableHead>
                   <TableHead>Leader Code</TableHead>
                   <TableHead>Name</TableHead>
@@ -229,12 +328,28 @@ export default function LinkclicksPage() {
               </TableHeader>
               <TableBody>
                 {isListLoading && (!linkclicks || linkclicks.length === 0) ? (
-                  <TableRow><TableCell colSpan={8} className="text-center py-8"><div className="flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading...</span></div></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8"><div className="flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading...</span></div></TableCell></TableRow>
                 ) : !linkclicks || linkclicks.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center py-8">No link clicks found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8">No link clicks found.</TableCell></TableRow>
                 ) : (
                   linkclicks.map((linkclick, idx) => (
                     <TableRow key={linkclick._id}>
+                      <TableCell>
+                        <div className="flex items-center justify-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5" 
+                            onClick={() => toggleLinkclickSelection(linkclick._id || '')}
+                          >
+                            {selectedLinkclicks.includes(linkclick._id || '') ? (
+                              <CheckSquare className="h-4 w-4" />
+                            ) : (
+                              <Square className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell>{(page - 1) * ITEMS_PER_PAGE + idx + 1}</TableCell>
                       <TableCell><div className="flex items-center gap-2 font-mono text-sm"><Hash className="w-3 h-3 text-gray-500"/>{linkclick.leaderCode || 'N/A'}</div></TableCell>
                       <TableCell><div className="font-medium">{linkclick.name}</div></TableCell>
@@ -255,10 +370,95 @@ export default function LinkclicksPage() {
       </Card>
       
       {totalPages > 1 && (
-        <div className="flex items-center justify-center space-x-2 py-4">
-          <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page <= 1 || isListLoading}><ChevronsLeft className="h-4 w-4 mr-1" />Previous</Button>
-          <span className="text-sm font-medium">Page {currentPage} of {totalPages}</span>
-          <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={page >= totalPages || isListLoading}>Next<ChevronsRight className="h-4 w-4 ml-1" /></Button>
+        <div className="mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage(Math.max(1, page - 1));
+                  }}
+                  className={page <= 1 || isListLoading ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              
+              {/* First page */}
+              {page > 3 && (
+                <PaginationItem>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage(1);
+                    }}
+                  >
+                    1
+                  </PaginationLink>
+                </PaginationItem>
+              )}
+              
+              {/* Ellipsis if needed */}
+              {page > 4 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Pages around current page */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(pageNum => pageNum >= Math.max(1, page - 1) && pageNum <= Math.min(totalPages, page + 1))
+                .map(pageNum => (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink 
+                      href="#" 
+                      isActive={page === pageNum}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage(pageNum);
+                      }}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))
+              }
+              
+              {/* Ellipsis if needed */}
+              {page < totalPages - 3 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Last page */}
+              {page < totalPages - 2 && (
+                <PaginationItem>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage(totalPages);
+                    }}
+                  >
+                    {totalPages}
+                  </PaginationLink>
+                </PaginationItem>
+              )}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage(Math.min(totalPages, page + 1));
+                  }}
+                  className={page >= totalPages || isListLoading ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
 
@@ -305,6 +505,17 @@ export default function LinkclicksPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* NEW: Bulk Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        open={isBulkDeleteModalOpen}
+        onOpenChange={setIsBulkDeleteModalOpen}
+        title="Delete Multiple Link Clicks"
+        description={`Are you sure you want to delete ${selectedLinkclicks.length} selected link clicks? This action cannot be undone.`}
+        onConfirm={confirmBulkDelete}
+        confirmButtonText="Delete"
+        itemCount={selectedLinkclicks.length}
+      />
     </div>
   );
 }

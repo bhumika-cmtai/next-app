@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Loader2, ChevronsLeft, ChevronsRight, Hash, Trash2, Download } from "lucide-react";
+import { Phone, Loader2, Hash, Trash2, Download, CheckSquare, Square } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 
 import {
@@ -19,11 +19,21 @@ import {
   selectRegisterationLoading,
   selectRegisterationPagination,
   Registeration,
+  deleteManyRegisterations,
 } from "@/lib/redux/registerationSlice";
 import { AppDispatch } from "@/lib/store";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { DeleteConfirmationModal } from "@/app/components/ui/delete-confirmation-modal";
 
 // Debounce hook for search functionality
 function useDebounce<T>(value: T, delay: number): T {
@@ -75,6 +85,10 @@ export default function RegistrationsPage() {
   // State for the export modal
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportStatus, setExportStatus] = useState("all");
+
+  // NEW: State for multiple selection
+  const [selectedRegisterations, setSelectedRegisterations] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
   const ITEMS_PER_PAGE = 8;
 
@@ -209,6 +223,45 @@ export default function RegistrationsPage() {
     return statusColors[status] || "bg-gray-400";
   };
 
+  // NEW: Handler for selecting/deselecting a single registration
+  const toggleRegisterationSelection = (registerationId: string) => {
+    setSelectedRegisterations(prev => 
+      prev.includes(registerationId)
+        ? prev.filter(id => id !== registerationId)
+        : [...prev, registerationId]
+    );
+  };
+
+  // NEW: Handler for selecting/deselecting all registrations
+  const toggleSelectAll = () => {
+    if (selectedRegisterations.length === registrations.length) {
+      setSelectedRegisterations([]);
+    } else {
+      setSelectedRegisterations(registrations.map(reg => reg._id || '').filter(Boolean));
+    }
+  };
+
+  // NEW: Handler for bulk delete action
+  const handleBulkDelete = () => {
+    if (selectedRegisterations.length === 0) {
+      toast.warning("No registrations selected for deletion");
+      return;
+    }
+    setIsBulkDeleteModalOpen(true);
+  };
+
+  // NEW: Handler to confirm bulk deletion
+  const confirmBulkDelete = async  () => {
+    const result = await dispatch(deleteManyRegisterations(selectedRegisterations));
+    if (result) {
+      toast.success(`${selectedRegisterations.length} registrations would be deleted`);
+      setIsBulkDeleteModalOpen(false);
+      setSelectedRegisterations([]);
+    } else {
+      toast.error("Failed to delete registrations");
+    }
+  };
+
   return (
     <div className="w-full mx-auto mt-2">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
@@ -240,12 +293,58 @@ export default function RegistrationsPage() {
         </div>
       </div>
 
+      {/* NEW: Bulk Actions Bar */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="flex items-center gap-1.5" 
+            onClick={toggleSelectAll}
+          >
+            {selectedRegisterations.length === registrations.length && registrations.length > 0 ? (
+              <CheckSquare className="h-4 w-4" />
+            ) : (
+              <Square className="h-4 w-4" />
+            )}
+            {selectedRegisterations.length > 0 ? `Selected (${selectedRegisterations.length})` : "Select All"}
+          </Button>
+        </div>
+        {selectedRegisterations.length > 0 && (
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            className="flex items-center gap-1.5"
+            onClick={handleBulkDelete}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Selected
+          </Button>
+        )}
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <div className="flex items-center justify-center">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5" 
+                        onClick={toggleSelectAll}
+                      >
+                        {selectedRegisterations.length === registrations.length && registrations.length > 0 ? (
+                          <CheckSquare className="h-4 w-4" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </TableHead>
                   <TableHead className="w-12">#</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Phone Number</TableHead>
@@ -258,12 +357,28 @@ export default function RegistrationsPage() {
               </TableHeader>
               <TableBody>
                 {isListLoading && (!registrations || registrations.length === 0) ? (
-                  <TableRow><TableCell colSpan={8} className="text-center py-8"><div className="flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading...</span></div></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8"><div className="flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading...</span></div></TableCell></TableRow>
                 ) : !registrations || registrations.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center py-8">No registrations found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8">No registrations found.</TableCell></TableRow>
                 ) : (
                   registrations.map((register, idx) => (
                     <TableRow key={register._id}>
+                      <TableCell>
+                        <div className="flex items-center justify-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5" 
+                            onClick={() => toggleRegisterationSelection(register._id || '')}
+                          >
+                            {selectedRegisterations.includes(register._id || '') ? (
+                              <CheckSquare className="h-4 w-4" />
+                            ) : (
+                              <Square className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell>{(page - 1) * ITEMS_PER_PAGE + idx + 1}</TableCell>
                       <TableCell><div className="font-medium">{register.name}</div></TableCell>
                       <TableCell><div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-500" /><span className="text-sm">{register.phoneNumber}</span></div></TableCell>
@@ -293,10 +408,95 @@ export default function RegistrationsPage() {
       </Card>
       
       {totalPages > 1 && (
-        <div className="flex items-center justify-center space-x-2 py-4">
-          <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page <= 1 || isListLoading}><ChevronsLeft className="h-4 w-4 mr-1" />Previous</Button>
-          <span className="text-sm font-medium">Page {currentPage} of {totalPages}</span>
-          <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={page >= totalPages || isListLoading}>Next<ChevronsRight className="h-4 w-4 ml-1" /></Button>
+        <div className="mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage(Math.max(1, page - 1));
+                  }}
+                  className={page <= 1 || isListLoading ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              
+              {/* First page */}
+              {page > 3 && (
+                <PaginationItem>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage(1);
+                    }}
+                  >
+                    1
+                  </PaginationLink>
+                </PaginationItem>
+              )}
+              
+              {/* Ellipsis if needed */}
+              {page > 4 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Pages around current page */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(pageNum => pageNum >= Math.max(1, page - 1) && pageNum <= Math.min(totalPages, page + 1))
+                .map(pageNum => (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink 
+                      href="#" 
+                      isActive={page === pageNum}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage(pageNum);
+                      }}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))
+              }
+              
+              {/* Ellipsis if needed */}
+              {page < totalPages - 3 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Last page */}
+              {page < totalPages - 2 && (
+                <PaginationItem>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage(totalPages);
+                    }}
+                  >
+                    {totalPages}
+                  </PaginationLink>
+                </PaginationItem>
+              )}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage(Math.min(totalPages, page + 1));
+                  }}
+                  className={page >= totalPages || isListLoading ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
 
@@ -342,23 +542,27 @@ export default function RegistrationsPage() {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to permanently delete the registration for <strong>{registerationToDelete?.name}</strong>? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild><Button type="button" variant="outline" disabled={isDeleting}>Cancel</Button></DialogClose>
-            <Button type="button" variant="destructive" onClick={handleDeleteConfirm} disabled={isDeleting}>
-              {isDeleting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Deleting...</>) : ('Delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* NEW: Replace the delete dialog with DeleteConfirmationModal */}
+      <DeleteConfirmationModal
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete Registration"
+        description={`Are you sure you want to permanently delete the registration for ${registerationToDelete?.name}? This action cannot be undone.`}
+        onConfirm={handleDeleteConfirm}
+        isDeleting={isDeleting}
+        confirmButtonText="Delete Registration"
+      />
+      
+      {/* NEW: Bulk Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        open={isBulkDeleteModalOpen}
+        onOpenChange={setIsBulkDeleteModalOpen}
+        title="Delete Multiple Registrations"
+        description={`Are you sure you want to delete ${selectedRegisterations.length} selected registrations? This action cannot be undone.`}
+        onConfirm={confirmBulkDelete}
+        confirmButtonText="Delete"
+        itemCount={selectedRegisterations.length}
+      />
 
       {/* Export Dialog */}
       <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>

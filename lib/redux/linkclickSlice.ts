@@ -188,6 +188,23 @@ export const deleteLinkclick = (id: string) => async (dispatch: Dispatch) => {
   }
 };
 
+export const deleteManyLinkclicks = (ids: string[]) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/linkclicks/deleteManyLinkclicks`, { data: { ids } });
+    dispatch(setLoading(false));
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      dispatch(setError(response.data.message));
+      return null;
+    }
+  } catch (error: unknown) {  
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+    return null;
+  }
+};  
 
 export const fetchPortalNames = () => async (dispatch: Dispatch) => {
   try {

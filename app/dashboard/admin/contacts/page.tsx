@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, Loader2, ChevronsLeft, ChevronsRight, Download, Trash2 } from "lucide-react";
+import { Phone, Mail, Loader2, Download, Trash2, CheckSquare, Square } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "sonner";
 import {
@@ -39,11 +39,21 @@ import {
   updateContact,
   deleteContact,
   selectContacts,
+  deleteManyContacts,
   selectLoading,
   selectPagination,
   Contact, // Assuming Contact type now includes `reason?: string`
 } from "@/lib/redux/contactSlice";
 import { AppDispatch } from "@/lib/store";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { DeleteConfirmationModal } from "@/app/components/ui/delete-confirmation-modal";
 
 // Debounce hook for search functionality
 function useDebounce<T>(value: T, delay: number): T {
@@ -82,12 +92,17 @@ export default function Contacts() {
   // State for delete confirmation modal
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSingleDeleteModalOpen, setIsSingleDeleteModalOpen] = useState(false);
 
   // State for the export modal
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportStatus, setExportStatus] = useState("all");
 
-  const ITEMS_PER_PAGE = 8;
+  // New state for multiple selection
+  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+
+  const ITEMS_PER_PAGE = 15;
 
   // Fetch contacts when page or search query changes
   useEffect(() => {
@@ -141,6 +156,7 @@ export default function Contacts() {
   // Handler to open the delete confirmation modal
   const openDeleteConfirmation = (contact: Contact) => {
     setContactToDelete(contact);
+    setIsSingleDeleteModalOpen(true);
   };
 
   // Handler to submit the deletion
@@ -151,6 +167,7 @@ export default function Contacts() {
       await dispatch(deleteContact(contactToDelete._id));
       toast.success(`Contact for "${contactToDelete.name}" has been deleted.`);
       setContactToDelete(null); // Close the dialog
+      setIsSingleDeleteModalOpen(false);
 
       const newPage = contacts.length === 1 && page > 1 ? page - 1 : page;
       if (newPage !== page) {
@@ -205,6 +222,45 @@ export default function Contacts() {
     setExportModalOpen(false);
   };
 
+  // Handler for selecting/deselecting a single contact
+  const toggleContactSelection = (contactId: string) => {
+    setSelectedContacts(prev => 
+      prev.includes(contactId)
+        ? prev.filter(id => id !== contactId)
+        : [...prev, contactId]
+    );
+  };
+
+  // Handler for selecting/deselecting all contacts
+  const toggleSelectAll = () => {
+    if (selectedContacts.length === contacts.length) {
+      setSelectedContacts([]);
+    } else {
+      setSelectedContacts(contacts.map(contact => contact._id || '').filter(Boolean));
+    }
+  };
+
+  // Handler for bulk delete action
+  const handleBulkDelete = () => {
+    if (selectedContacts.length === 0) {
+      toast.warning("No contacts selected for deletion");
+      return;
+    }
+    setIsBulkDeleteModalOpen(true);
+  };
+
+  // Handler to confirm bulk deletion
+  const confirmBulkDelete = async () => {
+    const result = await dispatch(deleteManyContacts(selectedContacts));
+    if (result) {
+      toast.success(`${selectedContacts.length} contacts would be deleted`);
+      setIsBulkDeleteModalOpen(false);
+      setSelectedContacts([]);
+    } else {
+      toast.error("Failed to delete contacts");
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "New": return "bg-blue-500";
@@ -239,12 +295,58 @@ export default function Contacts() {
         </div>
       </div>
 
+      {/* Bulk Actions Bar */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="flex items-center gap-1.5" 
+            onClick={toggleSelectAll}
+          >
+            {selectedContacts.length === contacts.length && contacts.length > 0 ? (
+              <CheckSquare className="h-4 w-4" />
+            ) : (
+              <Square className="h-4 w-4" />
+            )}
+            {selectedContacts.length > 0 ? `Selected (${selectedContacts.length})` : "Select All"}
+          </Button>
+        </div>
+        {selectedContacts.length > 0 && (
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            className="flex items-center gap-1.5"
+            onClick={handleBulkDelete}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Selected
+          </Button>
+        )}
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <div className="flex items-center justify-center">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5" 
+                        onClick={toggleSelectAll}
+                      >
+                        {selectedContacts.length === contacts.length && contacts.length > 0 ? (
+                          <CheckSquare className="h-4 w-4" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </TableHead>
                   <TableHead className="w-12">#</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Contact Info</TableHead>
@@ -255,12 +357,28 @@ export default function Contacts() {
               </TableHeader>
               <TableBody>
                 {isListLoading && contacts.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8"><div className="flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading contacts...</span></div></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8"><div className="flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading contacts...</span></div></TableCell></TableRow>
                 ) : contacts.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8">No contacts found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-8">No contacts found.</TableCell></TableRow>
                 ) : (
                   contacts.map((contact, idx) => (
                     <TableRow key={contact._id}>
+                      <TableCell>
+                        <div className="flex items-center justify-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5" 
+                            onClick={() => toggleContactSelection(contact._id || '')}
+                          >
+                            {selectedContacts.includes(contact._id || '') ? (
+                              <CheckSquare className="h-4 w-4" />
+                            ) : (
+                              <Square className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell>{(page - 1) * ITEMS_PER_PAGE + idx + 1}</TableCell>
                       <TableCell><div className="font-medium">{contact.name}</div></TableCell>
                       <TableCell><div className="flex flex-col gap-1"><div className="flex items-center gap-2"><Mail className="w-4 h-4 text-gray-500" /><span className="text-sm">{contact.email}</span></div>{contact.phoneNumber && (<div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-500" /><span className="text-sm">{contact.phoneNumber}</span></div>)}</div></TableCell>
@@ -284,10 +402,95 @@ export default function Contacts() {
       </Card>
       
       {totalPages > 1 && (
-        <div className="flex items-center justify-center space-x-2 py-4">
-          <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page <= 1 || isListLoading}><ChevronsLeft className="h-4 w-4 mr-1" />Previous</Button>
-          <span className="text-sm font-medium">Page {currentPage} of {totalPages}</span>
-          <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={page >= totalPages || isListLoading}>Next<ChevronsRight className="h-4 w-4 ml-1" /></Button>
+        <div className="mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage(Math.max(1, page - 1));
+                  }}
+                  className={page <= 1 || isListLoading ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              
+              {/* First page */}
+              {page > 3 && (
+                <PaginationItem>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage(1);
+                    }}
+                  >
+                    1
+                  </PaginationLink>
+                </PaginationItem>
+              )}
+              
+              {/* Ellipsis if needed */}
+              {page > 4 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Pages around current page */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(pageNum => pageNum >= Math.max(1, page - 1) && pageNum <= Math.min(totalPages, page + 1))
+                .map(pageNum => (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink 
+                      href="#" 
+                      isActive={page === pageNum}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage(pageNum);
+                      }}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))
+              }
+              
+              {/* Ellipsis if needed */}
+              {page < totalPages - 3 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Last page */}
+              {page < totalPages - 2 && (
+                <PaginationItem>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setPage(totalPages);
+                    }}
+                  >
+                    {totalPages}
+                  </PaginationLink>
+                </PaginationItem>
+              )}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setPage(Math.min(totalPages, page + 1));
+                  }}
+                  className={page >= totalPages || isListLoading ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
 
@@ -333,23 +536,16 @@ export default function Contacts() {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={!!contactToDelete} onOpenChange={(open) => !open && setContactToDelete(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Contact</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete the contact for <b>{contactToDelete?.name}</b>? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setContactToDelete(null)} disabled={isDeleting}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteContact} disabled={isDeleting}>
-              {isDeleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Single Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        open={isSingleDeleteModalOpen}
+        onOpenChange={setIsSingleDeleteModalOpen}
+        title="Delete Contact"
+        description={`Are you sure you want to delete the contact for ${contactToDelete?.name}? This action cannot be undone.`}
+        onConfirm={handleDeleteContact}
+        isDeleting={isDeleting}
+        confirmButtonText="Delete Contact"
+      />
       
       {/* Export Contacts Dialog */}
       <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
@@ -378,6 +574,17 @@ export default function Contacts() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Bulk Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        open={isBulkDeleteModalOpen}
+        onOpenChange={setIsBulkDeleteModalOpen}
+        title="Delete Multiple Contacts"
+        description={`Are you sure you want to delete ${selectedContacts.length} selected contacts? This action cannot be undone.`}
+        onConfirm={confirmBulkDelete}
+        confirmButtonText="Delete"
+        itemCount={selectedContacts.length}
+      />
     </div>
   );
 }

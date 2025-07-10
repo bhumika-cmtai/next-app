@@ -184,6 +184,24 @@ export const deleteContact = (id: string) => async (dispatch: Dispatch) => {
   }
 };
 
+export const deleteManyContacts = (ids: string[]) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/deleteManyContacts`, { data: { ids } });
+    dispatch(setLoading(false));
+    if (response.status === 200) {
+      return true;
+    } else {
+      dispatch(setError(response.data.message));
+      return false;
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+    return false;
+  }
+};  
+
 export const selectContacts = (state: RootState) => state.contacts.data;
 export const selectContactById = (state: RootState) => state.contacts.selectedContact;
 export const selectLoading = (state: RootState) => state.contacts.loading;

@@ -8,14 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Upload, Edit, Trash2, Mail, Phone, Download, Loader2 } from "lucide-react";
+import { Plus, Upload, Edit, Trash2, Mail, Phone, Download, Loader2, CheckSquare, Square } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
-import { fetchLeads, selectLeads, selectLoading, selectPagination, selectCurrentPage, Lead, addLead, updateLead, deleteLead as deleteLeadAction } from "@/lib/redux/leadSlice";
+import { fetchLeads, selectLeads, selectLoading, selectPagination, selectCurrentPage, Lead, addLead, updateLead, deleteLead as deleteLeadAction, deleteManyLeads } from "@/lib/redux/leadSlice";
 import { AppDispatch } from "@/lib/store";
 import { useSelector, useDispatch } from "react-redux";
 import ImportLeads from "./importLeads";
-import AgeCell from "@/components/ui/AgeCell";
 import { Label } from "@/components/ui/label";
+import { DeleteConfirmationModal } from "@/app/components/ui/delete-confirmation-modal";
+import { toast } from "sonner";
+
 
 // Define the initial state for our expanded form, matching the Lead interface
 const initialFormState: Omit<Lead, "_id" | "createdOn" | "updatedOn"> = {
@@ -51,6 +53,11 @@ export default function Leads() {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportStatus, setExportStatus] = useState("all");
+
+  // NEW: State for multiple selection
+  const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Debounce search input
   useEffect(() => {
@@ -120,14 +127,59 @@ export default function Leads() {
     }
   };
 
+  // NEW: Handler for selecting/deselecting a single lead
+  const toggleLeadSelection = (leadId: string) => {
+    setSelectedLeads(prev => 
+      prev.includes(leadId)
+        ? prev.filter(id => id !== leadId)
+        : [...prev, leadId]
+    );
+  };
+
+  // NEW: Handler for selecting/deselecting all leads
+  const toggleSelectAll = () => {
+    if (selectedLeads.length === leads.length) {
+      setSelectedLeads([]);
+    } else {
+      setSelectedLeads(leads.map(lead => lead._id || '').filter(Boolean));
+    }
+  };
+
+  // NEW: Handler for bulk delete action
+  const handleBulkDelete = () => {
+    if (selectedLeads.length === 0) {
+      toast.warning("No leads selected for deletion");
+      return;
+    }
+    setIsBulkDeleteModalOpen(true);
+  };
+
+  // NEW: Handler to confirm bulk deletion
+  const confirmBulkDelete = async () => {
+    const result = await dispatch(deleteManyLeads(selectedLeads));
+    if (result) {
+      toast.success(`${selectedLeads.length} leads would be deleted`);
+      setIsBulkDeleteModalOpen(false);
+      setSelectedLeads([]);
+    } else {
+      toast.error("Failed to delete leads");
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteLead?._id) return;
     setDeleteLoading(true);
     await dispatch(deleteLeadAction(deleteLead._id));
     setDeleteLoading(false);
     setDeleteLead(null);
+    setIsDeleteModalOpen(false);
     const newPage = leads.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
     dispatch(fetchLeads({ search: debouncedSearch, status: statusFilter === 'all' ? undefined : statusFilter, page: newPage }));
+  };
+
+  const openDeleteModal = (lead: Lead) => {
+    setDeleteLead(lead);
+    setIsDeleteModalOpen(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -199,12 +251,58 @@ export default function Leads() {
         </div>
       </div>
 
+      {/* NEW: Bulk Actions Bar */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="flex items-center gap-1.5" 
+            onClick={toggleSelectAll}
+          >
+            {selectedLeads.length === leads.length && leads.length > 0 ? (
+              <CheckSquare className="h-4 w-4" />
+            ) : (
+              <Square className="h-4 w-4" />
+            )}
+            {selectedLeads.length > 0 ? `Selected (${selectedLeads.length})` : "Select All"}
+          </Button>
+        </div>
+        {selectedLeads.length > 0 && (
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            className="flex items-center gap-1.5"
+            onClick={handleBulkDelete}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Selected
+          </Button>
+        )}
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <div className="flex items-center justify-center">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5" 
+                        onClick={toggleSelectAll}
+                      >
+                        {selectedLeads.length === leads.length && leads.length > 0 ? (
+                          <CheckSquare className="h-4 w-4" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </TableHead>
                   <TableHead className="w-12">S. No.</TableHead>
                   <TableHead>Created Date</TableHead>
                   <TableHead>Lead Name</TableHead>
@@ -220,12 +318,28 @@ export default function Leads() {
               </TableHeader>
               <TableBody>
                 {loading && leads.length === 0 ? (
-                  <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></TableCell></TableRow>
                 ) : leads.length === 0 ? (
-                  <TableRow><TableCell colSpan={9} className="text-center py-8">No leads found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center py-8">No leads found.</TableCell></TableRow>
                 ) : (
                   leads.map((lead, idx) => (
                     <TableRow key={lead._id}>
+                      <TableCell>
+                        <div className="flex items-center justify-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5" 
+                            onClick={() => toggleLeadSelection(lead._id || '')}
+                          >
+                            {selectedLeads.includes(lead._id || '') ? (
+                              <CheckSquare className="h-4 w-4" />
+                            ) : (
+                              <Square className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell>{(currentPage - 1) * 20 + idx + 1}</TableCell>
                       <TableCell>{lead.createdOn ? new Date(parseInt(lead.createdOn)).toLocaleDateString() : '-'}</TableCell>
                       <TableCell><div className="font-medium">{lead.name}</div></TableCell>
@@ -243,7 +357,7 @@ export default function Leads() {
                       <TableCell>
                         <div className="flex gap-2">
                           <Button size="icon" variant="ghost" onClick={() => openEditModal(lead)} title="Edit"><Edit className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => setDeleteLead(lead)} title="Delete"><Trash2 className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => openDeleteModal(lead)} title="Delete"><Trash2 className="w-4 h-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -282,15 +396,27 @@ export default function Leads() {
         </DialogContent>
       </Dialog>
       
-      <Dialog open={!!deleteLead} onOpenChange={(open) => !open && setDeleteLead(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Delete Lead</DialogTitle><DialogDescription>Are you sure you want to delete the lead for <b>{deleteLead?.name}</b>? This action cannot be undone.</DialogDescription></DialogHeader>
-          <DialogFooter>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteLoading}>{deleteLoading ? 'Deleting...' : 'Delete'}</Button>
-            <DialogClose asChild><Button type="button" variant="outline" disabled={deleteLoading}>Cancel</Button></DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* NEW: Replace the delete dialog with DeleteConfirmationModal */}
+      <DeleteConfirmationModal
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        title="Delete Lead"
+        description={`Are you sure you want to delete the lead for ${deleteLead?.name}? This action cannot be undone.`}
+        onConfirm={handleDelete}
+        isDeleting={deleteLoading}
+        confirmButtonText="Delete Lead"
+      />
+      
+      {/* NEW: Bulk Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        open={isBulkDeleteModalOpen}
+        onOpenChange={setIsBulkDeleteModalOpen}
+        title="Delete Multiple Leads"
+        description={`Are you sure you want to delete ${selectedLeads.length} selected leads? This action cannot be undone.`}
+        onConfirm={confirmBulkDelete}
+        confirmButtonText="Delete"
+        itemCount={selectedLeads.length}
+      />
 
       <ImportLeads open={importModalOpen} onOpenChange={setImportModalOpen} onImportSuccess={() => dispatch(fetchLeads())} />
 
@@ -306,9 +432,90 @@ export default function Leads() {
         <div className="mt-4">
           <Pagination>
             <PaginationContent>
-              <PaginationItem><PaginationPrevious href="#" onClick={() => handlePageChange(currentPage - 1)} /></PaginationItem>
-              {Array.from({ length: pagination.totalPages }, (_, i) => (<PaginationItem key={i + 1}><PaginationLink href="#" isActive={currentPage === i + 1} onClick={() => handlePageChange(i + 1)}>{i + 1}</PaginationLink></PaginationItem>))}
-              <PaginationItem><PaginationNext href="#" onClick={() => handlePageChange(currentPage + 1)} /></PaginationItem>
+              <PaginationItem>
+                <PaginationPrevious 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePageChange(currentPage - 1);
+                  }}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              
+              {/* First page */}
+              {currentPage > 3 && (
+                <PaginationItem>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePageChange(1);
+                    }}
+                  >
+                    1
+                  </PaginationLink>
+                </PaginationItem>
+              )}
+              
+              {/* Ellipsis if needed */}
+              {currentPage > 4 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Pages around current page */}
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                .filter(page => page >= Math.max(1, currentPage - 1) && page <= Math.min(pagination.totalPages, currentPage + 1))
+                .map(page => (
+                  <PaginationItem key={page}>
+                    <PaginationLink 
+                      href="#" 
+                      isActive={currentPage === page}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlePageChange(page);
+                      }}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))
+              }
+              
+              {/* Ellipsis if needed */}
+              {currentPage < pagination.totalPages - 3 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Last page */}
+              {currentPage < pagination.totalPages - 2 && (
+                <PaginationItem>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePageChange(pagination.totalPages);
+                    }}
+                  >
+                    {pagination.totalPages}
+                  </PaginationLink>
+                </PaginationItem>
+              )}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePageChange(currentPage + 1);
+                  }}
+                  className={currentPage === pagination.totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
             </PaginationContent>
           </Pagination>
         </div>

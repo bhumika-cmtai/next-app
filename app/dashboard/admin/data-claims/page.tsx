@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Phone, Trash2, Upload, Download,Loader2  } from "lucide-react"; // Added Download icon
+import { Plus, Edit, Phone, Trash2, Upload, Download, Loader2, CheckSquare, Square } from "lucide-react";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination";
 import ImportDataClaims from "./importDataClaims";
+import { DeleteConfirmationModal } from "@/app/components/ui/delete-confirmation-modal";
 
 import { 
   fetchClients, 
@@ -25,6 +25,7 @@ import {
   setCurrentPage,
   fetchPortalNames,
    deleteClient, // NEW: Import the deleteClient thunk
+   deleteManyClients,
   selectPortalNames,
   distributeCommissionForClient 
 } from "@/lib/redux/clientSlice";
@@ -66,6 +67,10 @@ export default function Clients() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // NEW: State for multiple selection
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
   const [form, setForm] = useState<ClientFormState>({
     name: "",
@@ -204,6 +209,45 @@ export default function Clients() {
     }
   };
 
+  // NEW: Handler for selecting/deselecting a single client
+  const toggleClientSelection = (clientId: string) => {
+    setSelectedClients(prev => 
+      prev.includes(clientId)
+        ? prev.filter(id => id !== clientId)
+        : [...prev, clientId]
+    );
+  };
+
+  // NEW: Handler for selecting/deselecting all clients
+  const toggleSelectAll = () => {
+    if (selectedClients.length === clients.length) {
+      setSelectedClients([]);
+    } else {
+      setSelectedClients(clients.map(client => client._id || '').filter(Boolean));
+    }
+  };
+
+  // NEW: Handler for bulk delete action
+  const handleBulkDelete = () => {
+    if (selectedClients.length === 0) {
+      toast.warning("No clients selected for deletion");
+      return;
+    }
+    setIsBulkDeleteModalOpen(true);
+  };
+
+  // NEW: Handler to confirm bulk deletion
+  const confirmBulkDelete = async () => {
+    const result = await dispatch(deleteManyClients(selectedClients));
+    if (result) {
+      toast.success(`${selectedClients.length} clients would be deleted`);
+      setIsBulkDeleteModalOpen(false);
+      setSelectedClients([]);
+    } else {
+      toast.error("Failed to delete clients");
+    }
+  };
+
 
   const handleRemoveOwner = (indexToRemove: number) => {
     const newOwnerNames = (form.ownerName ?? []).filter((_, index) => index !== indexToRemove);
@@ -242,18 +286,6 @@ export default function Clients() {
     } finally {
         setIsApproving(false);
     }
-  };
-
-  const getStatusColor = (status: string) => {
-    const statusColors: { [key: string]: string } = {
-      'New': 'bg-blue-500',
-      'RegisterationDone': 'bg-teal-500',
-      'CallCut': 'bg-yellow-500',
-      'CallNotPickUp': 'bg-orange-500',
-      'NotInterested': 'bg-red-500',
-      'InvalidNumber': 'bg-gray-500',
-    };
-    return statusColors[status] || "bg-gray-400";
   };
 
   // **** FIXED: Export function now correctly uses the 'clients' variable and 'Client' fields ****
@@ -331,12 +363,58 @@ export default function Clients() {
         </div>
       </div>
 
+      {/* NEW: Bulk Actions Bar */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="flex items-center gap-1.5" 
+            onClick={toggleSelectAll}
+          >
+            {selectedClients.length === clients.length && clients.length > 0 ? (
+              <CheckSquare className="h-4 w-4" />
+            ) : (
+              <Square className="h-4 w-4" />
+            )}
+            {selectedClients.length > 0 ? `Selected (${selectedClients.length})` : "Select All"}
+          </Button>
+        </div>
+        {selectedClients.length > 0 && (
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            className="flex items-center gap-1.5"
+            onClick={handleBulkDelete}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Selected
+          </Button>
+        )}
+      </div>
+
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <div className="flex items-center justify-center">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5" 
+                        onClick={toggleSelectAll}
+                      >
+                        {selectedClients.length === clients.length && clients.length > 0 ? (
+                          <CheckSquare className="h-4 w-4" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </TableHead>
                   <TableHead className="w-12">S.no.</TableHead>
                   <TableHead>Portal</TableHead>
                   <TableHead>Name</TableHead>
@@ -351,13 +429,29 @@ export default function Clients() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={10} className="text-center py-8">Loading...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center py-8">Loading...</TableCell></TableRow>
                 ) : clients.length === 0 ? (
-                  <TableRow><TableCell colSpan={10} className="text-center py-8">No clients found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={11} className="text-center py-8">No clients found.</TableCell></TableRow>
                 ) : (
                   clients.map((client, idx) => (
                     <TableRow key={client._id}>
-                      <TableCell>{(pagination.currentPage - 1) * 8 + idx + 1}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5" 
+                            onClick={() => toggleClientSelection(client._id || '')}
+                          >
+                            {selectedClients.includes(client._id || '') ? (
+                              <CheckSquare className="h-4 w-4" />
+                            ) : (
+                              <Square className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell>{(currentPage - 1) * 20 + idx + 1}</TableCell>
                       <TableCell>{client.portalName || "-"}</TableCell>
                       <TableCell><div className="font-medium">{client.name}</div></TableCell>
                       <TableCell><div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-500" /><span className="text-sm">{client.phoneNumber}</span></div></TableCell>
@@ -422,27 +516,28 @@ export default function Clients() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Are you sure you want to delete this client?</DialogTitle>
-            <DialogDescription>
-              This action cannot be undone. This will permanently delete the client record for 
-              <span className="font-semibold"> {clientToDelete?.name}</span>.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" disabled={isDeleting}>Cancel</Button>
-            </DialogClose>
-            <Button variant="destructive" onClick={handleConfirmDelete} disabled={isDeleting}>
-              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete Client
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* NEW: Replace the delete dialog with DeleteConfirmationModal */}
+      <DeleteConfirmationModal
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        title="Delete Client"
+        description={`Are you sure you want to delete the client record for ${clientToDelete?.name}? This action cannot be undone.`}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        confirmButtonText="Delete Client"
+      />
       
+      {/* NEW: Bulk Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        open={isBulkDeleteModalOpen}
+        onOpenChange={setIsBulkDeleteModalOpen}
+        title="Delete Multiple Clients"
+        description={`Are you sure you want to delete ${selectedClients.length} selected clients? This action cannot be undone.`}
+        onConfirm={confirmBulkDelete}
+        confirmButtonText="Delete"
+        itemCount={selectedClients.length}
+      />
+
       {/* **** FIXED: Correctly calls fetchClients on success **** */}
       <ImportDataClaims open={importModalOpen} onOpenChange={setImportModalOpen} onImportSuccess={() => dispatch(fetchClients({ searchQuery: debouncedSearch, status: statusFilter, portalName: portalFilter, page: currentPage }))} />
       
@@ -458,13 +553,90 @@ export default function Clients() {
         <div className="mt-4">
           <Pagination>
             <PaginationContent>
-              <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }} /></PaginationItem>
-              {Array.from({ length: pagination.totalPages }, (_, i) => (
-                <PaginationItem key={i + 1}>
-                  <PaginationLink href="#" isActive={currentPage === i + 1} onClick={(e) => { e.preventDefault(); handlePageChange(i + 1); }}>{i + 1}</PaginationLink>
+              <PaginationItem>
+                <PaginationPrevious 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePageChange(currentPage - 1);
+                  }}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              
+              {/* First page */}
+              {currentPage > 3 && (
+                <PaginationItem>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePageChange(1);
+                    }}
+                  >
+                    1
+                  </PaginationLink>
                 </PaginationItem>
-              ))}
-              <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }} /></PaginationItem>
+              )}
+              
+              {/* Ellipsis if needed */}
+              {currentPage > 4 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Pages around current page */}
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                .filter(page => page >= Math.max(1, currentPage - 1) && page <= Math.min(pagination.totalPages, currentPage + 1))
+                .map(page => (
+                  <PaginationItem key={page}>
+                    <PaginationLink 
+                      href="#" 
+                      isActive={currentPage === page}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlePageChange(page);
+                      }}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))
+              }
+              
+              {/* Ellipsis if needed */}
+              {currentPage < pagination.totalPages - 3 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Last page */}
+              {currentPage < pagination.totalPages - 2 && (
+                <PaginationItem>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePageChange(pagination.totalPages);
+                    }}
+                  >
+                    {pagination.totalPages}
+                  </PaginationLink>
+                </PaginationItem>
+              )}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePageChange(currentPage + 1);
+                  }}
+                  className={currentPage === pagination.totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
             </PaginationContent>
           </Pagination>
         </div>

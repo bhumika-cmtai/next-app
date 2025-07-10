@@ -128,6 +128,24 @@ export const createRegisteration = (registerData: NewRegisterationData) => async
   }
 };
 
+export const deleteManyRegisterations = (ids: string[]) => async (dispatch: Dispatch) => {
+  dispatch(setLoading(true));
+  try {
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/registers/deleteManyRegisterations`, { data: { ids } });
+    dispatch(setLoading(false));
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      dispatch(setError(response.data.message));
+      return null;
+    }
+  } catch (error: unknown) {
+    const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
+    dispatch(setError(message || "Unknown error"));
+    return null;
+  }
+};  
+
 // Fetches a single registration by its ID
 export const fetchRegisterationById = (id: string) => async (dispatch: Dispatch) => {
     dispatch(setLoading(true));
