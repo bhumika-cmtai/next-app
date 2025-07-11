@@ -243,6 +243,7 @@ export default function Clients() {
       toast.success(`${selectedClients.length} clients would be deleted`);
       setIsBulkDeleteModalOpen(false);
       setSelectedClients([]);
+      dispatch(fetchClients({ searchQuery: debouncedSearch, status: statusFilter, portalName: portalFilter, page: currentPage }));
     } else {
       toast.error("Failed to delete clients");
     }
