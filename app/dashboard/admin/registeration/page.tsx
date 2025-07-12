@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Loader2, Hash, Trash2, Download, CheckSquare, Square } from "lucide-react";
+import { Phone, Loader2, Hash, Trash2, Download, CheckSquare, Square, Search } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 
 import {
@@ -89,6 +89,17 @@ export default function RegistrationsPage() {
   // NEW: State for multiple selection
   const [selectedRegisterations, setSelectedRegisterations] = useState<string[]>([]);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+
+  // NEW: State to store filtered registrations for date range
+  const [filteredRegistrations, setFilteredRegistrations] = useState<Registeration[]>([]);
+  // Flag to determine if we're showing filtered results
+  const [isDateFiltered, setIsDateFiltered] = useState(false);
+  // Date range filter state
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [dateRangeCount, setDateRangeCount] = useState<number | null>(null);
+  const [isCountLoading, setIsCountLoading] = useState<boolean>(false);
+  const [countError, setCountError] = useState<string | null>(null);
 
   const ITEMS_PER_PAGE = 8;
 
@@ -232,12 +243,53 @@ export default function RegistrationsPage() {
     );
   };
 
+  // NEW: Handler for date range search
+  const handleDateRangeSearch = () => {
+    if (!startDate || !endDate) {
+      toast.warning("Please select both start and end dates");
+      return;
+    }
+    setIsCountLoading(true);
+    setCountError(null);
+    setDateRangeCount(null);
+    try {
+      const startTimestamp = new Date(startDate).setHours(0, 0, 0, 0);
+      const endTimestamp = new Date(endDate).setHours(23, 59, 59, 999);
+      const filtered = registrations.filter(reg => {
+        if (!reg.createdOn) return false;
+        const regTimestamp = parseInt(reg.createdOn);
+        return regTimestamp >= startTimestamp && regTimestamp <= endTimestamp;
+      });
+      setFilteredRegistrations(filtered);
+      setDateRangeCount(filtered.length);
+      setIsDateFiltered(true);
+      toast.success("Date range search completed");
+    } catch (error: any) {
+      setCountError("Failed to filter registrations for the selected date range");
+      toast.error("Failed to process date range filter");
+    } finally {
+      setIsCountLoading(false);
+    }
+  };
+
+  // Clear filters function
+  const clearDateFilter = () => {
+    setStartDate("");
+    setEndDate("");
+    setDateRangeCount(null);
+    setFilteredRegistrations([]);
+    setIsDateFiltered(false);
+  };
+
+  // The data to display in the table (either filtered or all)
+  const displayedRegistrations = isDateFiltered ? filteredRegistrations : registrations;
+
   // NEW: Handler for selecting/deselecting all registrations
   const toggleSelectAll = () => {
-    if (selectedRegisterations.length === registrations.length) {
+    if (selectedRegisterations.length === displayedRegistrations.length) {
       setSelectedRegisterations([]);
     } else {
-      setSelectedRegisterations(registrations.map(reg => reg._id || '').filter(Boolean));
+      setSelectedRegisterations(displayedRegistrations.map(reg => reg._id || '').filter(Boolean));
     }
   };
 
@@ -265,7 +317,7 @@ export default function RegistrationsPage() {
   return (
     <div className="w-full mx-auto mt-2">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold">Registrations ({totalRegisterations})</h1>
+        <h1 className="text-3xl font-bold">Registrations ({isDateFiltered ? dateRangeCount : totalRegisterations})</h1>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Input placeholder="Search by Name..." value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} className="w-full sm:w-auto md:w-40"/>
           <Input placeholder="Search by Phone..." value={phoneSearch} onChange={(e) => setPhoneSearch(e.target.value)} className="w-full sm:w-auto md:w-40"/>
@@ -293,6 +345,53 @@ export default function RegistrationsPage() {
         </div>
       </div>
 
+            {/* NEW: Date Range Filter */}
+            <div className="flex flex-wrap justify-center items-end gap-2 p-4 border rounded-lg bg-slate-50 mb-6">
+        <div className="space-y-1">
+          <Label htmlFor="start-date" className="text-sm font-medium">Start Date</Label>
+          <Input 
+            id="start-date" 
+            type="date" 
+            value={startDate} 
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="end-date" className="text-sm font-medium">End Date</Label>
+          <Input 
+            id="end-date" 
+            type="date" 
+            value={endDate} 
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </div>
+        <Button 
+          onClick={handleDateRangeSearch} 
+          disabled={isCountLoading} 
+          className="gap-1"
+        >
+          <Search className="w-4 h-4"/>
+          {isCountLoading ? 'Searching...' : 'Search Dates'}
+        </Button>
+        {isDateFiltered && (
+          <Button 
+            variant="outline" 
+            onClick={clearDateFilter} 
+            className="gap-1"
+          >
+            Clear Filter
+          </Button>
+        )}
+      </div>
+      <div className="mb-4 h-6">
+        {countError && <p className="text-red-500 font-medium">{countError}</p>}
+        {dateRangeCount !== null && (
+          <p className="text-lg font-semibold text-primary">
+            Total Registrations Found: {dateRangeCount}
+          </p>
+        )}
+      </div>
+
       {/* NEW: Bulk Actions Bar */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
@@ -302,7 +401,7 @@ export default function RegistrationsPage() {
             className="flex items-center gap-1.5" 
             onClick={toggleSelectAll}
           >
-            {selectedRegisterations.length === registrations.length && registrations.length > 0 ? (
+            {selectedRegisterations.length === displayedRegistrations.length && displayedRegistrations.length > 0 ? (
               <CheckSquare className="h-4 w-4" />
             ) : (
               <Square className="h-4 w-4" />
@@ -337,7 +436,7 @@ export default function RegistrationsPage() {
                         className="h-5 w-5" 
                         onClick={toggleSelectAll}
                       >
-                        {selectedRegisterations.length === registrations.length && registrations.length > 0 ? (
+                        {selectedRegisterations.length === displayedRegistrations.length && displayedRegistrations.length > 0 ? (
                           <CheckSquare className="h-4 w-4" />
                         ) : (
                           <Square className="h-4 w-4" />
@@ -356,12 +455,12 @@ export default function RegistrationsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isListLoading && (!registrations || registrations.length === 0) ? (
+                {isListLoading && (!displayedRegistrations || displayedRegistrations.length === 0) ? (
                   <TableRow><TableCell colSpan={9} className="text-center py-8"><div className="flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading...</span></div></TableCell></TableRow>
-                ) : !registrations || registrations.length === 0 ? (
+                ) : !displayedRegistrations || displayedRegistrations.length === 0 ? (
                   <TableRow><TableCell colSpan={9} className="text-center py-8">No registrations found.</TableCell></TableRow>
                 ) : (
-                  registrations.map((register, idx) => (
+                  displayedRegistrations.map((register, idx) => (
                     <TableRow key={register._id}>
                       <TableCell>
                         <div className="flex items-center justify-center">
