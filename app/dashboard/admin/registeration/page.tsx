@@ -10,6 +10,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Phone, Loader2, Hash, Trash2, Download, CheckSquare, Square, Search } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
+import axios from "axios";
 
 import {
   fetchRegisterations,
@@ -101,7 +102,7 @@ export default function RegistrationsPage() {
   const [isCountLoading, setIsCountLoading] = useState<boolean>(false);
   const [countError, setCountError] = useState<string | null>(null);
 
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 15;
 
   // Main effect to fetch data when page or any filter changes
   useEffect(() => {
@@ -181,25 +182,48 @@ export default function RegistrationsPage() {
   };
 
   // Function to handle the CSV export
-  const handleExport = () => {
-    if (!registrations || registrations.length === 0) {
-        toast.warning("There is no registration data to export.");
-        return;
+  const handleExport = async () => {
+    // Fetch all registrations matching current filters (not just current page)
+    let allRegs: Registeration[] = [];
+    try {
+      const params: any = {
+        name: debouncedName,
+        phoneNumber: debouncedPhone,
+        leaderCode: debouncedCode,
+        limit: 10000, // Large limit to get all
+        page: 1
+      };
+      if (exportStatus !== "all") {
+        params.status = exportStatus;
+      }
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/registers/getAllRegister`, { params });
+      allRegs = response.data?.data?.registers || [];
+    } catch (err) {
+      toast.error("Failed to fetch all registrations for export.");
+      return;
     }
-      
-    const filteredRegistrations = exportStatus === "all" 
-      ? registrations 
-      : registrations.filter(reg => reg.status === exportStatus);
-    
-    if (filteredRegistrations.length === 0) {
-        toast.warning(`No registrations found with the status "${exportStatus}".`);
-        return;
+
+    // If date filter is active, filter by date
+    let exportData = allRegs;
+    if (isDateFiltered && startDate && endDate) {
+      const startTimestamp = new Date(startDate).setHours(0, 0, 0, 0);
+      const endTimestamp = new Date(endDate).setHours(23, 59, 59, 999);
+      exportData = allRegs.filter(reg => {
+        if (!reg.createdOn) return false;
+        const regTimestamp = parseInt(reg.createdOn);
+        return regTimestamp >= startTimestamp && regTimestamp <= endTimestamp;
+      });
+    }
+
+    if (!exportData || exportData.length === 0) {
+      toast.warning("No registrations found to export.");
+      return;
     }
 
     const headers = ["Name", "Phone Number", "Leader Code", "Status", "Created On", "Remark"];
     const csvContent = [
       headers.join(","),
-      ...filteredRegistrations.map(reg => [
+      ...exportData.map(reg => [
         `"${reg.name.replace(/"/g, '""')}"`,
         `"${reg.phoneNumber.replace(/"/g, '""')}"`,
         `"${reg.leaderCode || 'N/A'}"`,
@@ -283,6 +307,21 @@ export default function RegistrationsPage() {
 
   // The data to display in the table (either filtered or all)
   const displayedRegistrations = isDateFiltered ? filteredRegistrations : registrations;
+
+  // Pagination logic for filtered data
+  const filteredTotal = isDateFiltered ? filteredRegistrations.length : totalRegisterations;
+  const filteredTotalPages = isDateFiltered ? Math.ceil(filteredTotal / ITEMS_PER_PAGE) : totalPages;
+  const filteredCurrentPage = isDateFiltered ? page : currentPage;
+  const paginatedRegistrations = isDateFiltered
+    ? displayedRegistrations.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+    : displayedRegistrations;
+
+  // When filter is active and page changes, scroll to top
+  useEffect(() => {
+    if (isDateFiltered) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [page, isDateFiltered]);
 
   // NEW: Handler for selecting/deselecting all registrations
   const toggleSelectAll = () => {
@@ -455,12 +494,12 @@ export default function RegistrationsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isListLoading && (!displayedRegistrations || displayedRegistrations.length === 0) ? (
+                {isListLoading && (!paginatedRegistrations || paginatedRegistrations.length === 0) ? (
                   <TableRow><TableCell colSpan={9} className="text-center py-8"><div className="flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading...</span></div></TableCell></TableRow>
-                ) : !displayedRegistrations || displayedRegistrations.length === 0 ? (
+                ) : !paginatedRegistrations || paginatedRegistrations.length === 0 ? (
                   <TableRow><TableCell colSpan={9} className="text-center py-8">No registrations found.</TableCell></TableRow>
                 ) : (
-                  displayedRegistrations.map((register, idx) => (
+                  paginatedRegistrations.map((register, idx) => (
                     <TableRow key={register._id}>
                       <TableCell>
                         <div className="flex items-center justify-center">
@@ -506,7 +545,7 @@ export default function RegistrationsPage() {
         </CardContent>
       </Card>
       
-      {totalPages > 1 && (
+      {filteredTotalPages > 1 && (
         <div className="mt-4">
           <Pagination>
             <PaginationContent>
@@ -515,14 +554,13 @@ export default function RegistrationsPage() {
                   href="#" 
                   onClick={(e) => {
                     e.preventDefault();
-                    setPage(Math.max(1, page - 1));
+                    setPage(Math.max(1, filteredCurrentPage - 1));
                   }}
-                  className={page <= 1 || isListLoading ? "pointer-events-none opacity-50" : ""}
+                  className={filteredCurrentPage <= 1 || isListLoading ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
-              
               {/* First page */}
-              {page > 3 && (
+              {filteredCurrentPage > 3 && (
                 <PaginationItem>
                   <PaginationLink 
                     href="#" 
@@ -535,22 +573,20 @@ export default function RegistrationsPage() {
                   </PaginationLink>
                 </PaginationItem>
               )}
-              
               {/* Ellipsis if needed */}
-              {page > 4 && (
+              {filteredCurrentPage > 4 && (
                 <PaginationItem>
                   <span className="px-2">...</span>
                 </PaginationItem>
               )}
-              
               {/* Pages around current page */}
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(pageNum => pageNum >= Math.max(1, page - 1) && pageNum <= Math.min(totalPages, page + 1))
+              {Array.from({ length: filteredTotalPages }, (_, i) => i + 1)
+                .filter(pageNum => pageNum >= Math.max(1, filteredCurrentPage - 1) && pageNum <= Math.min(filteredTotalPages, filteredCurrentPage + 1))
                 .map(pageNum => (
                   <PaginationItem key={pageNum}>
                     <PaginationLink 
                       href="#" 
-                      isActive={page === pageNum}
+                      isActive={filteredCurrentPage === pageNum}
                       onClick={(e) => {
                         e.preventDefault();
                         setPage(pageNum);
@@ -561,37 +597,34 @@ export default function RegistrationsPage() {
                   </PaginationItem>
                 ))
               }
-              
               {/* Ellipsis if needed */}
-              {page < totalPages - 3 && (
+              {filteredCurrentPage < filteredTotalPages - 3 && (
                 <PaginationItem>
                   <span className="px-2">...</span>
                 </PaginationItem>
               )}
-              
               {/* Last page */}
-              {page < totalPages - 2 && (
+              {filteredCurrentPage < filteredTotalPages - 2 && (
                 <PaginationItem>
                   <PaginationLink 
                     href="#" 
                     onClick={(e) => {
                       e.preventDefault();
-                      setPage(totalPages);
+                      setPage(filteredTotalPages);
                     }}
                   >
-                    {totalPages}
+                    {filteredTotalPages}
                   </PaginationLink>
                 </PaginationItem>
               )}
-              
               <PaginationItem>
                 <PaginationNext 
                   href="#" 
                   onClick={(e) => {
                     e.preventDefault();
-                    setPage(Math.min(totalPages, page + 1));
+                    setPage(Math.min(filteredTotalPages, filteredCurrentPage + 1));
                   }}
-                  className={page >= totalPages || isListLoading ? "pointer-events-none opacity-50" : ""}
+                  className={filteredCurrentPage >= filteredTotalPages || isListLoading ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
             </PaginationContent>

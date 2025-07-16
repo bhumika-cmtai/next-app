@@ -17,6 +17,7 @@ import ImportLeads from "./importLeads";
 import { Label } from "@/components/ui/label";
 import { DeleteConfirmationModal } from "@/app/components/ui/delete-confirmation-modal";
 import { toast } from "sonner";
+import axios from "axios";
 
 
 // Define the initial state for our expanded form, matching the Lead interface
@@ -194,15 +195,34 @@ export default function Leads() {
     }
   };
   
-  const handleExport = () => {
-    const filteredLeads = exportStatus === "all" 
-      ? leads 
-      : leads.filter(lead => lead.status === exportStatus);
-    
-    const headers = ["Name", "Email", "Phone", "Status", "Age", "TransactionId","Gender","Created"];
+  const handleExport = async () => {
+    // Fetch all leads matching current filters (not just current page)
+    let allLeads: Lead[] = [];
+    try {
+      const params: any = {
+        search: debouncedSearch,
+        page: 1,
+        limit: 10000 // Large limit to get all
+      };
+      if (exportStatus !== "all") {
+        params.status = exportStatus;
+      }
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/getAllLeads`, { params });
+      allLeads = response.data?.data?.leads || [];
+    } catch (err) {
+      toast.error("Failed to fetch all leads for export.");
+      return;
+    }
+
+    if (!allLeads || allLeads.length === 0) {
+      toast.warning("No leads found to export.");
+      return;
+    }
+
+    const headers = ["Name", "Email", "Phone", "Status", "Age", "TransactionId", "Gender", "Created"];
     const csvContent = [
       headers.join(","),
-      ...filteredLeads.map(lead => [
+      ...allLeads.map(lead => [
         `"${lead.name.replace(/"/g, '""')}"`,
         `"${lead.email.replace(/"/g, '""')}"`,
         `"${lead.phoneNumber}"`,
@@ -210,7 +230,6 @@ export default function Leads() {
         `"${lead.age}"`,
         `"${lead.transactionId}"`,
         `"${lead.gender}"`,
-        // `"${(lead.message || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
         `"${lead.createdOn ? new Date(lead.createdOn).toLocaleDateString() : ''}"`
       ].join(","))
     ].join("\n");
