@@ -62,13 +62,27 @@ const Page = () => {
       setCodeError(null);
 
       try {
-        // Since the thunk returns data on success, we can await it.
         const leaderData = await dispatch(fetchLeaderCode(debouncedLeaderCode));
-        // The thunk throws on error, so if we get here, it's a success.
-        setValidatedLeaderName(leaderData.name);
+        // Check if the response indicates leader code not found
+        if (leaderData?.message === "leader code not found") {
+          setCodeError("Leader code not found. Please check and try again.");
+          return;
+        }
+        // If we reach here and have leader data, it's a success
+        if (leaderData?.name) {
+          setValidatedLeaderName(leaderData.name);
+        } else {
+          setCodeError("Invalid leader code. Please try again.");
+        }
       } catch (error: any) {
-        // The thunk throws on failure, so we catch the error here.
-        setCodeError(error.message || "Invalid Leader Code.");
+        // Handle different types of error responses
+        if (error.response?.data?.message) {
+          setCodeError(error.response.data.message);
+        } else if (error.message) {
+          setCodeError(error.message);
+        } else {
+          setCodeError("Invalid leader code. Please try again.");
+        }
       } finally {
         setIsCheckingCode(false);
       }
@@ -87,20 +101,19 @@ const Page = () => {
       return;
     }
 
-    try {
-      // Step 1: Verify the Leader Code exists by dispatching fetchLeaderCode.
-      // We'll use RTK's built-in matchers to check if the thunk was fulfilled or rejected.
-      const leaderInfo = await dispatch(fetchLeaderCode(leaderCode));
-      if (!leaderInfo) {
-        toast.error("leader code is not valid")
-      }
-      // If we reach here, the leader code is valid.
+    // Check if leader code is validated
+    if (!validatedLeaderName) {
+      toast.error("Please enter a valid Leader Code first.");
+      setIsLoading(false);
+      return;
+    }
 
-      // Step 2: Proceed to create the registration.
+    try {
+      // Step 1: Create the registration since we already verified the code
       const registerationPayload = {
         name,
         phoneNumber,
-        email: email || undefined, // Pass undefined if email is empty
+        email: email || undefined,
         leaderCode,
       };
 
@@ -116,27 +129,18 @@ const Page = () => {
         const whatsappLink = await dispatch(verifyCredentialsAndGetLink({ appName: WHATSAPP_GROUP_APP_NAME }));
 
         if (whatsappLink) {
-          // If the link is found, redirect the user to it.
-          // Using window.location.href is best for external URLs.
           window.location.href = whatsappLink;
         } else {
-          // If the link is not found, the thunk will show an error toast.
-          // We can show an info message and redirect to a fallback page.
           toast.info("Could not retrieve the group link. Redirecting to homepage.");
           router.push("/");
         }
-        router.push("/"); // Redirect on success
       } else {
-        // Handle failure, e.g., duplicate phone number
         toast.error(
-
           "Registration failed. This phone number or email may already be registered."
         );
       }
     } catch (error: any) {
-      // This will catch any unexpected errors during the process
-      toast.error("number exist")
-      // toast.error("An unexpected error occurred. Please try again later.");
+      toast.error("Registration failed. Please try again later.");
       console.error("Registration process failed:", error);
     } finally {
       setIsLoading(false);
@@ -170,75 +174,106 @@ const Page = () => {
                   </h1>
                   <div className="w-full rounded-2xl p-[1.5px] bg-[linear-gradient(90deg,_#c6ffdd_0%,_#fbd786_50%,_#f7797d_100%)] bg-[length:200%_auto] transition-all duration-500 hover:bg-[position:100%_0] shadow-md hover:shadow-lg">
                     <div className="flex flex-col w-full items-center gap-4 rounded-[14px] bg-white py-10">
+                      {/* Add form message section */}
+                      {/* Update the error message display */}
+                      {codeError && !isCheckingCode && (
+                        <div className="w-full px-4 py-3 mb-2 bg-red-50 border border-red-200 rounded-md">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                              <span className="text-red-500 text-xl">❌</span>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-red-800">Leader Code Not Found</h4>
+                              <p className="text-sm text-red-600">{codeError}</p>
+                              <p className="text-xs text-red-500 mt-1">
+                                Please make sure you have entered the correct leader code
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {validatedLeaderName && !isCheckingCode && (
+                        <div className="w-full px-4 py-3 mb-2 bg-green-50 border border-green-200 rounded-md">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                              <span className="text-green-500 text-xl">✓</span>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-green-800">Leader Code Verified</h4>
+                              <p className="text-sm text-green-600">Team Leader: {validatedLeaderName}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <form
                         className="flex flex-col gap-4"
                         onSubmit={handleSubmit}
                       >
-                        <input
-                          id="Leader Code"
-                          value={leaderCode}
-                          onChange={(e) => setLeaderCode(e.target.value)}
-                          required
-                          disabled={isLoading}
-                          type="text"
-                          placeholder="Team Leader Code"
-                          className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"
-                        />
+                        <div className="relative">
+                          <input
+                            id="Leader Code"
+                            value={leaderCode}
+                            onChange={(e) => setLeaderCode(e.target.value)}
+                            required
+                            disabled={isLoading}
+                            type="text"
+                            placeholder="Team Leader Code"
+                            className="border-[1px] border-gray-400 px-3 py-2 rounded-sm w-full"
+                          />
+                          {isCheckingCode && (
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                            </div>
+                          )}
+                        </div>
                         <input
                           id="name"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           required
-                          disabled={isLoading}
+                          disabled={isLoading || !validatedLeaderName}
                           type="text"
                           placeholder="Your Name"
-                          className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"
+                          className={`border-[1px] border-gray-400 px-3 py-2 rounded-sm ${!validatedLeaderName ? 'bg-gray-100' : ''}`}
                         />
                         <input
                           id="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          disabled={isLoading}
+                          disabled={isLoading || !validatedLeaderName}
                           type="email"
                           placeholder="Your Email "
-                          className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"
+                          className={`border-[1px] border-gray-400 px-3 py-2 rounded-sm ${!validatedLeaderName ? 'bg-gray-100' : ''}`}
                         />
                         <input
                           id="phoneNumber"
                           value={phoneNumber}
                           onChange={(e) => setPhoneNumber(e.target.value)}
                           required
-                          disabled={isLoading}
+                          disabled={isLoading || !validatedLeaderName}
                           type="text"
                           placeholder="Your Mobile Number"
-                          className="border-[1px] border-gray-400 px-3 py-2 rounded-sm"
+                          className={`border-[1px] border-gray-400 px-3 py-2 rounded-sm ${!validatedLeaderName ? 'bg-gray-100' : ''}`}
                         />
                         <div className="w-full mx-auto rounded-3xl p-[2px] bg-gradient-to-b from-[#A6F4C5] to-[#B6A7FF] hover:from-gold-200 hover:to-purple-500 transition-all duration-500">
                           <button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={isLoading || !validatedLeaderName || isCheckingCode}
                             className="w-full h-full text-center rounded-[22px] bg-white/90 backdrop-blur-sm px-4 py-1 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {isLoading ? "Submitting..." : "Submit"}
                           </button>
                         </div>
                       </form>
-                      <div className="mt-2 text-sm text-center h-5">
-                        {isCheckingCode && (
-                          <span className="flex items-center text-gray-500">
+                      {/* Remove the old status message div since we now have the new message sections */}
+                      {isCheckingCode && (
+                        <div className="mt-2 text-sm text-center h-5">
+                          <span className="flex items-center justify-center text-gray-500">
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Verifying code...
                           </span>
-                        )}
-                        {validatedLeaderName && !isCheckingCode && (
-                          <p className="text-green-600 font-medium">
-                            Leader: {validatedLeaderName}
-                          </p>
-                        )}
-                        {codeError && !isCheckingCode && (
-                          <p className="text-red-600">{codeError}</p>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
