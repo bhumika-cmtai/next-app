@@ -22,10 +22,72 @@ const Page = ({ params }: { params: Promise<{ slug: string }> }) => {
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
-  
   const isFetchingLink = useSelector((state: RootState) => state.links.isLoading);
+
+  // Add new states for leader code verification
+  const [isCheckingCode, setIsCheckingCode] = useState(false);
+  const [validatedLeaderName, setValidatedLeaderName] = useState<string | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+
+  // Add debounce hook for leader code
+  function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value);
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
+      return () => {
+        clearTimeout(handler);
+      };
+    }, [value, delay]);
+    return debouncedValue;
+  }
+
+  const debouncedLeaderCode = useDebounce(leaderCode, 500);
+
+  // Add leader code verification effect
+  useEffect(() => {
+    if (!debouncedLeaderCode) {
+      setValidatedLeaderName(null);
+      setCodeError(null);
+      return;
+    }
+
+    const verifyCode = async () => {
+      setIsCheckingCode(true);
+      setValidatedLeaderName(null);
+      setCodeError(null);
+
+      try {
+        const leaderData = await dispatch(fetchLeaderCode(debouncedLeaderCode));
+        // Check if the response indicates leader code not found
+        if (leaderData?.message === "leader code not found") {
+          setCodeError("Leader code not found. Please check and try again.");
+          return;
+        }
+        // If we reach here and have leader data, it's a success
+        if (leaderData?.name) {
+          setValidatedLeaderName(leaderData.name);
+        } else {
+          setCodeError("Invalid leader code. Please try again.");
+        }
+      } catch (error: any) {
+        // Handle different types of error responses
+        if (error.response?.data?.message) {
+          setCodeError(error.response.data.message);
+        } else if (error.message) {
+          setCodeError(error.message);
+        } else {
+          setCodeError("Invalid leader code. Please try again.");
+        }
+      } finally {
+        setIsCheckingCode(false);
+      }
+    };
+
+    verifyCode();
+  }, [debouncedLeaderCode, dispatch]);
 
   const formattedTitle = slug
     .replace(/-/g, " ")
@@ -64,34 +126,31 @@ const Page = ({ params }: { params: Promise<{ slug: string }> }) => {
       return;
     }
 
+    // Check if leader code is validated
+    if (!validatedLeaderName) {
+      toast.error("Please enter a valid Leader Code first.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      // Step 1: Validate the leader code (This logic remains)
-      await dispatch(fetchLeaderCode(leaderCode));
-      
-      // Step 2: If leader code is valid, create the payload for a 'linkclick'
-      // The structure of the object is the same, we just rename it for clarity.
+      // Step 1: Create the payload since we already verified the code
       const linkclickPayload = { 
         name, 
         phoneNumber, 
         leaderCode, 
-        status: "inComplete", // Default status
+        status: "inComplete",
         portalName: slug 
       };
 
-      // --- THIS IS THE MAIN CHANGE ---
-      // We now dispatch the `addLinkclick` action instead of `addClient`.
       const result = await dispatch(addLinkclick(linkclickPayload));
-      // --- END OF CHANGE ---
       
-      // Step 3: If the linkclick is added successfully, redirect to the portal link
       if (result) {
         toast.success("Details saved! Redirecting to portal...");
         setTimeout(() => {
-          // Use window.location.href for external links to ensure a full page navigation
           window.location.href = portalUrl;
-        }, 2000); // Increased timeout slightly for user to read the message
+        }, 2000);
       } else {
-        // This 'else' might not be reached if addLinkclick throws an error, but it's good for safety.
         throw new Error("Failed to save your details. Please try again.");
       }
     } catch (error: any) {
@@ -130,39 +189,79 @@ const Page = ({ params }: { params: Promise<{ slug: string }> }) => {
                 </h1>
                 <div className="w-full rounded-2xl p-[1.5px] bg-[linear-gradient(90deg,_#c6ffdd_0%,_#fbd786_50%,_#f7797d_100%)] bg-[length:200%_auto] transition-all duration-500 hover:bg-[position:100%_0] shadow-md hover:shadow-lg">
                   <div className="flex flex-col w-full items-center gap-4 rounded-[14px] bg-white py-10 px-6">
+                    {/* Add form message section */}
+                    {codeError && !isCheckingCode && (
+                      <div className="w-full px-4 py-3 mb-2 bg-red-50 border border-red-200 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-red-500 text-xl">❌</span>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-red-800">Leader Code Not Found</h4>
+                            <p className="text-sm text-red-600">{codeError}</p>
+                            <p className="text-xs text-red-500 mt-1">
+                              Please make sure you have entered the correct leader code
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {validatedLeaderName && !isCheckingCode && (
+                      <div className="w-full px-4 py-3 mb-2 bg-green-50 border border-green-200 rounded-md">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-green-500 text-xl">✓</span>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-green-800">Leader Code Verified</h4>
+                            <p className="text-sm text-green-600">Team Leader: {validatedLeaderName}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit}>
-                      <input
-                        id="Leader Code"
-                        value={leaderCode}
-                        onChange={(e) => setLeaderCode(e.target.value)}
-                        required
-                        disabled={isSubmitting}
-                        type="text"
-                        placeholder="Team Leader Code"
-                        className="border-[1px] border-gray-400 px-3 py-2 rounded-md"
-                      />
+                      <div className="relative">
+                        <input
+                          id="Leader Code"
+                          value={leaderCode}
+                          onChange={(e) => setLeaderCode(e.target.value)}
+                          required
+                          disabled={isSubmitting}
+                          type="text"
+                          placeholder="Team Leader Code"
+                          className="border-[1px] border-gray-400 px-3 py-2 rounded-md w-full"
+                        />
+                        {isCheckingCode && (
+                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                            <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                          </div>
+                        )}
+                      </div>
                       <input
                         id="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !validatedLeaderName}
                         type="text"
                         placeholder="Your Name"
-                        className="border-[1px] border-gray-400 px-3 py-2 rounded-md"
+                        className={`border-[1px] border-gray-400 px-3 py-2 rounded-md ${!validatedLeaderName ? 'bg-gray-100' : ''}`}
                       />
                       <input
                         id="phoneNumber"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                         required
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !validatedLeaderName}
                         type="text"
                         placeholder="Your Mobile Number"
-                        className="border-[1px] border-gray-400 px-3 py-2 rounded-md"
+                        className={`border-[1px] border-gray-400 px-3 py-2 rounded-md ${!validatedLeaderName ? 'bg-gray-100' : ''}`}
                       />
                       <div className="w-full mx-auto rounded-3xl p-[2px] bg-gradient-to-b from-[#A6F4C5] to-[#B6A7FF] hover:from-gold-200 hover:to-purple-500 transition-all duration-500">
-                        <button className="w-full h-full text-center rounded-[22px] bg-white/90 backdrop-blur-sm px-4 py-2 font-semibold disabled:opacity-50" disabled={isSubmitting}>
+                        <button 
+                          className="w-full h-full text-center rounded-[22px] bg-white/90 backdrop-blur-sm px-4 py-2 font-semibold disabled:opacity-50" 
+                          disabled={isSubmitting || !validatedLeaderName || isCheckingCode}
+                        >
                           {isSubmitting ? (
                             <span className="flex items-center justify-center">
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -172,6 +271,14 @@ const Page = ({ params }: { params: Promise<{ slug: string }> }) => {
                         </button>
                       </div>
                     </form>
+                    {isCheckingCode && (
+                      <div className="mt-2 text-sm text-center h-5">
+                        <span className="flex items-center justify-center text-gray-500">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Verifying code...
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
