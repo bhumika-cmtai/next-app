@@ -79,12 +79,10 @@ export default function Clients() {
     status: "New",
     ownerName: [],
     ownerNumber: [],
-    // city: "",
-    // age: 0,
     portalName: "",
     reason: "",
-    ekyc_stage: 'notComplete',
-    trade_status: 'notMatched',
+    ekyc_stage: 'not complete ',
+    trade_status: 'not done ',
     isApproved: false,
   });
   
@@ -313,8 +311,8 @@ export default function Clients() {
         `"${client.name.replace(/"/g, '""')}"`,
         `"${client.email?.replace(/"/g, '""') || ''}"`,
         `"${client.phoneNumber}"`,
-        `"${client.ekyc_stage || ''}"`,
-        `"${client.trade_status || ''}"`,
+        `"${getDisplayKycStatus(client.ekyc_stage || '')}"`,
+        `"${getDisplayTradeStatus(client.trade_status || '')}"`,
         `"${(client.ownerName || []).join('; ').replace(/"/g, '""')}"`,
          `"${(client.ownerNumber || []).join('; ').replace(/"/g, '""')}"`,
         `"${client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : ''}"`
@@ -331,6 +329,29 @@ export default function Clients() {
     document.body.removeChild(link);
     
     setExportModalOpen(false);
+  };
+
+  // Add mapping functions at the top of the component
+  const getDisplayKycStatus = (status: string) => {
+    switch (status) {
+      case "not complete ":
+        return "Not Completed";
+      case "complete":
+        return "Completed";
+      default:
+        return status;
+    }
+  };
+
+  const getDisplayTradeStatus = (status: string) => {
+    switch (status) {
+      case "not done ":
+        return "Not Completed";
+      case "done":
+        return "Completed";
+      default:
+        return status;
+    }
   };
 
   return (
@@ -456,8 +477,8 @@ export default function Clients() {
                       <TableCell>{client.portalName || "-"}</TableCell>
                       <TableCell><div className="font-medium">{client.name}</div></TableCell>
                       <TableCell><div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-500" /><span className="text-sm">{client.phoneNumber}</span></div></TableCell>
-                      <TableCell>{client.ekyc_stage === "notComplete" ? "Not Complete" : "Complete"}</TableCell>
-                      <TableCell>{client.trade_status === "notMatched" ? "Not Matched" : "Matched"}</TableCell>
+                      <TableCell>{getDisplayKycStatus(client.ekyc_stage || "-")}</TableCell>
+                      <TableCell>{getDisplayTradeStatus(client.trade_status || "-")}</TableCell>
                       <TableCell>{client.ownerName?.join(', ') || '-'}</TableCell>
                       <TableCell>{client.ownerNumber?.join(', ') || '-'}</TableCell>
                       <TableCell>{client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : '-'}</TableCell>
@@ -504,8 +525,34 @@ export default function Clients() {
             {/* <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="city">City</Label><Input id="city" placeholder="Client's city" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div> */}
             <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="portalName">Portal Name</Label><Input id="portalName" placeholder="e.g., Angel-One" value={form.portalName} onChange={(e) => setForm({ ...form, portalName: e.target.value })} /></div>
             {/* <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="age">Age</Label><Input id="age" type="number" placeholder="Client's age" value={form.age || ''} onChange={(e) => setForm({ ...form, age: Number(e.target.value) || 0 })} /></div> */}
-            <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="ekyc_stage">KYC Status</Label><Select value={form.ekyc_stage} onValueChange={(value) => setForm({ ...form, ekyc_stage: value })}><SelectTrigger id="ekyc_stage"><SelectValue placeholder="Select KYC Status" /></SelectTrigger><SelectContent><SelectItem value="notComplete">Not Complete</SelectItem><SelectItem value="complete">Complete</SelectItem></SelectContent></Select></div>
-            <div className="col-span-2 sm:col-span-1 space-y-2"><Label htmlFor="trade_status">Trade Status</Label><Select value={form.trade_status} onValueChange={(value) => setForm({ ...form, trade_status: value })}><SelectTrigger id="trade_status"><SelectValue placeholder="Select Trade Status" /></SelectTrigger><SelectContent><SelectItem value="notMatched">Not Matched</SelectItem><SelectItem value="matched">Matched</SelectItem></SelectContent></Select></div>
+            <div className="col-span-2 sm:col-span-1 space-y-2">
+              <Label htmlFor="ekyc_stage">KYC Status</Label>
+              <Select value={form.ekyc_stage} onValueChange={(value) => setForm({ ...form, ekyc_stage: value })}>
+                <SelectTrigger id="ekyc_stage">
+                  <SelectValue placeholder="Select KYC Status">
+                    {form.ekyc_stage ? getDisplayKycStatus(form.ekyc_stage) : "Select KYC Status"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not complete ">Not Completed</SelectItem>
+                  <SelectItem value="complete">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 sm:col-span-1 space-y-2">
+              <Label htmlFor="trade_status">Trade Status</Label>
+              <Select value={form.trade_status} onValueChange={(value) => setForm({ ...form, trade_status: value })}>
+                <SelectTrigger id="trade_status">
+                  <SelectValue placeholder="Select Trade Status">
+                    {form.trade_status ? getDisplayTradeStatus(form.trade_status) : "Select Trade Status"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not done ">Not Completed</SelectItem>
+                  <SelectItem value="done">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="col-span-2 space-y-2"><Label htmlFor="status">Client Status</Label><Select value={form.status} onValueChange={(value: string) => setForm({ ...form, status: value })} ><SelectTrigger id="status"><SelectValue placeholder="Select Status" /></SelectTrigger><SelectContent><SelectItem value="New">New</SelectItem><SelectItem value="RegisterationDone">Registered</SelectItem><SelectItem value="CallCut">Call Cut</SelectItem><SelectItem value="CallNotPickUp">Not Picked Up</SelectItem><SelectItem value="NotInterested">Not Interested</SelectItem><SelectItem value="InvalidNumber">Invalid Number</SelectItem></SelectContent></Select></div>
             {form.status === "NotInterested" && (<div className="col-span-2 space-y-2"><Label htmlFor="reason">Reason for Not Interested</Label><Input id="reason" placeholder="Enter reason" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} /></div>)}
             <DialogFooter className="col-span-2 pt-4 flex-wrap gap-2">

@@ -31,6 +31,29 @@ const isCurrentTimeInSession = (session: GlobalSession | null): boolean => {
   return now >= startDateTime && now <= endDateTime;
 };
 
+// Add mapping functions at the top of the component
+const getDisplayKycStatus = (status: string) => {
+  switch (status) {
+    case "not complete ":
+      return "Not Completed";
+    case "complete":
+      return "Completed";
+    default:
+      return status;
+  }
+};
+
+const getDisplayTradeStatus = (status: string) => {
+  switch (status) {
+    case "not done ":
+      return "Not Completed";
+    case "done":
+      return "Completed";
+    default:
+      return status;
+  }
+};
+
 export default function Clients() {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -111,33 +134,36 @@ export default function Clients() {
     e.preventDefault();
     if (!singleClientResult) return;
 
-    if (singleClientResult.ekyc_stage !== 'Complete' && singleClientResult.trade_status !== 'Matched') return;
+    // Update the condition to match API values
+    if (singleClientResult.ekyc_stage !== 'complete' && singleClientResult.trade_status !== 'done') {
+      return;
+    }
     if (singleClientResult.ownerNumber?.includes(newOwnerNumber.trim())) {
-        toast.warning("This phone number has already claimed this client.");
-        return;
+      toast.warning("This phone number has already claimed this client.");
+      return;
     }
     if (!newOwnerName.trim() || !newOwnerNumber.trim()) return;
     
     setIsAddOwnerLoading(true);
     const updatePayload = {
-        ownerName: [...(singleClientResult.ownerName || []), newOwnerName],
-        ownerNumber: [...(singleClientResult.ownerNumber || []), newOwnerNumber],
+      ownerName: [...(singleClientResult.ownerName || []), newOwnerName],
+      ownerNumber: [...(singleClientResult.ownerNumber || []), newOwnerNumber],
     };
     if (!singleClientResult._id) {
-        toast.error("Client ID is missing. Cannot update owner data.");
-        setIsAddOwnerLoading(false);
-        return;
+      toast.error("Client ID is missing. Cannot update owner data.");
+      setIsAddOwnerLoading(false);
+      return;
     }
     const responseWrapper = await dispatch(updateClient(singleClientResult._id, updatePayload));
     
     if (responseWrapper?.data) {
-        toast.success("Owner data has been saved successfully!");
-        setSingleClientResult(null);
-        setSingleSearchNumber("");
-        setNewOwnerName("");
-        setNewOwnerNumber("");
+      toast.success("Owner data has been saved successfully!");
+      setSingleClientResult(null);
+      setSingleSearchNumber("");
+      setNewOwnerName("");
+      setNewOwnerNumber("");
     } else {
-        toast.error("Failed to save owner data. Please try again.");
+      toast.error("Failed to save owner data. Please try again.");
     }
 
     setIsAddOwnerLoading(false);
@@ -221,19 +247,35 @@ export default function Clients() {
                 <div><p className="text-muted-foreground">Client Name</p><p className="font-medium text-base">{singleClientResult.name}</p></div>
                 <div><p className="text-muted-foreground">Phone Number</p><p className="font-medium text-base">{singleClientResult.phoneNumber}</p></div>
                 {/* <div><p className="text-muted-foreground">Status</p><Badge className={`${getStatusColor(singleClientResult.status || "")} text-white`}>{singleClientResult.status}</Badge></div> */}
-                <div><p className="text-muted-foreground">E-KYC Status</p><div className="flex items-center gap-2 font-medium">{singleClientResult.ekyc_stage === 'Complete' ? <ShieldCheck className="w-4 h-4 text-green-500" /> : <ShieldAlert className="w-4 h-4 text-orange-500" />}<span>{singleClientResult.ekyc_stage === 'Complete' ? 'Complete' : 'Not Complete'}</span></div></div>
-                <div className="md:col-span-2"><p className="text-muted-foreground">Trade Status</p><div className="flex items-center gap-2 font-medium">{singleClientResult.trade_status === 'Matched' ? <ShieldCheck className="w-4 h-4 text-green-500" /> : <ShieldAlert className="w-4 h-4 text-orange-500" />}<span>{singleClientResult.trade_status === 'Matched' ? 'Matched' : 'Not Matched'}</span></div></div>
+                <div>
+                  <p className="text-muted-foreground">E-KYC Status</p>
+                  <div className="flex items-center gap-2 font-medium">
+                    {singleClientResult.ekyc_stage === 'complete' ? 
+                      <ShieldCheck className="w-4 h-4 text-green-500" /> : 
+                      <ShieldAlert className="w-4 h-4 text-orange-500" />}
+                    <span>{getDisplayKycStatus(singleClientResult.ekyc_stage || "")}</span>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-muted-foreground">Trade Status</p>
+                  <div className="flex items-center gap-2 font-medium">
+                    {singleClientResult.trade_status === 'done' ? 
+                      <ShieldCheck className="w-4 h-4 text-green-500" /> : 
+                      <ShieldAlert className="w-4 h-4 text-orange-500" />}
+                    <span>{getDisplayTradeStatus(singleClientResult.trade_status || "")}</span>
+                  </div>
+                </div>
                 <div className="md:col-span-2"><p className="text-muted-foreground">Current Owner(s)</p>{(singleClientResult.ownerName && singleClientResult.ownerName.length > 0) ? (<ul className="list-disc list-inside mt-1 font-medium">{singleClientResult.ownerName.map((name, i) => <li key={i}>{name} - {singleClientResult.ownerNumber?.[i] || 'N/A'}</li>)}</ul>) : (<p className="text-muted-foreground italic mt-1">No owners have claimed this client yet.</p>)}</div>
             </div>
             {(() => {
-                const canClaim = singleClientResult.ekyc_stage === 'Complete' || singleClientResult.trade_status === 'Matched';
+                const canClaim = singleClientResult.ekyc_stage === 'complete' || singleClientResult.trade_status === 'done';
                 const isAlreadyOwner = newOwnerNumber.trim() ? singleClientResult.ownerNumber?.includes(newOwnerNumber.trim()) : false;
 
                 return (
                     <div className="border-t pt-6">
                         <h3 className="font-semibold text-lg flex items-center gap-2 mb-4"><UserPlus className="w-5 h-5" />Claim This Client</h3>
                         
-                        {!canClaim && (<div className="p-3 mb-4 rounded-md text-sm flex items-center gap-2 bg-yellow-50 text-yellow-800 border border-yellow-200"><AlertCircle className="w-4 h-4" /><span>Client must have a 'Complete' KYC or 'Matched' Trade status or RegisterationDone to be claimed.</span></div>)}
+                        {!canClaim && (<div className="p-3 mb-4 rounded-md text-sm flex items-center gap-2 bg-yellow-50 text-yellow-800 border border-yellow-200"><AlertCircle className="w-4 h-4" /><span>Client must have a 'Completed' KYC or 'Completed' Trade status to be claimed.</span></div>)}
                         
                         {isAlreadyOwner && (
                             <div className="p-3 mb-4 rounded-md text-sm flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-200">

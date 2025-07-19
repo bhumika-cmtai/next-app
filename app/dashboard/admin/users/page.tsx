@@ -197,49 +197,63 @@ export default function Users() {
   };
 
   // Function to handle the CSV export
-  const handleExport = () => {
-    if (!users || users.length === 0) {
-        toast.warning("There is no leader data to export.");
-        return;
-    }
-      
-    const filteredUsers = exportStatus === "all" 
-      ? users 
-      : users.filter(user => user.status === exportStatus);
-    
-    if (filteredUsers.length === 0) {
-        toast.warning(`No leaders found with the status "${exportStatus}".`);
-        return;
-    }
+  const handleExport = async () => {
+    let allUsers: User[] = [];
+    try {
+      // Fetch all users matching current filters (not just current page)
+      const params: any = {
+        search: debouncedSearch,
+        page: 1,
+        limit: 10000, // Large limit to get all records
+        status: exportStatus !== "all" ? exportStatus : undefined
+      };
 
-    const headers = ["Name", "Email", "Phone Number", "WhatsApp Number", "City", "Status", "Leader Code", "Income", "Registered Clients", "Joined On"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredUsers.map(user => [
-        `"${(user.name || '').replace(/"/g, '""')}"`,
-        `"${(user.email || '').replace(/"/g, '""')}"`,
-        `"${user.phoneNumber || ''}"`,
-        `"${user.whatsappNumber || ''}"`,
-        `"${(user.city || '').replace(/"/g, '""')}"`,
-        `"${user.status || 'N/A'}"`,
-        `"${user.leaderCode || 'N/A'}"`,
-        `${user.income || 0}`,
-        `${user.registeredClientCount || 0}`,
-        `"${user.createdOn ? new Date(parseInt(user.createdOn)).toISOString() : 'N/A'}"`
-      ].join(","))
-    ].join("\n");
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getAllUsers`, { params });
+      allUsers = response.data?.data?.users || [];
+
+      if (!allUsers || allUsers.length === 0) {
+        toast.warning("No users found to export.");
+        return;
+      }
+
+      toast.success(`Found ${allUsers.length} users to export.`);
+
+      const headers = ["Name", "Email", "Phone Number", "WhatsApp Number", "City", "Status", "Leader Code", "Income", "Registered Clients", "Joined On", "Account Number", "IFSC", "UPI ID"];
+      const csvContent = [
+        headers.join(","),
+        ...allUsers.map((user: User) => [
+          `"${(user.name || '').replace(/"/g, '""')}"`,
+          `"${(user.email || '').replace(/"/g, '""')}"`,
+          `"${user.phoneNumber || ''}"`,
+          `"${user.whatsappNumber || ''}"`,
+          `"${(user.city || '').replace(/"/g, '""')}"`,
+          `"${user.status || 'N/A'}"`,
+          `"${user.leaderCode || 'N/A'}"`,
+          `${user.income || 0}`,
+          `${user.registeredClientCount || 0}`,
+          `"${user.createdOn ? new Date(parseInt(user.createdOn)).toLocaleDateString() : 'N/A'}"`,
+          `"${user.account_number || 'N/A'}"`,
+          `"${user.Ifsc || 'N/A'}"`,
+          `"${user.upi_id || 'N/A'}"`
+        ].join(","))
+      ].join("\n");
     
-    const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `leaders-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" }); // Add BOM for Excel compatibility
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `users-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url); // Clean up the URL object
     
-    setExportModalOpen(false);
-    toast.success("Leader data has been exported.");
+      setExportModalOpen(false);
+      toast.success(`Successfully exported ${allUsers.length} users.`);
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error("Failed to export users data. Please try again.");
+    }
   };
   
   const handleDateRangeSearch = async () => {
