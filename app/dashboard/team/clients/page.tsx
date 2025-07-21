@@ -6,9 +6,7 @@ import { toast } from "sonner";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Edit, Phone, Clock, AlertCircle, Loader2, UserPlus, ShieldCheck, ShieldAlert, Info } from "lucide-react";
 import { 
   updateClient,

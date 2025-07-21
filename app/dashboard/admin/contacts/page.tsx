@@ -54,6 +54,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { DeleteConfirmationModal } from "@/app/components/ui/delete-confirmation-modal";
+import axios from "axios"; // Added axios import
 
 // Debounce hook for search functionality
 function useDebounce<T>(value: T, delay: number): T {
@@ -183,43 +184,58 @@ export default function Contacts() {
   };
 
   // Function to handle the CSV export
-  const handleExport = () => {
-    if (!contacts || contacts.length === 0) {
-        toast.warning("There is no contact data to export.");
-        return;
-    }
-      
-    const filteredContacts = exportStatus === "all" 
-      ? contacts 
-      : contacts.filter(contact => contact.status === exportStatus);
-    
-    if (filteredContacts.length === 0) {
-        toast.warning(`No contacts found with the status "${exportStatus}".`);
-        return;
-    }
+  const handleExport = async () => {
+    let allContacts: Contact[] = [];
+    try {
+      // Fetch all contacts matching current filters (not just current page)
+      const params: any = {
+        searchQuery: search,
+        page: 1,
+        limit: 10000 // Large limit to get all
+      };
+      if (exportStatus !== "all") {
+        params.status = exportStatus;
+      }
 
-    const headers = ["Name", "Email", "Phone Number", "Status", "Remark"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredContacts.map(contact => [
-        `"${contact.name.replace(/"/g, '""')}"`,
-        `"${contact.email.replace(/"/g, '""')}"`,
-        `"${contact.phoneNumber || ''}"`,
-        `"${contact.status || 'N/A'}"`,
-        `"${contact.reason || ''}"`,
-      ].join(","))
-    ].join("\n");
-    
-    const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `contacts-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    setExportModalOpen(false);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/getAllContact`, { params });
+      allContacts = response.data?.data?.contacts || [];
+
+      if (!allContacts || allContacts.length === 0) {
+        toast.warning("No contacts found to export.");
+        return;
+      }
+
+      toast.success(`Found ${allContacts.length} contacts to export.`);
+
+      const headers = ["Name", "Email", "Phone Number", "Status", "Remark", "Created"];
+      const csvContent = [
+        headers.join(","),
+        ...allContacts.map(contact => [
+          `"${(contact.name || '').replace(/"/g, '""')}"`,
+          `"${(contact.email || '').replace(/"/g, '""')}"`,
+          `"${contact.phoneNumber || ''}"`,
+          `"${contact.status || 'N/A'}"`,
+          `"${(contact.reason || '').replace(/"/g, '""')}"`,
+          `"${contact.createdOn ? new Date(parseInt(contact.createdOn)).toLocaleDateString() : 'N/A'}"`
+        ].join(","))
+      ].join("\n");
+      
+      const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" }); // Add BOM for Excel compatibility
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `contacts-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url); // Clean up the URL object
+      
+      setExportModalOpen(false);
+      toast.success(`Successfully exported ${allContacts.length} contacts.`);
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error("Failed to export contacts data. Please try again.");
+    }
   };
 
   // Handler for selecting/deselecting a single contact
