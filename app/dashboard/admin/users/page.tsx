@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import React, { useState, useEffect, ChangeEvent, FormEvent, useMemo, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -101,14 +101,35 @@ export default function Users() {
 
   const ITEMS_PER_PAGE = 8;
 
-  // Debounce search input
+  // Debounce search input with useRef to prevent unnecessary re-renders
+  const searchTimeout = React.useRef<NodeJS.Timeout>();
+  
   useEffect(() => {
-    const handler = setTimeout(() => setDebouncedSearch(search), 400);
-    return () => clearTimeout(handler);
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+    searchTimeout.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
   }, [search]);
+
+  // Track if this is the first render
+  const isFirstRender = React.useRef(true);
 
   // Fetch users on mount and when filters change
   useEffect(() => {
+    // Skip the first render since we don't want to fetch twice on mount
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
     const params = {
       search: debouncedSearch,
       status: status === "all" ? undefined : status,
@@ -119,28 +140,39 @@ export default function Users() {
     dispatch(fetchUsers(params));
   }, [dispatch, debouncedSearch, status]);
 
+  // Initial fetch on mount
+  useEffect(() => {
+    const params = {
+      page: 1,
+      limit: 10000
+    };
+    dispatch(fetchUsers(params));
+  }, [dispatch]);
+
   // Calculate pagination on the client side
   const displayedUsers = users;
   const totalItems = displayedUsers.length;
   const totalPaginatedPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
   
   // Get current page's data
-  const currentPageData = displayedUsers.slice(
-    (page - 1) * ITEMS_PER_PAGE, 
-    page * ITEMS_PER_PAGE
-  );
+  const currentPageData = useMemo(() => {
+    return displayedUsers.slice(
+      (page - 1) * ITEMS_PER_PAGE, 
+      page * ITEMS_PER_PAGE
+    );
+  }, [displayedUsers, page]);
 
-  const handlePageChange = (newPage: number) => {
+  const handleStatusChange = useCallback((val: string) => {
+    setStatus(val);
+    setPage(1); // Reset to page 1 on filter change
+  }, []);
+
+  const handlePageChange = useCallback((newPage: number) => {
     if (newPage < 1 || newPage > totalPaginatedPages) return;
     setPage(newPage);
     // Smooth scroll to top when page changes
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleStatusChange = (val: string) => {
-    setStatus(val);
-    setPage(1); // Reset to page 1 on filter change
-  };
+  }, [totalPaginatedPages]);
 
   const openAddModal = () => {
     setEditUser(null);
@@ -436,9 +468,36 @@ export default function Users() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8">
+                      <div className="flex justify-center items-center gap-2">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <span>Loading leaders...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : displayedUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8">
+                      {debouncedSearch || status !== "all" ? (
+                        <div className="text-gray-500">
+                          No leaders found for the current filters.
+                          <br />
+                          Try adjusting your search or filter criteria.
+                        </div>
+                      ) : (
+                        <div className="text-gray-500">
+                          No leaders found in the system.
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
                 ) : currentPageData.length === 0 ? (
-                  <TableRow><TableCell colSpan={9} className="text-center py-8">No Leaders found.</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8">
+                      No leaders found on this page.
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   currentPageData.map((user: User, idx: number) => (
                     <TableRow key={user._id}>

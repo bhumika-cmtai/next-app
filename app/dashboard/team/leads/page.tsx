@@ -46,18 +46,18 @@ export default function ClientDashboard() {
     if (!user) {
       dispatch(fetchCurrentUser());
     }
-  }, [dispatch, user]);
+  }, [dispatch]); // Remove user from dependencies since we check it inside
 
   // Effect to fetch the user's clients *after* the user's phoneNumber is available
   useEffect(() => {
-    // Only run if we have a user with a phone number and the data hasn't been fetched yet
-    if (user && user.phoneNumber && clientData.length === 0) {
+    // Only run if we have a user with a phone number
+    if (user?.phoneNumber) {
       dispatch(fetchClientsByOwner(user.phoneNumber));
     }
-  }, [dispatch, user, clientData]);
+  }, [dispatch, user?.phoneNumber]); // Only depend on phoneNumber
 
   // Handle loading state
-  if (authLoading || (clientLoading && clientData.length === 0)) {
+  if (authLoading || clientLoading) {
     return (
       <main className="bg-white min-h-screen p-4 sm:p-8 flex justify-center items-center">
         <p className="text-lg">Loading your data...</p>
@@ -75,7 +75,7 @@ export default function ClientDashboard() {
   }
   
   // Handle case where user has no claimed data
-  if (!clientLoading && clientData.length === 0) {
+  if (clientData.length === 0) {
       return (
         <main className="bg-white min-h-screen p-4 sm:p-8">
             <div className="max-w-4xl mx-auto flex flex-col gap-8">
