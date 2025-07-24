@@ -63,11 +63,11 @@ export default function Users() {
   const users: User[] = useSelector(selectUsers);
   const loading: boolean = useSelector(selectLoading);
   const pagination = useSelector(selectPagination);
-  const currentPage = useSelector(selectCurrentPage);
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [page, setPage] = useState(1);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
@@ -77,7 +77,7 @@ export default function Users() {
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-   // NEW: State for the "View Details" modal
+  // State for the "View Details" modal
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
 
@@ -94,10 +94,12 @@ export default function Users() {
   const [isCountLoading, setIsCountLoading] = useState<boolean>(false);
   const [countError, setCountError] = useState<string | null>(null);
 
-  // NEW: State for multiple selection
+  // State for multiple selection
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const ITEMS_PER_PAGE = 8;
 
   // Debounce search input
   useEffect(() => {
@@ -105,24 +107,39 @@ export default function Users() {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Fetch users on mount and when filters/page change
+  // Fetch users on mount and when filters change
   useEffect(() => {
-    dispatch(fetchUsers({ search: debouncedSearch, status, page: currentPage }));
-  }, [dispatch, debouncedSearch, status, currentPage]);
+    const params = {
+      search: debouncedSearch,
+      status: status === "all" ? undefined : status,
+      page: 1,
+      limit: 10000 // Large limit to get all records
+    };
 
-  const openViewModal = (user: User) => {
-    setViewingUser(user);
-    setIsViewModalOpen(true);
-  };
+    dispatch(fetchUsers(params));
+  }, [dispatch, debouncedSearch, status]);
 
-  const handlePageChange = (page: number) => {
-    if (page < 1 || page > pagination.totalPages) return;
-    dispatch(fetchUsers({ search: debouncedSearch, status, page }));
+  // Calculate pagination on the client side
+  const displayedUsers = users;
+  const totalItems = displayedUsers.length;
+  const totalPaginatedPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  
+  // Get current page's data
+  const currentPageData = displayedUsers.slice(
+    (page - 1) * ITEMS_PER_PAGE, 
+    page * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPaginatedPages) return;
+    setPage(newPage);
+    // Smooth scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleStatusChange = (val: string) => {
     setStatus(val);
-    handlePageChange(1); // Reset to page 1 on filter change
+    setPage(1); // Reset to page 1 on filter change
   };
 
   const openAddModal = () => {
@@ -176,7 +193,7 @@ export default function Users() {
 
       if (response) {
         setIsModalOpen(false);
-        dispatch(fetchUsers({ search: debouncedSearch, status, page: currentPage }));
+        dispatch(fetchUsers({ search: debouncedSearch, status, page: page }));
       }
     } finally {
       setFormLoading(false);
@@ -189,7 +206,7 @@ export default function Users() {
     try {
       await dispatch(deleteUserAction(deleteUser._id));
       setDeleteUser(null);
-      const newPage = users.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage;
+      const newPage = users.length === 1 && page > 1 ? page - 1 : page;
       dispatch(fetchUsers({ search: debouncedSearch, status, page: newPage }));
     } finally {
       setDeleteLoading(false);
@@ -305,7 +322,7 @@ export default function Users() {
       toast.success(`${selectedUsers.length} leaders deleted successfully`);
       setIsBulkDeleteModalOpen(false);
       setSelectedUsers([]);
-      dispatch(fetchUsers({ search: debouncedSearch, status, page: currentPage }));
+      dispatch(fetchUsers({ search: debouncedSearch, status, page: page }));
     } else {
       toast.error("Failed to delete leaders");
     }
@@ -314,6 +331,11 @@ export default function Users() {
   const openDeleteModal = (user: User) => {
     setDeleteUser(user);
     setIsDeleteModalOpen(true);
+  };
+
+  const openViewModal = (user: User) => {
+    setViewingUser(user);
+    setIsViewModalOpen(true);
   };
 
   return (
@@ -415,10 +437,10 @@ export default function Users() {
               <TableBody>
                 {loading ? (
                   <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>
-                ) : users.length === 0 ? (
+                ) : currentPageData.length === 0 ? (
                   <TableRow><TableCell colSpan={9} className="text-center py-8">No Leaders found.</TableCell></TableRow>
                 ) : (
-                  users.map((user: User, idx: number) => (
+                  currentPageData.map((user: User, idx: number) => (
                     <TableRow key={user._id}>
                       <TableCell>
                         <div className="flex items-center justify-center">
@@ -436,7 +458,7 @@ export default function Users() {
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell>{(currentPage - 1) * 8 + idx + 1}</TableCell>
+                      <TableCell>{(page - 1) * ITEMS_PER_PAGE + idx + 1}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar><AvatarFallback>{user.name?.[0]?.toUpperCase()}</AvatarFallback></Avatar>
@@ -468,25 +490,68 @@ export default function Users() {
         </CardContent>
       </Card>
 
-      {/* --- FUNCTIONAL PAGINATION --- */}
-      {pagination.totalPages > 1 && (
+      {/* Update pagination */}
+      {totalPaginatedPages > 1 && (
         <div className="mt-4">
           <Pagination>
             <PaginationContent>
-              <PaginationItem className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}>
-                <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }} />
+              <PaginationItem className={page === 1 ? "pointer-events-none opacity-50" : ""}>
+                <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); handlePageChange(page - 1); }} />
               </PaginationItem>
               
-              {Array.from({ length: pagination.totalPages }, (_, i) => (
-                <PaginationItem key={i + 1}>
-                  <PaginationLink href="#" isActive={currentPage === i + 1} onClick={(e) => { e.preventDefault(); handlePageChange(i + 1); }}>
-                    {i + 1}
+              {/* First page */}
+              {page > 3 && (
+                <PaginationItem>
+                  <PaginationLink href="#" onClick={(e) => { e.preventDefault(); handlePageChange(1); }}>
+                    1
                   </PaginationLink>
                 </PaginationItem>
-              ))}
+              )}
+              
+              {/* Ellipsis if needed */}
+              {page > 4 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Pages around current page */}
+              {Array.from({ length: totalPaginatedPages }, (_, i) => i + 1)
+                .filter(pageNum => pageNum >= Math.max(1, page - 1) && pageNum <= Math.min(totalPaginatedPages, page + 1))
+                .map(pageNum => (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink 
+                      href="#" 
+                      isActive={page === pageNum}
+                      onClick={(e) => { e.preventDefault(); handlePageChange(pageNum); }}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))
+              }
+              
+              {/* Ellipsis if needed */}
+              {page < totalPaginatedPages - 3 && (
+                <PaginationItem>
+                  <span className="px-2">...</span>
+                </PaginationItem>
+              )}
+              
+              {/* Last page */}
+              {page < totalPaginatedPages - 2 && (
+                <PaginationItem>
+                  <PaginationLink 
+                    href="#" 
+                    onClick={(e) => { e.preventDefault(); handlePageChange(totalPaginatedPages); }}
+                  >
+                    {totalPaginatedPages}
+                  </PaginationLink>
+                </PaginationItem>
+              )}
 
-              <PaginationItem className={currentPage === pagination.totalPages ? "pointer-events-none opacity-50" : ""}>
-                <PaginationNext href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }} />
+              <PaginationItem className={page === totalPaginatedPages ? "pointer-events-none opacity-50" : ""}>
+                <PaginationNext href="#" onClick={(e) => { e.preventDefault(); handlePageChange(page + 1); }} />
               </PaginationItem>
             </PaginationContent>
           </Pagination>

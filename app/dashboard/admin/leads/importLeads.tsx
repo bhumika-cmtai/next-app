@@ -184,7 +184,6 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
               return mappedUser;
             });
 
-            console.log('Mapped leads:', mappedData);
             const response = await dispatch(addManyLeads(mappedData));
             if (response) {
               toast.success(`Successfully imported ${mappedData.length} leads`);
@@ -195,7 +194,6 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
               toast.error("Failed to import leads: " + (response.error?.message || "Unknown error"));
             }
           } catch (error) {
-            toast.error("Error processing data: " + (error as Error).message);
           } finally {
             setIsProcessing(false);
           }

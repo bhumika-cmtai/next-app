@@ -106,19 +106,23 @@ export default function RegistrationsPage() {
 
   // Main effect to fetch data when page or any filter changes
   useEffect(() => {
-    dispatch(fetchRegisterations({ 
-      page, 
+    const params = { 
+      page: 1,
       name: debouncedName,
       phoneNumber: debouncedPhone,
       leaderCode: debouncedCode,
-      status: statusFilter, 
-      limit: ITEMS_PER_PAGE 
-    }));
-  }, [dispatch, page, debouncedName, debouncedPhone, debouncedCode, statusFilter]);
-  
+      status: statusFilter === "all" ? undefined : statusFilter,
+      limit: 10000 // Always use large limit to get all records
+    };
+
+    dispatch(fetchRegisterations(params));
+  }, [dispatch, debouncedName, debouncedPhone, debouncedCode, statusFilter]);
+
   // Effect to reset to page 1 when a new search or filter is applied
   useEffect(() => {
-    setPage(1);
+    if (debouncedName || debouncedPhone || debouncedCode || statusFilter !== "all") {
+      setPage(1);
+    }
   }, [debouncedName, debouncedPhone, debouncedCode, statusFilter]);
 
   const openUpdateModal = (registeration: Registeration) => {
@@ -181,69 +185,112 @@ export default function RegistrationsPage() {
     }
   };
 
-  // Function to handle the CSV export
-  const handleExport = async () => {
-    // Fetch all registrations matching current filters (not just current page)
-    let allRegs: Registeration[] = [];
-    try {
-      const params: any = {
-        name: debouncedName,
-        phoneNumber: debouncedPhone,
-        leaderCode: debouncedCode,
-        limit: 10000, // Large limit to get all
-        page: 1
-      };
-      if (exportStatus !== "all") {
-        params.status = exportStatus;
-      }
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/registers/getAllRegister`, { params });
-      allRegs = response.data?.data?.registers || [];
-    } catch (err) {
-      toast.error("Failed to fetch all registrations for export.");
+  // Update the date range search to filter on frontend
+  const handleDateRangeSearch = () => {
+    if (!startDate || !endDate) {
+      toast.warning("Please select both start and end dates");
       return;
     }
 
-    // If date filter is active, filter by date
-    let exportData = allRegs;
-    if (isDateFiltered && startDate && endDate) {
+    setIsCountLoading(true);
+    setCountError(null);
+    setDateRangeCount(null);
+
+    try {
+      // Convert selected dates to timestamps (start of day and end of day)
       const startTimestamp = new Date(startDate).setHours(0, 0, 0, 0);
       const endTimestamp = new Date(endDate).setHours(23, 59, 59, 999);
-      exportData = allRegs.filter(reg => {
+
+      // Filter registrations on the frontend
+      const filtered = registrations.filter(reg => {
         if (!reg.createdOn) return false;
         const regTimestamp = parseInt(reg.createdOn);
         return regTimestamp >= startTimestamp && regTimestamp <= endTimestamp;
       });
-    }
 
-    if (!exportData || exportData.length === 0) {
-      toast.warning("No registrations found to export.");
-      return;
-    }
+      setFilteredRegistrations(filtered);
+      setDateRangeCount(filtered.length);
+      setIsDateFiltered(true);
+      
+      if (filtered.length === 0) {
+        toast.info("No registrations found in selected date range");
+      } else {
+        toast.success(`Found ${filtered.length} registrations in selected date range`);
+      }
 
-    const headers = ["Name", "Phone Number", "Leader Code", "Status", "Created On", "Remark"];
-    const csvContent = [
-      headers.join(","),
-      ...exportData.map(reg => [
-        `"${reg.name.replace(/"/g, '""')}"`,
-        `"${reg.phoneNumber.replace(/"/g, '""')}"`,
-        `"${reg.leaderCode || 'N/A'}"`,
-        `"${reg.status}"`,
-        `"${reg.createdOn ? new Date(parseInt(reg.createdOn)).toISOString() : 'N/A'}"`,
-        `"${(reg.reason || '').replace(/"/g, '""')}"`
-      ].join(","))
-    ].join("\n");
-    
-    const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `registrations-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    setExportModalOpen(false);
-    toast.success("Registration data has been exported.");
+    } catch (error: any) {
+      console.error('Date range filter error:', error);
+      setCountError("Failed to filter registrations by date range");
+      toast.error("Failed to process date range filter");
+    } finally {
+      setIsCountLoading(false);
+    }
+  };
+
+  // Update the export function to use frontend filtering for dates
+  const handleExport = async () => {
+    try {
+      // Get all registrations first
+      const params: any = {
+        limit: 10000,
+        page: 1
+      };
+
+      if (exportStatus !== "all") {
+        params.status = exportStatus;
+      }
+
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/registers/getAllRegister`, { params });
+      let allRegs: Registeration[] = response.data?.data?.registers || [];
+
+      // Apply date filter if active
+      if (isDateFiltered && startDate && endDate) {
+        const startTimestamp = new Date(startDate).setHours(0, 0, 0, 0);
+        const endTimestamp = new Date(endDate).setHours(23, 59, 59, 999);
+        
+        allRegs = allRegs.filter(reg => {
+          if (!reg.createdOn) return false;
+          const regTimestamp = parseInt(reg.createdOn);
+          return regTimestamp >= startTimestamp && regTimestamp <= endTimestamp;
+        });
+      }
+
+      if (!allRegs || allRegs.length === 0) {
+        toast.warning("No registrations found to export.");
+        return;
+      }
+
+      toast.success(`Found ${allRegs.length} registrations to export.`);
+
+      const headers = ["Name", "Phone Number", "Leader Code", "Status", "Created On", "Remark"];
+      const csvContent = [
+        headers.join(","),
+        ...allRegs.map((reg: Registeration) => [
+          `"${(reg.name || '').replace(/"/g, '""')}"`,
+          `"${(reg.phoneNumber || '').replace(/"/g, '""')}"`,
+          `"${reg.leaderCode || 'N/A'}"`,
+          `"${reg.status || 'N/A'}"`,
+          `"${reg.createdOn ? new Date(parseInt(reg.createdOn)).toLocaleString() : 'N/A'}"`,
+          `"${(reg.reason || '').replace(/"/g, '""')}"`
+        ].join(","))
+      ].join("\n");
+      
+      const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `registrations-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      setExportModalOpen(false);
+      toast.success(`Successfully exported ${allRegs.length} registrations.`);
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error("Failed to export registrations data. Please try again.");
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -267,35 +314,6 @@ export default function RegistrationsPage() {
     );
   };
 
-  // NEW: Handler for date range search
-  const handleDateRangeSearch = () => {
-    if (!startDate || !endDate) {
-      toast.warning("Please select both start and end dates");
-      return;
-    }
-    setIsCountLoading(true);
-    setCountError(null);
-    setDateRangeCount(null);
-    try {
-      const startTimestamp = new Date(startDate).setHours(0, 0, 0, 0);
-      const endTimestamp = new Date(endDate).setHours(23, 59, 59, 999);
-      const filtered = registrations.filter(reg => {
-        if (!reg.createdOn) return false;
-        const regTimestamp = parseInt(reg.createdOn);
-        return regTimestamp >= startTimestamp && regTimestamp <= endTimestamp;
-      });
-      setFilteredRegistrations(filtered);
-      setDateRangeCount(filtered.length);
-      setIsDateFiltered(true);
-      toast.success("Date range search completed");
-    } catch (error: any) {
-      setCountError("Failed to filter registrations for the selected date range");
-      toast.error("Failed to process date range filter");
-    } finally {
-      setIsCountLoading(false);
-    }
-  };
-
   // Clear filters function
   const clearDateFilter = () => {
     setStartDate("");
@@ -307,14 +325,13 @@ export default function RegistrationsPage() {
 
   // The data to display in the table (either filtered or all)
   const displayedRegistrations = isDateFiltered ? filteredRegistrations : registrations;
-
-  // Pagination logic for filtered data
-  const filteredTotal = isDateFiltered ? filteredRegistrations.length : totalRegisterations;
-  const filteredTotalPages = isDateFiltered ? Math.ceil(filteredTotal / ITEMS_PER_PAGE) : totalPages;
-  const filteredCurrentPage = isDateFiltered ? page : currentPage;
-  const paginatedRegistrations = isDateFiltered
-    ? displayedRegistrations.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
-    : displayedRegistrations;
+  
+  // Calculate pagination
+  const totalItems = displayedRegistrations.length;
+  const totalPaginatedPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  
+  // Get current page's data
+  const currentPageData = displayedRegistrations.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   // When filter is active and page changes, scroll to top
   useEffect(() => {
@@ -356,7 +373,9 @@ export default function RegistrationsPage() {
   return (
     <div className="w-full mx-auto mt-2">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold">Registrations ({isDateFiltered ? dateRangeCount : totalRegisterations})</h1>
+        <h1 className="text-3xl font-bold">
+          Registrations ({isDateFiltered ? dateRangeCount : totalItems})
+        </h1>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Input placeholder="Search by Name..." value={nameSearch} onChange={(e) => setNameSearch(e.target.value)} className="w-full sm:w-auto md:w-40"/>
           <Input placeholder="Search by Phone..." value={phoneSearch} onChange={(e) => setPhoneSearch(e.target.value)} className="w-full sm:w-auto md:w-40"/>
@@ -494,12 +513,12 @@ export default function RegistrationsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isListLoading && (!paginatedRegistrations || paginatedRegistrations.length === 0) ? (
+                {isListLoading && (!currentPageData || currentPageData.length === 0) ? (
                   <TableRow><TableCell colSpan={9} className="text-center py-8"><div className="flex justify-center items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /><span>Loading...</span></div></TableCell></TableRow>
-                ) : !paginatedRegistrations || paginatedRegistrations.length === 0 ? (
+                ) : !currentPageData || currentPageData.length === 0 ? (
                   <TableRow><TableCell colSpan={9} className="text-center py-8">No registrations found.</TableCell></TableRow>
                 ) : (
-                  paginatedRegistrations.map((register, idx) => (
+                  currentPageData.map((register, idx) => (
                     <TableRow key={register._id}>
                       <TableCell>
                         <div className="flex items-center justify-center">
@@ -545,7 +564,7 @@ export default function RegistrationsPage() {
         </CardContent>
       </Card>
       
-      {filteredTotalPages > 1 && (
+      {totalPaginatedPages > 1 && (
         <div className="mt-4">
           <Pagination>
             <PaginationContent>
@@ -554,13 +573,14 @@ export default function RegistrationsPage() {
                   href="#" 
                   onClick={(e) => {
                     e.preventDefault();
-                    setPage(Math.max(1, filteredCurrentPage - 1));
+                    setPage(Math.max(1, page - 1));
                   }}
-                  className={filteredCurrentPage <= 1 || isListLoading ? "pointer-events-none opacity-50" : ""}
+                  className={page <= 1 || isListLoading ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
+              
               {/* First page */}
-              {filteredCurrentPage > 3 && (
+              {page > 3 && (
                 <PaginationItem>
                   <PaginationLink 
                     href="#" 
@@ -573,20 +593,22 @@ export default function RegistrationsPage() {
                   </PaginationLink>
                 </PaginationItem>
               )}
+              
               {/* Ellipsis if needed */}
-              {filteredCurrentPage > 4 && (
+              {page > 4 && (
                 <PaginationItem>
                   <span className="px-2">...</span>
                 </PaginationItem>
               )}
+              
               {/* Pages around current page */}
-              {Array.from({ length: filteredTotalPages }, (_, i) => i + 1)
-                .filter(pageNum => pageNum >= Math.max(1, filteredCurrentPage - 1) && pageNum <= Math.min(filteredTotalPages, filteredCurrentPage + 1))
+              {Array.from({ length: totalPaginatedPages }, (_, i) => i + 1)
+                .filter(pageNum => pageNum >= Math.max(1, page - 1) && pageNum <= Math.min(totalPaginatedPages, page + 1))
                 .map(pageNum => (
                   <PaginationItem key={pageNum}>
                     <PaginationLink 
                       href="#" 
-                      isActive={filteredCurrentPage === pageNum}
+                      isActive={page === pageNum}
                       onClick={(e) => {
                         e.preventDefault();
                         setPage(pageNum);
@@ -597,23 +619,25 @@ export default function RegistrationsPage() {
                   </PaginationItem>
                 ))
               }
+              
               {/* Ellipsis if needed */}
-              {filteredCurrentPage < filteredTotalPages - 3 && (
+              {page < totalPaginatedPages - 3 && (
                 <PaginationItem>
                   <span className="px-2">...</span>
                 </PaginationItem>
               )}
+              
               {/* Last page */}
-              {filteredCurrentPage < filteredTotalPages - 2 && (
+              {page < totalPaginatedPages - 2 && (
                 <PaginationItem>
                   <PaginationLink 
                     href="#" 
                     onClick={(e) => {
                       e.preventDefault();
-                      setPage(filteredTotalPages);
+                      setPage(totalPaginatedPages);
                     }}
                   >
-                    {filteredTotalPages}
+                    {totalPaginatedPages}
                   </PaginationLink>
                 </PaginationItem>
               )}
@@ -622,9 +646,9 @@ export default function RegistrationsPage() {
                   href="#" 
                   onClick={(e) => {
                     e.preventDefault();
-                    setPage(Math.min(filteredTotalPages, filteredCurrentPage + 1));
+                    setPage(Math.min(totalPaginatedPages, page + 1));
                   }}
-                  className={filteredCurrentPage >= filteredTotalPages || isListLoading ? "pointer-events-none opacity-50" : ""}
+                  className={page >= totalPaginatedPages || isListLoading ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
             </PaginationContent>
