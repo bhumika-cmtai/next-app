@@ -102,7 +102,7 @@ export default function Users() {
   const ITEMS_PER_PAGE = 8;
 
   // Debounce search input with useRef to prevent unnecessary re-renders
-  const searchTimeout = React.useRef<NodeJS.Timeout>();
+  const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
     if (searchTimeout.current) {

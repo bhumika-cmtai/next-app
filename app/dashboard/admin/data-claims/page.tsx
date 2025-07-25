@@ -512,7 +512,17 @@ export default function Clients() {
                     form.ownerName.map((name, index) => (
                       <div key={index} className="flex items-center justify-between text-sm p-1 rounded-md bg-muted/50">
                         <span>{name} - {(form.ownerNumber?.[index] ?? "")}</span>
-                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={() => handleRemoveOwner(index)}><Trash2 className="h-4 w-4" /></Button>
+                        {!form.isApproved && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-red-500"
+                            onClick={() => handleRemoveOwner(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     ))
                   ) : (<p className="text-sm text-muted-foreground text-center py-2">No owners assigned.</p>)}
