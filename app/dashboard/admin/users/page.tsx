@@ -132,15 +132,20 @@ export default function Users() {
       return;
     }
 
-    const params = {
+    const params: any = {
       search: debouncedSearch,
       status: status === "all" ? undefined : status,
       page: page,
       limit: ITEMS_PER_PAGE // Large limit to get all records
     };
 
+    if (startDate && endDate) {
+      params.startDate = startDate;
+      params.endDate = endDate;
+    }
+
     dispatch(fetchUsers(params));
-  }, [dispatch, debouncedSearch, status, page]);
+  }, [dispatch, debouncedSearch, status, page, startDate, endDate]);
 
   // Initial fetch on mount
   useEffect(() => {
@@ -227,7 +232,7 @@ export default function Users() {
 
       if (response) {
         setIsModalOpen(false);
-        dispatch(fetchUsers({ search: debouncedSearch, status, page: page }));
+        dispatch(fetchUsers({ search: debouncedSearch, status, page: page, startDate, endDate }));
       }
     } finally {
       setFormLoading(false);
@@ -241,7 +246,7 @@ export default function Users() {
       await dispatch(deleteUserAction(deleteUser._id));
       setDeleteUser(null);
       const newPage = users.length === 1 && page > 1 ? page - 1 : page;
-      dispatch(fetchUsers({ search: debouncedSearch, status, page: newPage }));
+      dispatch(fetchUsers({ search: debouncedSearch, status, page: newPage, startDate, endDate  }));
     } finally {
       setDeleteLoading(false);
     }

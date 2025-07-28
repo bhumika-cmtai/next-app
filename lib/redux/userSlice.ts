@@ -110,17 +110,21 @@ export const fetchUsersCount = () => async (dispatch: Dispatch) => {
   }
 };
 
-export const fetchUsers = (params?: { search?: string; status?: string; page?: number }) => async (dispatch: Dispatch) => {
+export const fetchUsers = (params?: { search?: string; status?: string; page?: number, startDate?: string, endDate?: string }) => async (dispatch: Dispatch) => {
   dispatch(setLoading(true));
   try {
     const query = [];
     if (params?.search) query.push(`searchQuery=${encodeURIComponent(params.search)}`);
     if (params?.status && params.status !== 'all') query.push(`status=${encodeURIComponent(params.status)}`);
     if (params?.page) query.push(`page=${params.page}`);
+    // --- MODIFICATION: Add dates to the query string if they exist ---
+    if (params?.startDate) query.push(`startDate=${params.startDate}`);
+    if (params?.endDate) query.push(`endDate=${params.endDate}`);
+
     const queryString = query.length ? `?${query.join('&')}` : '';
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/getallUsers${queryString}`);
+    
     if (response.status === 200) {
-      console.log(response.data.data)
       dispatch(setUsers(response.data.data));
       if (params?.page) dispatch(setCurrentPage(params.page));
     } else {
