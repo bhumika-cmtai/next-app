@@ -62,6 +62,7 @@ export default function Users() {
   const dispatch = useDispatch<AppDispatch>();
   const users: User[] = useSelector(selectUsers);
   const loading: boolean = useSelector(selectLoading);
+   const { totalPages, currentPage, totalUsers } = useSelector(selectPagination);
   const pagination = useSelector(selectPagination);
 
   const [search, setSearch] = useState("");
@@ -99,7 +100,7 @@ export default function Users() {
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 15;
 
   // Debounce search input with useRef to prevent unnecessary re-renders
   const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
@@ -110,6 +111,7 @@ export default function Users() {
     }
     searchTimeout.current = setTimeout(() => {
       setDebouncedSearch(search);
+      setPage(1)
     }, 400);
 
     return () => {
@@ -133,12 +135,12 @@ export default function Users() {
     const params = {
       search: debouncedSearch,
       status: status === "all" ? undefined : status,
-      page: 1,
-      limit: 10000 // Large limit to get all records
+      page: page,
+      limit: ITEMS_PER_PAGE // Large limit to get all records
     };
 
     dispatch(fetchUsers(params));
-  }, [dispatch, debouncedSearch, status]);
+  }, [dispatch, debouncedSearch, status, page]);
 
   // Initial fetch on mount
   useEffect(() => {
@@ -150,17 +152,17 @@ export default function Users() {
   }, [dispatch]);
 
   // Calculate pagination on the client side
-  const displayedUsers = users;
-  const totalItems = displayedUsers.length;
-  const totalPaginatedPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  // const displayedUsers = users;
+  // const totalItems = displayedUsers.length;
+  // const totalPaginatedPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
   
-  // Get current page's data
-  const currentPageData = useMemo(() => {
-    return displayedUsers.slice(
-      (page - 1) * ITEMS_PER_PAGE, 
-      page * ITEMS_PER_PAGE
-    );
-  }, [displayedUsers, page]);
+  // // Get current page's data
+  // const currentPageData = useMemo(() => {
+  //   return displayedUsers.slice(
+  //     (page - 1) * ITEMS_PER_PAGE, 
+  //     page * ITEMS_PER_PAGE
+  //   );
+  // }, [displayedUsers, page]);
 
   const handleStatusChange = useCallback((val: string) => {
     setStatus(val);
@@ -168,11 +170,11 @@ export default function Users() {
   }, []);
 
   const handlePageChange = useCallback((newPage: number) => {
-    if (newPage < 1 || newPage > totalPaginatedPages) return;
+    if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
     // Smooth scroll to top when page changes
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [totalPaginatedPages]);
+  }, [totalPages]);
 
   const openAddModal = () => {
     setEditUser(null);
@@ -468,78 +470,30 @@ export default function Users() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      <div className="flex justify-center items-center gap-2">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                        <span>Loading leaders...</span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : displayedUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      {debouncedSearch || status !== "all" ? (
-                        <div className="text-gray-500">
-                          No leaders found for the current filters.
-                          <br />
-                          Try adjusting your search or filter criteria.
-                        </div>
-                      ) : (
-                        <div className="text-gray-500">
-                          No leaders found in the system.
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ) : currentPageData.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      No leaders found on this page.
-                    </TableCell>
-                  </TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-8"><div className="flex justify-center items-center gap-2"><Loader2 className="h-6 w-6 animate-spin" /><span>Loading leaders...</span></div></TableCell></TableRow>
+                // --- FIX: Use `users.length` directly ---
+                ) : users.length === 0 ? (
+                  <TableRow><TableCell colSpan={9} className="text-center py-8">{debouncedSearch || status !== "all" ? "No leaders found for the current filters." : "No leaders found in the system."}</TableCell></TableRow>
                 ) : (
-                  currentPageData.map((user: User, idx: number) => (
+                  // --- FIX: Map over `users` directly. It only contains the current page's data. ---
+                  users.map((user: User, idx: number) => (
                     <TableRow key={user._id}>
                       <TableCell>
                         <div className="flex items-center justify-center">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-5 w-5" 
-                            onClick={() => toggleUserSelection(user._id || '')}
-                          >
-                            {selectedUsers.includes(user._id || '') ? (
-                              <CheckSquare className="h-4 w-4" />
-                            ) : (
-                              <Square className="h-4 w-4" />
-                            )}
+                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => toggleUserSelection(user._id || '')}>
+                            {selectedUsers.includes(user._id || '') ? (<CheckSquare className="h-4 w-4" />) : (<Square className="h-4 w-4" />)}
                           </Button>
                         </div>
                       </TableCell>
+                      {/* --- FIX: Correct serial number calculation using `page` state --- */}
                       <TableCell>{(page - 1) * ITEMS_PER_PAGE + idx + 1}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar><AvatarFallback>{user.name?.[0]?.toUpperCase()}</AvatarFallback></Avatar>
-                          <span className="font-medium">{user.name}</span>
-                        </div>
-                      </TableCell>
+                      <TableCell><div className="flex items-center gap-3"><Avatar><AvatarFallback>{user.name?.[0]?.toUpperCase()}</AvatarFallback></Avatar><span className="font-medium">{user.name}</span></div></TableCell>
                       <TableCell>{user.phoneNumber || '-'}</TableCell>
                       <TableCell><Badge variant={user.status === "Active" ? "default" : "secondary"}>{user.status || 'N/A'}</Badge></TableCell>
                       <TableCell>{user.leaderCode || '-'}</TableCell>
                       <TableCell>{user.createdOn ? new Date(parseInt(user.createdOn)).toLocaleDateString() : '-'}</TableCell>
                       <TableCell>{user.registeredClientCount}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button size="icon" variant="ghost" onClick={() => openViewModal(user)} title="View">
-                            <Eye className="w-4 h-4 text-blue-600" />
-                          </Button>
-                          <Button size="icon" variant="ghost" onClick={() => openEditModal(user)} title="Edit"><Edit className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => openDeleteModal(user)} title="Delete">
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </TableCell>
+                      <TableCell><div className="flex gap-2"><Button size="icon" variant="ghost" onClick={() => openViewModal(user)} title="View"><Eye className="w-4 h-4 text-blue-600" /></Button><Button size="icon" variant="ghost" onClick={() => openEditModal(user)} title="Edit"><Edit className="w-4 h-4" /></Button><Button size="icon" variant="ghost" onClick={() => openDeleteModal(user)} title="Delete"><Trash2 className="w-4 h-4 text-red-500" /></Button></div></TableCell>
                     </TableRow>
                   ))
                 )}
@@ -549,8 +503,8 @@ export default function Users() {
         </CardContent>
       </Card>
 
-      {/* Update pagination */}
-      {totalPaginatedPages > 1 && (
+      {/* --- FIX: Pagination component now uses `totalPages` from Redux --- */}
+      {totalPages > 1 && (
         <div className="mt-4">
           <Pagination>
             <PaginationContent>
@@ -558,58 +512,16 @@ export default function Users() {
                 <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); handlePageChange(page - 1); }} />
               </PaginationItem>
               
-              {/* First page */}
-              {page > 3 && (
-                <PaginationItem>
-                  <PaginationLink href="#" onClick={(e) => { e.preventDefault(); handlePageChange(1); }}>
-                    1
-                  </PaginationLink>
-                </PaginationItem>
-              )}
-              
-              {/* Ellipsis if needed */}
-              {page > 4 && (
-                <PaginationItem>
-                  <span className="px-2">...</span>
-                </PaginationItem>
-              )}
-              
-              {/* Pages around current page */}
-              {Array.from({ length: totalPaginatedPages }, (_, i) => i + 1)
-                .filter(pageNum => pageNum >= Math.max(1, page - 1) && pageNum <= Math.min(totalPaginatedPages, page + 1))
-                .map(pageNum => (
+              {/* This logic creates a link for each page available from the backend */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
                   <PaginationItem key={pageNum}>
-                    <PaginationLink 
-                      href="#" 
-                      isActive={page === pageNum}
-                      onClick={(e) => { e.preventDefault(); handlePageChange(pageNum); }}
-                    >
+                    <PaginationLink href="#" isActive={page === pageNum} onClick={(e) => { e.preventDefault(); handlePageChange(pageNum); }}>
                       {pageNum}
                     </PaginationLink>
                   </PaginationItem>
-                ))
-              }
-              
-              {/* Ellipsis if needed */}
-              {page < totalPaginatedPages - 3 && (
-                <PaginationItem>
-                  <span className="px-2">...</span>
-                </PaginationItem>
-              )}
-              
-              {/* Last page */}
-              {page < totalPaginatedPages - 2 && (
-                <PaginationItem>
-                  <PaginationLink 
-                    href="#" 
-                    onClick={(e) => { e.preventDefault(); handlePageChange(totalPaginatedPages); }}
-                  >
-                    {totalPaginatedPages}
-                  </PaginationLink>
-                </PaginationItem>
-              )}
+              ))}
 
-              <PaginationItem className={page === totalPaginatedPages ? "pointer-events-none opacity-50" : ""}>
+              <PaginationItem className={page === totalPages ? "pointer-events-none opacity-50" : ""}>
                 <PaginationNext href="#" onClick={(e) => { e.preventDefault(); handlePageChange(page + 1); }} />
               </PaginationItem>
             </PaginationContent>
