@@ -266,7 +266,7 @@ export default function Clients() {
                 <div className="md:col-span-2"><p className="text-muted-foreground">Current Owner(s)</p>{(singleClientResult.ownerName && singleClientResult.ownerName.length > 0) ? (<ul className="list-disc list-inside mt-1 font-medium">{singleClientResult.ownerName.map((name, i) => <li key={i}>{name} - {singleClientResult.ownerNumber?.[i] || 'N/A'}</li>)}</ul>) : (<p className="text-muted-foreground italic mt-1">No owners have claimed this client yet.</p>)}</div>
             </div>
             {(() => {
-                const canClaim = singleClientResult.ekyc_stage === 'complete' || singleClientResult.trade_status === 'done';
+                const canClaim = singleClientResult.ekyc_stage === 'complete'||singleClientResult.ekyc_stage === 'Complete'||singleClientResult.ekyc_stage === 'Completed'||singleClientResult.ekyc_stage === 'completed' ||singleClientResult.ekyc_stage === 'done' || singleClientResult.trade_status === 'done' ||singleClientResult.trade_status === 'complete' || singleClientResult.trade_status === 'Complete' || singleClientResult.trade_status === 'Completed' ||singleClientResult.trade_status === 'completed';
                 const isAlreadyOwner = newOwnerNumber.trim() ? singleClientResult.ownerNumber?.includes(newOwnerNumber.trim()) : false;
 
                 return (
