@@ -35,20 +35,32 @@ const getDisplayKycStatus = (status: string) => {
     case "not complete ":
       return "Not Completed";
     case "complete":
+    case "completed":
+    case "Complete":
+    case "Completed":
+    case "done":
+    case "Done":
       return "Completed";
-    default:
-      return status;
+      default:
+        return status;
+      // singleClientResult.trade_status === 'done' ||singleClientResult.trade_status === 'complete' || singleClientResult.trade_status === 'Complete' || singleClientResult.trade_status === 'Completed' ||singleClientResult.trade_status === 'completed'
   }
 };
 
 const getDisplayTradeStatus = (status: string) => {
   switch (status) {
-    case "not done ":
+    case "not complete ":
       return "Not Completed";
+    case "complete":
+    case "completed":
+    case "Complete":
+    case "Completed":
     case "done":
+    case "Done":
       return "Completed";
-    default:
-      return status;
+      default:
+        return status;
+
   }
 };
 
@@ -133,9 +145,15 @@ export default function Clients() {
     if (!singleClientResult) return;
 
     // Update the condition to match API values
-    if (singleClientResult.ekyc_stage !== 'complete' && singleClientResult.trade_status !== 'done') {
-      return;
-    }
+const normalizedEkyc = (singleClientResult.ekyc_stage ?? '').toLowerCase();
+const normalizedTrade = (singleClientResult.trade_status ?? '').toLowerCase();
+
+if (
+  !['complete', 'completed', 'done'].includes(normalizedEkyc) &&
+  !['done', 'complete', 'completed'].includes(normalizedTrade)
+) {
+  return;
+}
     if (singleClientResult.ownerNumber?.includes(newOwnerNumber.trim())) {
       toast.warning("This phone number has already claimed this client.");
       return;
@@ -248,7 +266,7 @@ export default function Clients() {
                 <div>
                   <p className="text-muted-foreground">E-KYC Status</p>
                   <div className="flex items-center gap-2 font-medium">
-                    {singleClientResult.ekyc_stage === 'complete' ? 
+                    {(singleClientResult.ekyc_stage === 'complete'||singleClientResult.ekyc_stage === 'Complete'||singleClientResult.ekyc_stage === 'Completed'||singleClientResult.ekyc_stage === 'completed' ||singleClientResult.ekyc_stage === 'done' || singleClientResult.ekyc_stage === 'Done') ? 
                       <ShieldCheck className="w-4 h-4 text-green-500" /> : 
                       <ShieldAlert className="w-4 h-4 text-orange-500" />}
                     <span>{getDisplayKycStatus(singleClientResult.ekyc_stage || "")}</span>
@@ -257,7 +275,7 @@ export default function Clients() {
                 <div className="md:col-span-2">
                   <p className="text-muted-foreground">Trade Status</p>
                   <div className="flex items-center gap-2 font-medium">
-                    {singleClientResult.trade_status === 'done' ? 
+                    {(singleClientResult.trade_status === 'done' ||singleClientResult.trade_status === 'complete' || singleClientResult.trade_status === 'Complete' || singleClientResult.trade_status === 'Completed' ||singleClientResult.trade_status === 'completed' || singleClientResult.trade_status === 'Done') ? 
                       <ShieldCheck className="w-4 h-4 text-green-500" /> : 
                       <ShieldAlert className="w-4 h-4 text-orange-500" />}
                     <span>{getDisplayTradeStatus(singleClientResult.trade_status || "")}</span>
@@ -266,7 +284,7 @@ export default function Clients() {
                 <div className="md:col-span-2"><p className="text-muted-foreground">Current Owner(s)</p>{(singleClientResult.ownerName && singleClientResult.ownerName.length > 0) ? (<ul className="list-disc list-inside mt-1 font-medium">{singleClientResult.ownerName.map((name, i) => <li key={i}>{name} - {singleClientResult.ownerNumber?.[i] || 'N/A'}</li>)}</ul>) : (<p className="text-muted-foreground italic mt-1">No owners have claimed this client yet.</p>)}</div>
             </div>
             {(() => {
-                const canClaim = singleClientResult.ekyc_stage === 'complete'||singleClientResult.ekyc_stage === 'Complete'||singleClientResult.ekyc_stage === 'Completed'||singleClientResult.ekyc_stage === 'completed' ||singleClientResult.ekyc_stage === 'done' || singleClientResult.trade_status === 'done' ||singleClientResult.trade_status === 'complete' || singleClientResult.trade_status === 'Complete' || singleClientResult.trade_status === 'Completed' ||singleClientResult.trade_status === 'completed';
+                const canClaim = singleClientResult.ekyc_stage === 'complete'||singleClientResult.ekyc_stage === 'Complete'||singleClientResult.ekyc_stage === 'Completed'||singleClientResult.ekyc_stage === 'completed' ||singleClientResult.ekyc_stage === 'done' || singleClientResult.ekyc_stage === 'Done' || singleClientResult.trade_status === 'done' ||singleClientResult.trade_status === 'complete' || singleClientResult.trade_status === 'Complete' || singleClientResult.trade_status === 'Completed' ||singleClientResult.trade_status === 'completed' || singleClientResult.trade_status === 'Done';
                 const isAlreadyOwner = newOwnerNumber.trim() ? singleClientResult.ownerNumber?.includes(newOwnerNumber.trim()) : false;
 
                 return (
