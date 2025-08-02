@@ -357,6 +357,7 @@ export default function Users() {
   // NEW: Handler to confirm bulk deletion
   const confirmBulkDelete = async () => {
     const result = await dispatch(deleteManyUsers(selectedUsers));
+    // console.log(result)
     if (result) {
       toast.success(`${selectedUsers.length} leaders deleted successfully`);
       setIsBulkDeleteModalOpen(false);
