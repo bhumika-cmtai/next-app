@@ -125,8 +125,10 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       },
       error: (error) => {
         toast.error("Error reading CSV file: " + error.message);
+        // console.log(error)
       }
     });
+    // console.log(results)
   };
 
   useEffect(() => {
@@ -183,7 +185,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
               };
               return mappedUser;
             });
-
+            // console.log(mappeduser)
             const response = await dispatch(addManyLeads(mappedData));
             if (response) {
               toast.success(`Successfully imported ${mappedData.length} leads`);
