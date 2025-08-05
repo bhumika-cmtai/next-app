@@ -473,7 +473,7 @@ export default function Clients() {
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell>{(currentPage - 1) * 20 + idx + 1}</TableCell>
+                      <TableCell>{(currentPage - 1) * 15 + idx + 1}</TableCell>
                       <TableCell>{client.portalName || "-"}</TableCell>
                       <TableCell><div className="font-medium">{client.name}</div></TableCell>
                       <TableCell><div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-500" /><span className="text-sm">{client.phoneNumber}</span></div></TableCell>
