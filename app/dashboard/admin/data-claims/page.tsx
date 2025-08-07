@@ -288,48 +288,76 @@ export default function Clients() {
   };
 
   // **** FIXED: Export function now correctly uses the 'clients' variable and 'Client' fields ****
-  const handleExport = () => {
-    if (!clients || clients.length === 0) {
-        toast.warning("There is no data to export.");
-        return;
-    }
-      
-    const filteredClients = exportStatus === "all" 
-      ? clients 
-      : clients.filter(client => client.status === exportStatus);
-    
-    if (filteredClients.length === 0) {
-        toast.warning(`No clients found with the status "${exportStatus}".`);
-        return;
-    }
+  const handleExport = async () => {
+    toast.info("Preparing export... This may take a moment.");
 
-    const headers = ["Portal", "Name", "Email", "Phone", "KYC Status", "Trade Status","Owner Name", "Owner Number" ,"Created"];
-    const csvContent = [
-      headers.join(","),
-      ...filteredClients.map(client => [
-        `"${client.portalName?.replace(/"/g, '""') || ''}"`,
-        `"${client.name.replace(/"/g, '""')}"`,
-        `"${client.email?.replace(/"/g, '""') || ''}"`,
-        `"${client.phoneNumber}"`,
-        `"${getDisplayKycStatus(client.ekyc_stage || '')}"`,
-        `"${getDisplayTradeStatus(client.trade_status || '')}"`,
-        `"${(client.ownerName || []).join('; ').replace(/"/g, '""')}"`,
-         `"${(client.ownerNumber || []).join('; ').replace(/"/g, '""')}"`,
-        `"${client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : ''}"`
-      ].join(","))
-    ].join("\n");
+    // Construct the query parameters based on the current filters
+    const params = new URLSearchParams();
+    if (exportStatus !== "all") {
+        params.append("status", exportStatus);
+    }
+    // Add other filters if you want the export to respect them
+    // if (portalFilter !== "all") {
+    //   params.append("portalName", portalFilter);
+    // }
+    // if (debouncedSearch) {
+    //   params.append("searchQuery", debouncedSearch);
+    // }
     
-    const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `clients-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    setExportModalOpen(false);
-  };
+    // Add the crucial export flag
+    params.append("export", "true");
+
+
+    try {
+        // Fetch ALL clients from your endpoint with the new parameter
+        const response = await fetch(`https://growup-backend.vercel.app/v1/clients/getAllClient?${params.toString()}`);
+        
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        // The actual data is likely nested in the response, adjust if necessary
+        const allClients = data.data.clients; 
+
+        if (!allClients || allClients.length === 0) {
+            toast.warning(`No clients found with the status "${exportStatus}".`);
+            return;
+        }
+
+        const headers = ["Portal", "Name", "Email", "Phone", "KYC Status", "Trade Status","Owner Name", "Owner Number" ,"Created"];
+        const csvContent = [
+            headers.join(","),
+            ...allClients.map((client: Client) => [
+                `"${client.portalName?.replace(/"/g, '""') || ''}"`,
+                `"${client.name.replace(/"/g, '""')}"`,
+                `"${client.email?.replace(/"/g, '""') || ''}"`,
+                `"${client.phoneNumber}"`,
+                `"${getDisplayKycStatus(client.ekyc_stage || '')}"`,
+                `"${getDisplayTradeStatus(client.trade_status || '')}"`,
+                `"${(client.ownerName || []).join('; ').replace(/"/g, '""')}"`,
+                `"${(client.ownerNumber || []).join('; ').replace(/"/g, '""')}"`,
+                `"${client.createdOn ? new Date(parseInt(client.createdOn)).toLocaleDateString() : ''}"`
+            ].join(","))
+        ].join("\n");
+
+        const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `clients-${exportStatus.toLowerCase()}-${new Date().toISOString().split("T")[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setExportModalOpen(false);
+
+    } catch (error) {
+        console.error("Failed to export clients:", error);
+        toast.error("Failed to export data. Please try again.");
+    }
+};
+
 
   // Add mapping functions at the top of the component
   const getDisplayKycStatus = (status: string) => {

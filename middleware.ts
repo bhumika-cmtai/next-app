@@ -1,74 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
 
-
-// Protect all dashboard and resources routes (including subroutes)
+// Add matcher for the paths we want to protect
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/resources/:path*',
+    /*
+     * Match all paths except:
+     * 1. /api routes
+     * 2. /_next (Next.js internals)
+     * 3. /fonts (inside public)
+     * 4. /examples (inside public)
+     * 5. all files inside public (images, fonts, icons, etc)
+     * 6. all auth routes (/login, /register, /forgot-password)
+     */
+    '/((?!api|_next|fonts|examples|[\\w-]+\\.\\w+|login|register|forgot-password).*)',
+    '/resources/:path*', // Protect all resources paths
   ],
 };
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-
-export default async function middleware(request: NextRequest) {
+export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Get token from cookie
   const token = request.cookies.get('auth-token')?.value;
-  let user = null;
-  // try {
-  //   user = token ? JSON.parse(decodeURIComponent(token)) : null;
-  // } catch {}
-  try {
-    if (token) {
-      const { payload } = await jwtVerify(token, secret);
-      user = payload;
-    }
-  } catch (e) {
-    user = null;
-  }
-  // console.log("token", token)
-  // console.log("user", user)
 
-  // Block access to /dashboard/admin or /dashboard/team if no valid auth-token
-  if (
-    (!token) &&
-    (pathname.startsWith('/dashboard/admin') || pathname.startsWith('/dashboard/team'))
-  ) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  // Public paths that don't require authentication
+  if (pathname === '/' ) {
+    // If it's the homepage, always allow access, regardless of login status.
+    return NextResponse.next();
+  }
+  const publicPaths = ['/get-started','/login', '/register', '/forgot-password'];
+  
+  // Check if the path is public
+  const isPublicPath = publicPaths.includes(pathname);
+
+  // Check if the path is a protected resource
+  const isProtectedResource = pathname.startsWith('/resources/');
+
+  // If the path is public and user is logged in, redirect to dashboard
+  if (isPublicPath && token) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Role-based route protection
-  const isAdminRoute = pathname.startsWith('/dashboard/admin');
-  const isTeamRoute = pathname.startsWith('/dashboard/team');
-  // const isUserRoute = pathname.startsWith('/dashboard/user');
-
-  if (user) {
-    // console.log(user.role)
-    if (user.role === 'admin' && (isTeamRoute)) {
-      return NextResponse.rewrite(new URL('/404', request.url));
-    }
-    // if (user.role === 'team' && (isAdminRoute || isUserRoute)) {
-    //   return NextResponse.rewrite(new URL('/404', request.url));
-    // }
-    if (user.role !== 'admin' && (isAdminRoute)) {
-      return NextResponse.rewrite(new URL('/404', request.url));
-    }
-  }
-
-  // On login, redirect to correct dashboard for all roles
-  if (pathname.startsWith("/login") && user) {
-    if (user.role === "admin") {
-      return NextResponse.redirect(new URL("/dashboard/admin", request.url));
-    }
-    else{
-      return NextResponse.redirect(new URL("/dashboard/team", request.url));
-    }
-    // if (user.role === "user") {
-    //   return NextResponse.redirect(new URL("/dashboard/user", request.url));
-    // }
+  // If the path is protected (including protected resources) and user is not logged in, redirect to login
+  if ((!isPublicPath || isProtectedResource) && !token) {
+    const from = encodeURIComponent(pathname);
+    return NextResponse.redirect(
+      new URL(`/login?from=${from}`, request.url)
+    );
   }
 
   return NextResponse.next();
