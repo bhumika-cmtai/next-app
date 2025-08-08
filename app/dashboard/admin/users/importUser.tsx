@@ -93,42 +93,66 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
     setIsDragging(false);
     
     const file = e.dataTransfer.files[0];
-    if (file && (file.type === "text/csv" || file.name.endsWith('.csv'))) {
+    if (!file) return;
+    
+    // Check file extension for both CSV and Excel formats
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    
+    if (extension === 'csv' || file.type === "text/csv") {
       handleFileProcessing(file);
+    } else if (['xls', 'xlsx', 'xlsm', 'xlsb', 'xlt'].includes(extension || '')) {
+      toast.error("Excel files are not supported. Please save your file as CSV format and try again.");
     } else {
-      toast.error("Please upload a CSV file");
+      toast.error("Unsupported file format. Please upload a CSV file.");
     }
   };
 
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && (file.type === "text/csv" || file.name.endsWith('.csv'))) {
+    if (!file) return;
+    
+    // Check file extension for both CSV and Excel formats
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    
+    if (extension === 'csv' || file.type === "text/csv") {
       handleFileProcessing(file);
-    } else if (file) {
-      toast.error("Please upload a CSV file");
+    } else if (['xls', 'xlsx', 'xlsm', 'xlsb', 'xlt'].includes(extension || '')) {
+      toast.error("Excel files are not supported. Please save your file as CSV format and try again.");
+      e.target.value = ''; // Reset input
+    } else {
+      toast.error("Unsupported file format. Please upload a CSV file.");
       e.target.value = ''; // Reset input
     }
   };
 
   const handleFileProcessing = (file: File) => {
     setSelectedFile(file);
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        if (results.data.length > 0 && typeof results.data[0] === 'object' && results.data[0] !== null) {
-          const headers = Object.keys(results.data[0] as object);
-          setFileHeaders(headers);
-          setAllData(results.data);
-          setTotalPages(Math.ceil(results.data.length / itemsPerPage));
-          setCurrentPage(1);
-          setPreviewData(results.data.slice(0, itemsPerPage));
+    try {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          if (results.data.length > 0 && typeof results.data[0] === 'object' && results.data[0] !== null) {
+            const headers = Object.keys(results.data[0] as object);
+            setFileHeaders(headers);
+            setAllData(results.data);
+            setTotalPages(Math.ceil(results.data.length / itemsPerPage));
+            setCurrentPage(1);
+            setPreviewData(results.data.slice(0, itemsPerPage));
+          } else {
+            toast.error("The CSV file appears to be empty or improperly formatted.");
+            handleReset();
+          }
+        },
+        error: (error) => {
+          toast.error("Error reading CSV file: " + error.message);
+          handleReset();
         }
-      },
-      error: (error) => {
-        toast.error("Error reading CSV file: " + error.message);
-      }
-    });
+      });
+    } catch (error) {
+      toast.error("Failed to process file. Please check if the file is a valid CSV.");
+      handleReset();
+    }
   };
 
   // Update preview data when page changes
@@ -172,28 +196,42 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
         skipEmptyLines: true,
         complete: async (results) => {
           try {
+            if (!results.data || results.data.length === 0) {
+              toast.error("No valid data found in the CSV file.");
+              setIsProcessing(false);
+              return;
+            }
+            
             const mappedData = results.data.map((row: any) => {
-              const name = row[fieldMapping.name];
-              const phoneNumber = row[fieldMapping.phoneNumber];
-              const generatedPassword = generatePassword(name, phoneNumber);
-              
-              const mappedUser: ParsedUser = {
-                name: name,
-                email: row[fieldMapping.email],
-                phoneNumber: phoneNumber,
-                whatsappNumber: row[fieldMapping.whatsappNumber] || phoneNumber,
-                city: row[fieldMapping.city] || "",
-                role: row[fieldMapping.role] || "user",
-                password: generatedPassword,
-                status: row[fieldMapping.status] || "Active",
-                leaderCode: row[fieldMapping.leaderCode] || "",
-                // abhi_aap_kya_karte_hai: row[fieldMapping.abhi_aap_kya_karte_hai] || "",
-                // work_experience: row[fieldMapping.work_experience] || "",
-              };
-              return mappedUser;
-            });
+              try {
+                const name = row[fieldMapping.name];
+                const phoneNumber = row[fieldMapping.phoneNumber];
+                const generatedPassword = generatePassword(name, phoneNumber);
+                
+                const mappedUser: ParsedUser = {
+                  name: name,
+                  email: row[fieldMapping.email],
+                  phoneNumber: phoneNumber,
+                  whatsappNumber: row[fieldMapping.whatsappNumber] || phoneNumber,
+                  city: row[fieldMapping.city] || "",
+                  role: row[fieldMapping.role] || "user",
+                  password: generatedPassword,
+                  status: row[fieldMapping.status] || "Active",
+                  leaderCode: row[fieldMapping.leaderCode] || "",
+                };
+                return mappedUser;
+              } catch (rowError) {
+                console.error("Error mapping row:", rowError, row);
+                return null;
+              }
+            }).filter((item): item is ParsedUser => item !== null); // Type guard to filter out nulls
+            
+            if (mappedData.length === 0) {
+              toast.error("No valid data could be extracted from the CSV file.");
+              setIsProcessing(false);
+              return;
+            }
 
-            console.log('Mapped users:', mappedData);
             const response = await dispatch(addManyUsers(mappedData));
             if (response) {
               toast.success(`Successfully imported ${mappedData.length} users`);
@@ -204,7 +242,8 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
               toast.error("Failed to import users: " + (response.error?.message || "Unknown error"));
             }
           } catch (error) {
-            toast.error("Error processing data: " + (error as Error).message);
+            console.error("Import processing error:", error);
+            toast.error("Error processing data: " + ((error as Error).message || "Unknown error"));
           } finally {
             setIsProcessing(false);
           }
@@ -215,7 +254,8 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
         },
       });
     } catch (error) {
-      toast.error("Import failed: " + (error as Error).message);
+      console.error("Import failed:", error);
+      toast.error("Import failed: " + ((error as Error).message || "Unknown error"));
       setIsProcessing(false);
     }
   };
@@ -270,7 +310,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold">Drag and drop your file here or</h3>
-                    <p className="text-sm text-muted-foreground">Supported format: CSV</p>
+                    <p className="text-sm text-muted-foreground">Supported format: CSV only (not Excel)</p>
                   </div>
                   <div className="w-full max-w-sm">
                     <Button 

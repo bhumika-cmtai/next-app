@@ -192,7 +192,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
               return mappedUser;
             });
 
-            console.log('Mapped clients:', mappedData);
+            // console.log('Mapped clients:', mappedData);
             const response = await dispatch(addManyClients(mappedData));
             if (response) {
               toast.success(`Successfully imported ${mappedData.length} clients`);

@@ -69,7 +69,7 @@ export const fetchAllAppLinks = () => async (dispatch: Dispatch) => {
   dispatch(setIsLoading(true));
   try {
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/applink/all`);
-    console.log(response.data.data)
+    // console.log(response.data.data)
     dispatch(setAppLinks(response.data.data));
   } catch (error: any) {
     const message = error.response?.data?.message || "Failed to fetch app links.";

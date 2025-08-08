@@ -141,11 +141,11 @@ export const addLinkclick = (linkclick: Linkclick) => async (dispatch: Dispatch)
   try {
     const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/linkclicks/addLinkclick`, linkclick);
     if (response.status === 201) {
-      console.log(response.data)
+      // console.log(response.data)
       return response.data;
     } else {
       dispatch(setError(response.data.message));
-      console.log(response.data)
+      // console.log(response.data)
     }
   } catch (error: unknown) {
     const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
