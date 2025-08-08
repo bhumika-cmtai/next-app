@@ -131,7 +131,8 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
         skipEmptyLines: true,
         complete: (results) => {
           if (results.data.length > 0 && typeof results.data[0] === 'object' && results.data[0] !== null) {
-            const headers = Object.keys(results.data[0] as object);
+            // Filter out empty headers
+            const headers = Object.keys(results.data[0] as object).filter(header => header.trim() !== '');
             setFileHeaders(headers);
             setAllData(results.data);
             setTotalPages(Math.ceil(results.data.length / itemsPerPage));
@@ -191,6 +192,10 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       Papa.parse(selectedFile, {
         header: true,
         skipEmptyLines: true,
+        transformHeader: (header) => {
+          // Ensure headers are not empty strings
+          return header.trim() || `column_${Math.random().toString(36).substring(2, 10)}`;
+        },
         complete: async (results) => {
           try {
             if (!results.data || results.data.length === 0) {
@@ -201,13 +206,22 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
             
             const mappedData = results.data.map((row: any) => {
               try {
+                // Skip row if it's not a valid object
+                if (!row || typeof row !== 'object') return null;
+                
+                // Check if mapped fields exist in the row
+                if (!row[fieldMapping.name] || !row[fieldMapping.email] || 
+                    !row[fieldMapping.phoneNumber] || !row[fieldMapping.transactionId]) {
+                  return null;
+                }
+                
                 const mappedUser: ParsedUser = {
                   name: row[fieldMapping.name],
                   email: row[fieldMapping.email],
                   phoneNumber: row[fieldMapping.phoneNumber],
                   transactionId: row[fieldMapping.transactionId],
                   city: row[fieldMapping.city] || "",
-                  age: row[fieldMapping.age] ,
+                  age: row[fieldMapping.age] || "",
                   gender: row[fieldMapping.gender] || "",
                   status: row[fieldMapping.status] || "New",
                 };
@@ -224,30 +238,36 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
               return;
             }
             
-            const response = await dispatch(addManyLeads(mappedData));
-            if (response) {
-              toast.success(`Successfully imported ${mappedData.length} leads`);
-              handleReset();
-              onOpenChange(false);
-              onImportSuccess?.();
-            } else {
-              toast.error("Failed to import leads: " + (response.error?.message || "Unknown error"));
+            try {
+              const response = await dispatch(addManyLeads(mappedData));
+              if (response) {
+                toast.success(`Successfully imported ${mappedData.length} leads`);
+                handleReset();
+                onOpenChange(false);
+                onImportSuccess?.();
+              } else {
+                toast.error("Failed to import leads: " + (response.error?.message || "Unknown error"));
+              }
+            } catch (apiError: any) {
+              console.error("API error during import:", apiError);
+              toast.error(`Failed to save data: ${apiError?.message || "Unknown error"}`);
             }
-          } catch (error) {
+          } catch (error: any) {
             console.error("Import processing error:", error);
-            toast.error("Error processing data: " + (error as Error).message || "Unknown error");
+            toast.error("Error processing data: " + (error?.message || "Unknown error"));
           } finally {
             setIsProcessing(false);
           }
         },
         error: (error) => {
+          console.error("CSV parsing error:", error);
           toast.error("Error parsing CSV: " + error.message);
           setIsProcessing(false);
         },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Import failed:", error);
-      toast.error("Import failed: " + ((error as Error).message || "Unknown error"));
+      toast.error("Import failed: " + (error?.message || "Unknown error"));
       setIsProcessing(false);
     }
   };
@@ -368,9 +388,11 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                               </SelectTrigger>
                               <SelectContent>
                                 {fileHeaders.map((header) => (
-                                  <SelectItem key={header} value={header}>
-                                    {header}
-                                  </SelectItem>
+                                  header ? (
+                                    <SelectItem key={header} value={header || `header-${Math.random()}`}>
+                                      {header || "(Empty Column)"}
+                                    </SelectItem>
+                                  ) : null
                                 ))}
                               </SelectContent>
                             </Select>
