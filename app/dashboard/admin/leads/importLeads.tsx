@@ -173,9 +173,11 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       ...prev,
       [field]: value
     }));
+    console.log("in fieldMapping function", fieldMapping)
   };
 
   const handleImport = async () => {
+    console.log("selectedFile", selectedFile)
     const requiredFields = ["name", "email", "phoneNumber","transactionId"];
     const missingRequiredFields = requiredFields.filter(field => !fieldMapping[field]);
     
@@ -199,6 +201,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
         complete: async (results) => {
           try {
             if (!results.data || results.data.length === 0) {
+              console.log(results)
               toast.error("No valid data found in the CSV file.");
               setIsProcessing(false);
               return;
@@ -207,13 +210,12 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
             const mappedData = results.data.map((row: any) => {
               try {
                 // Skip row if it's not a valid object
-                if (!row || typeof row !== 'object') return null;
+                // if (!row || typeof row !== 'object') return null;
                 
                 // Check if mapped fields exist in the row
-                if (!row[fieldMapping.name] || !row[fieldMapping.email] || 
-                    !row[fieldMapping.phoneNumber] || !row[fieldMapping.transactionId]) {
-                  return null;
-                }
+                // if (!row[fieldMapping.name] || !row[fieldMapping.email] ||  !row[fieldMapping.phoneNumber] || !row[fieldMapping.transactionId]) {
+                //   return null;
+                // }
                 
                 const mappedUser: ParsedUser = {
                   name: row[fieldMapping.name],
@@ -225,6 +227,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                   gender: row[fieldMapping.gender] || "",
                   status: row[fieldMapping.status] || "New",
                 };
+                console.log(mappedUser)
                 return mappedUser;
               } catch (rowError) {
                 console.error("Error mapping row:", rowError, row);
@@ -232,11 +235,14 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
               }
             }).filter((item): item is ParsedUser => item !== null); // Type guard to filter out nulls
             
-            if (mappedData.length === 0) {
-              toast.error("No valid data could be extracted from the CSV file.");
-              setIsProcessing(false);
-              return;
-            }
+            // if (mappedData.length === 0) {
+              // console.log(mappedData)
+    // console.log("in fieldMapping function", fieldMapping)
+
+            //   toast.error("No valid data could be extracted from the CSV file.");
+            //   setIsProcessing(false);
+            //   return;
+            // }
             
             try {
               const response = await dispatch(addManyLeads(mappedData));
