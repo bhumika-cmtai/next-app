@@ -129,6 +129,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
+        transformHeader: (header) => header.trim(),
         complete: (results) => {
           if (results.data.length > 0 && typeof results.data[0] === 'object' && results.data[0] !== null) {
             // Filter out empty headers
@@ -173,11 +174,11 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
       ...prev,
       [field]: value
     }));
-    console.log("in fieldMapping function", fieldMapping)
+    // console.log("in fieldMapping function", fieldMapping)
   };
 
   const handleImport = async () => {
-    console.log("selectedFile", selectedFile)
+    // console.log("selectedFile", selectedFile)
     const requiredFields = ["name", "email", "phoneNumber","transactionId"];
     const missingRequiredFields = requiredFields.filter(field => !fieldMapping[field]);
     
@@ -201,7 +202,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
         complete: async (results) => {
           try {
             if (!results.data || results.data.length === 0) {
-              console.log(results)
+              // console.log(results)
               toast.error("No valid data found in the CSV file.");
               setIsProcessing(false);
               return;
@@ -216,7 +217,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                 // if (!row[fieldMapping.name] || !row[fieldMapping.email] ||  !row[fieldMapping.phoneNumber] || !row[fieldMapping.transactionId]) {
                 //   return null;
                 // }
-                
+                // console.log(fieldMapping)
                 const mappedUser: ParsedUser = {
                   name: row[fieldMapping.name],
                   email: row[fieldMapping.email],
@@ -227,7 +228,7 @@ export default function ImportUser({ open, onOpenChange, onImportSuccess }: Impo
                   gender: row[fieldMapping.gender] || "",
                   status: row[fieldMapping.status] || "New",
                 };
-                console.log(mappedUser)
+                // console.log(mappedUser)
                 return mappedUser;
               } catch (rowError) {
                 console.error("Error mapping row:", rowError, row);

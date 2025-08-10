@@ -100,11 +100,11 @@ export const fetchLeadsCount = () => async (dispatch: Dispatch) => {
     if (response.data) {
       dispatch(setTotalLeadsCount(response.data.data.count));
     } else {
-      console.log("Failed to fetch leads count:", response.data.message);
+      // console.log("Failed to fetch leads count:", response.data.message);
     }
   } catch (error: unknown) {
     const message = typeof error === "object" && error && "message" in error ? (error as { message?: string }).message : String(error);
-    console.log("Error fetching leads count:", message);
+    // console.log("Error fetching leads count:", message);
   }
 };
 
@@ -123,7 +123,7 @@ export const fetchLeads = (params?: { search?: string; status?: string; page?: n
     const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leads/getAllLeads${queryString}`);
     
     if (response.status === 200) {
-      console.log(response)
+      // console.log(response)
       dispatch(setLeads(response.data.data));
     } else {
       dispatch(setError(response.data.message));
