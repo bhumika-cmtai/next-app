@@ -219,7 +219,7 @@ export default function Leads() {
       return;
     }
 
-    const headers = ["Name", "Email", "Phone", "Status", "Age", "TransactionId", "Gender", "Created"];
+    const headers = ["Name", "Email", "Phone", "Status", "Age","City" ,"TransactionId", "Gender", "Created"];
     const csvContent = [
       headers.join(","),
       ...allLeads.map(lead => [
@@ -228,6 +228,7 @@ export default function Leads() {
         `"${lead.phoneNumber}"`,
         `"${lead.status}"`,
         `"${lead.age}"`,
+        `"${lead.city}"`,
         `"${lead.transactionId}"`,
         `"${lead.gender}"`,
         `"${lead.createdOn ? new Date(lead.createdOn).toLocaleDateString() : ''}"`
